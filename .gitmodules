@@ -1,3 +1,4 @@
 [submodule "BuildTools"]
 	path = BuildTools
 	url = https://github.com/SapphireEngine/BuildTools
+	branch = master
