@@ -1,0 +1,43 @@
+#pragma once
+
+#if SE_PLATFORM_WINDOWS
+#	define SE_SUPPORTS_OPENGL     1
+#	define SE_SUPPORTS_DIRECT3D11 1
+#	define SE_SUPPORTS_DIRECT3D12 1
+#	define SE_SUPPORTS_VULKAN     1
+#else
+#	define SE_SUPPORTS_OPENGL     1
+#	define SE_SUPPORTS_DIRECT3D11 0
+#	define SE_SUPPORTS_DIRECT3D12 0
+#	define SE_SUPPORTS_VULKAN     1
+#endif
+
+#if SE_SUPPORTS_OPENGL && SE_ENABLE_OPENGL
+#	define SE_OPENGL 1
+#else
+#	define SE_OPENGL 0
+#endif
+
+#if SE_SUPPORTS_DIRECT3D11 && SE_ENABLE_DIRECT3D11
+#	define SE_DIRECT3D11 1
+#else
+#	define SE_DIRECT3D11 0
+#endif
+
+#if SE_SUPPORTS_DIRECT3D12 && SE_ENABLE_DIRECT3D12
+#	define SE_DIRECT3D12 1
+#else
+#	define SE_DIRECT3D12 0
+#endif
+
+#if SE_DIRECT3D11 || SE_DIRECT3D12
+#	define SE_DIRECT3D 1
+#else
+#	define SE_DIRECT3D 0
+#endif
+
+#if SE_SUPPORTS_VULKAN && SE_ENABLE_VULKAN
+#	define SE_VULKAN 1
+#else
+#	define SE_VULKAN 0
+#endif
