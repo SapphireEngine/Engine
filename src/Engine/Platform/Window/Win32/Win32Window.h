@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Platform/Window/Common/WindowDesc.h"
+#include "Platform/Window/Common/WindowConfig.h"
 #include "Platform/Window/Win32/Win32EventQueue.h"
 
 class ITaskbarList3;
@@ -13,11 +13,11 @@ class Window
 public:
 	~Window();
 
-	bool create(WindowDesc& desc, EventQueue& eventQueue);
+	bool create(WindowConfig& desc, EventQueue& eventQueue);
 
-	const WindowDesc getDesc();
+	const WindowConfig getDesc();
 
-	void updateDesc(WindowDesc& desc);
+	void updateDesc(WindowConfig& desc);
 
 	void setTitle(std::wstring title);
 
@@ -62,7 +62,7 @@ public:
 protected:
 	EventQueue* mEventQueue;
 
-	WindowDesc mDesc;
+	WindowConfig mDesc;
 
 	// Window State
 	WNDCLASSEX wndClass;

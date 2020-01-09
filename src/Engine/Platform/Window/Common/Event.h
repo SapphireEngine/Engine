@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Platform/Window/Common/Key.h"
+#include "Platform/Window/Common/Mouse.h"
+#include "Platform/Window/Common/Gamepad.h"
 
 //=============================================================================
 SE_NAMESPACE_WND_BEGIN
@@ -10,53 +12,36 @@ class Window;
 enum class EventType : size_t
 {
 	None = 0,
-
 	// Closing a window
 	Close,
-
 	// Creating a window
 	Create,
-
 	// Focus/Unfocus on a window
 	Focus,
-
 	// Paint events, a good time to present any graphical changes
 	Paint,
-
 	// Resizing a window
 	Resize,
-
-	// Change in the screen DPI scaling (such as moving a window to a monitor
-	// with a larger DPI.
+	// Change in the screen DPI scaling (such as moving a window to a monitor with a larger DPI.
 	DPI,
-
 	// Keyboard input such as press/release events
 	Keyboard,
-
 	// Mouse moving events
 	MouseMoved,
-
 	// Raw mouse data events
 	MouseRaw,
-
 	// Mouse scrolling events
 	MouseWheel,
-
 	// Mouse button press events
 	MouseInput,
-
 	// Touch events
 	Touch,
-
 	// Gamepad Input Events such as analog sticks, button presses
 	Gamepad,
-
 	// Dropping a file on the window
 	DropFile,
-
 	// Hovering a file over a window
 	HoverFile,
-
 	EventTypeMax
 };
 
@@ -101,177 +86,6 @@ struct DPIData
 
 	static const EventType type = EventType::DPI;
 };
-
-/**
-* The state of a button press, be it keyboard, mouse, etc.
-*/
-enum ButtonState : size_t
-{
-	Pressed = 0,
-	Released,
-	ButtonStateMax
-};
-
-/**
-* The state of modifier keys such as ctrl, alt, shift, and the windows/command
-* buttons. Pressed is true, released is false;
-*/
-struct ModifierState
-{
-	// Ctrl key
-	bool ctrl;
-
-	// Alt key
-	bool alt;
-
-	// Shift key
-	bool shift;
-
-	// Meta buttons such as the Windows button or Mac's Command button
-	bool meta;
-
-	ModifierState(bool ctrl = false, bool alt = false, bool shift = false,
-		bool meta = false);
-};
-
-/**
-* Key event enum
-*/
-enum class Key : size_t
-{
-	// Keyboard
-	Escape = 0,
-	Num1,
-	Num2,
-	Num3,
-	Num4,
-	Num5,
-	Num6,
-	Num7,
-	Num8,
-	Num9,
-	Num0,
-	Minus,
-	Equals,
-	Back,
-	Tab,
-	Q,
-	W,
-	E,
-	R,
-	T,
-	Y,
-	U,
-	I,
-	O,
-	P,
-	LBracket,
-	RBracket,
-	Enter,
-	LControl,
-	A,
-	S,
-	D,
-	F,
-	G,
-	H,
-	J,
-	K,
-	L,
-	Semicolon,
-	Apostrophe,
-	Grave,
-	LShift,
-	Backslash,
-	Z,
-	X,
-	C,
-	V,
-	B,
-	N,
-	M,
-	Comma,
-	Period,
-	Slash,
-	RShift,
-	Multiply,
-	LAlt,
-	Space,
-	Capital,
-	F1,
-	F2,
-	F3,
-	F4,
-	F5,
-	F6,
-	F7,
-	F8,
-	F9,
-	F10,
-	Numlock,
-	Scroll,
-	Numpad7,
-	Numpad8,
-	Numpad9,
-	Subtract,
-	Numpad4,
-	Numpad5,
-	Numpad6,
-	Add,
-	Numpad1,
-	Numpad2,
-	Numpad3,
-	Numpad0,
-	Decimal,
-	F11,
-	F12,
-	Numpadenter,
-	RControl,
-	Divide,
-	sysrq,
-	RAlt,
-	Pause,
-	Home,
-	Up,
-	PgUp,
-	Left,
-	Right,
-	End,
-	Down,
-	PgDn,
-	Insert,
-	Del,
-	LWin,
-	RWin,
-	Apps,
-
-	KeysMax
-};
-
-typedef const char* KeyToCharMap[static_cast<size_t>(Key::KeysMax)];
-typedef Key CharToKeyMap[static_cast<size_t>(Key::KeysMax)];
-
-/**
-* A map of the Keys enum to chars for matching keyboard event data.
-* Convenient for converting Key(s) to strings for serialization
-*/
-static KeyToCharMap sKeyToCharMap;
-
-/**
-* Converts a key to a string for serialization
-*/
-const char* convertKeyToString(Key key);
-
-/**
-* A map of strings to Keys for matching keyboard event data.
-* Useful for deserialization of strings to Keys
-*/
-static CharToKeyMap sCharToKeyMap;
-
-/**
-* Converts a string name to a Key for deserialization
-*/
-Key convertStringToKey(const char* str);
 
 /**
 * Data sent during keyboard events
@@ -326,16 +140,6 @@ struct MouseMoveData
 		int deltax, int deltay);
 };
 
-enum MouseInput
-{
-	Left,
-	Right,
-	Middle,
-	Button4,
-	Button5,
-	MouseInputMax
-};
-
 /**
 * Data passed with mouse input events
 */
@@ -362,29 +166,7 @@ struct MouseWheelData
 	MouseWheelData(double delta, ModifierState modifiers);
 };
 
-/**
-* Touch point data
-*/
-struct TouchPoint
-{
-	// A unique id for each touch point
-	unsigned long id;
 
-	// touch coordinate relative to whole screen origin in pixels
-	unsigned screenX;
-
-	// touch coordinate relative to whole screen origin in pixels
-	unsigned screenY;
-
-	// touch coordinate relative to window in pixels.
-	unsigned clientX;
-
-	// touch coordinate relative to window in pixels.
-	unsigned clientY;
-
-	// Did the touch point change
-	bool isChanged;
-};
 
 /**
 * Data passed for touch events
@@ -397,52 +179,6 @@ struct TouchData
 
 	static const EventType type = EventType::Touch;
 };
-
-/**
-* Gamepad Button pressed enum
-*/
-enum class GamepadButton : size_t
-{
-	DPadUp = 0,
-	DPadDown,
-	DPadLeft,
-	DPadRight,
-	StartButton,
-	BackButton,
-	LThumbClick,
-	RThumbClick,
-	LShoulder,
-	RShoulder,
-	AButton,
-	BButton,
-	XButton,
-	YButton,
-	GamepadButtonMax
-};
-
-/**
-* Gamepad analog stick enum
-*/
-enum class AnalogInput : size_t
-{
-	// gamepad
-	AnalogLeftTrigger,
-	AnalogRightTrigger,
-	AnalogLeftStickX,
-	AnalogLeftStickY,
-	AnalogRightStickX,
-	AnalogRightStickY,
-
-	// mouse
-	AnalogMouseX,
-	AnalogMouseY,
-	AnalogMouseScroll,
-
-	AnalogInputsMax
-};
-
-typedef const char*
-AnalogToStringMap[static_cast<size_t>(AnalogInput::AnalogInputsMax)];
 
 /**
 * Data passed for gamepad events

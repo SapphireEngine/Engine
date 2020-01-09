@@ -26,12 +26,12 @@ Window::~Window()
 	}
 }
 
-const WindowDesc Window::getDesc()
+const WindowConfig Window::getDesc()
 {
 	return mDesc;
 }
 
-bool Window::create(WindowDesc& desc, EventQueue& eventQueue)
+bool Window::create(WindowConfig& desc, EventQueue& eventQueue)
 {
 	mEventQueue = &eventQueue;
 
@@ -165,7 +165,7 @@ bool Window::create(WindowDesc& desc, EventQueue& eventQueue)
 	return true;
 }
 
-void Window::updateDesc(WindowDesc& desc)
+void Window::updateDesc(WindowConfig& desc)
 {
 	windowRect.left = mDesc.x;
 	windowRect.top = mDesc.y;

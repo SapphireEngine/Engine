@@ -3,7 +3,7 @@
 //=============================================================================
 SE_NAMESPACE_WND_BEGIN
 
-struct WindowDesc
+struct WindowConfig
 {
 	// States
 	bool visible = false;
@@ -25,8 +25,8 @@ struct WindowDesc
 struct UVec2
 {
 	UVec2(unsigned x = 0, unsigned y = 0) : x(x), y(y) {}
-	unsigned x;
-	unsigned y;
+	unsigned x = 0;
+	unsigned y = 0;
 };
 
 SE_NAMESPACE_WND_END

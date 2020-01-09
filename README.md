@@ -8,6 +8,8 @@
 
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+Development roadmap: https://trello.com/b/LKL3XIJe/sapphire-engine
+
 # Table of Contents
 
 - [Features](#features)
@@ -30,12 +32,11 @@
   * High performance
   * Extensive validation and error reporting
   
-* Rendering Backend
-  * Support GAPI
-    * Direct3D 11
-	* Direct3D 12
-	* Vulkan
-	* OpenGL 3.3-4.6
+* Rendering Backends
+  * Direct3D 11
+  * Direct3D 12
+  * Vulkan
+  * OpenGL 3.3-4.6
 
 <a name="cloning"></a>
 # Cloning the Repository

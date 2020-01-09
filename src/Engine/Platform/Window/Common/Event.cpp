@@ -73,15 +73,7 @@ ResizeData::ResizeData(unsigned width, unsigned height, bool resizing)
 {
 }
 
-const char* convertKeyToString(Key key)
-{
-	return nullptr;
-}
 
-Key convertStringToKey(const char* str)
-{
-	return Key();
-}
 
 FocusData::FocusData(bool focused) : focused(focused)
 {

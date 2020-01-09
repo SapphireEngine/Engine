@@ -292,7 +292,7 @@ void Renderer::initializeAPI(SE_NAMESPACE_WND::Window& window)
 	}
 
 	//Swapchain
-	const SE_NAMESPACE_WND::WindowDesc wdesc = window.getDesc();
+	const SE_NAMESPACE_WND::WindowConfig wdesc = window.getDesc();
 	setupSwapchain(wdesc.width, wdesc.height);
 	mCurrentBuffer = 0;
 
