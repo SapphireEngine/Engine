@@ -47,8 +47,8 @@ project "Engine"
 	kind "StaticLib"
 	
 	if _ACTION == "vs2015" or _ACTION == "vs2017" or _ACTION == "vs2019" then
-		targetdir ("$(SolutionDir)../_lib/$(Configuration)/$(PlatformName)/")
-		objdir ("!$(SolutionDir)../_obj/$(Configuration)/$(PlatformName)/$(ProjectName)/")
+		targetdir ("$(SolutionDir)_lib/$(Configuration)/$(PlatformName)/")
+		objdir ("!$(SolutionDir)_obj/$(Configuration)/$(PlatformName)/$(ProjectName)/")
 		targetname "$(ProjectName)"
 	end
 	
@@ -63,7 +63,8 @@ project "Engine"
 	
 	includedirs
 	{
-		"src/Engine"
+		"src/3rdParty",
+		"src/Engine"		
 	}
 	
 project "Test"
@@ -72,7 +73,7 @@ project "Test"
 	
 	if _ACTION == "vs2015" or _ACTION == "vs2017" or _ACTION == "vs2019" then
 		targetdir ("$(SolutionDir)../bin/")
-		objdir ("!$(SolutionDir)../_obj/$(Configuration)/$(PlatformName)/$(ProjectName)/")
+		objdir ("!$(SolutionDir)_obj/$(Configuration)/$(PlatformName)/$(ProjectName)/")
 		targetname "$(ProjectName)_$(PlatformName)_$(Configuration)"
 	end
 	
@@ -83,6 +84,7 @@ project "Test"
 	
 	includedirs
 	{
+		"src/3rdParty",
 		"src/Engine",
 		"src/Test"
 	}
@@ -91,7 +93,8 @@ project "Test"
 	
 		libdirs 
 		{
-			"$(SolutionDir)../_lib/$(Configuration)/$(PlatformName)/"
+			"$(SolutionDir)../src/3rdParty/Lib$(PlatformName)/",
+			"$(SolutionDir)_lib/$(Configuration)/$(PlatformName)/"
 		}
 	
 	end

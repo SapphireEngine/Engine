@@ -1,6 +1,14 @@
 #pragma once
 
 //=============================================================================
+// Namespace Window
+//=============================================================================
+#define SE_NAMESPACE_WND               window
+#define SE_NAMESPACE_WND_BEGIN         namespace SE_NAMESPACE::SE_NAMESPACE_WND {
+#define SE_NAMESPACE_WND_END           }
+namespace SE_NAMESPACE::SE_NAMESPACE_WND{}
+
+//=============================================================================
 // Platform Macros
 //=============================================================================
 #if SE_COMPILER_MSVC
