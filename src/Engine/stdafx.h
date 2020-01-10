@@ -8,9 +8,12 @@
 //-----------------------------------------------------------------------------
 // STL Header
 #include <type_traits>
+#include <codecvt>
+#include <locale>
 #include <memory>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <queue>
 #include <unordered_map>
 

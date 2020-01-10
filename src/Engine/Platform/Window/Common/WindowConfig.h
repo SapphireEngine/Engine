@@ -11,8 +11,8 @@ struct WindowConfig
 	bool resizable = false;
 	unsigned monitor = 0;
 	// App Data
-	std::wstring title = L"XWin";
-	std::wstring name = L"XWinApp";
+	std::wstring title = L"Sapphire";
+	std::wstring name = L"SapphireApp";
 	std::string iconPath = "";
 	// Transform
 	long x = 0;

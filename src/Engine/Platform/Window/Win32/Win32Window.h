@@ -3,7 +3,7 @@
 #include "Platform/Window/Common/WindowConfig.h"
 #include "Platform/Window/Win32/Win32EventQueue.h"
 
-class ITaskbarList3;
+struct ITaskbarList3;
 
 //=============================================================================
 SE_NAMESPACE_WND_BEGIN
@@ -13,24 +13,26 @@ class Window
 public:
 	~Window();
 
-	bool create(WindowConfig& desc, EventQueue& eventQueue);
+	bool Create(WindowConfig &desc, EventQueue &eventQueue);
+	void Close();
 
-	const WindowConfig getDesc();
+	void SetTitle(std::wstring_view title);
+	void SetPosition(unsigned x, unsigned y);
+	void SetMousePosition(unsigned x, unsigned y);
+	void SetSize(unsigned width, unsigned height);
 
-	void updateDesc(WindowConfig& desc);
 
-	void setTitle(std::wstring title);
 
-	void setPosition(unsigned x, unsigned y);
 
-	void setMousePosition(unsigned x, unsigned y);
+	const WindowConfig GetDesc();
 
-	void showMouse(bool show);
 
-	void setSize(unsigned width, unsigned height);
+	
 
-	void setProgress(float progress);
 
+
+	void ShowMouse(bool show);
+	
 	UVec2 getCurrentDisplaySize() const;
 
 	// returns the current top left corner this window is located in
@@ -40,14 +42,11 @@ public:
 
 	std::string getTitle() const;
 
-	void close();
+	
 
 	// Executes an event callback asynchronously, use this for non-blocking
 	// events (resizing while rendering, etc.)
-	void executeEventCallback(const Event e);
-
-	static LRESULT CALLBACK WindowProcStatic(HWND hwnd, UINT msg, WPARAM wparam,
-		LPARAM lparam);
+	void executeEventCallback(const Event e);	
 
 	LRESULT WindowProc(UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -60,31 +59,20 @@ public:
 	std::function<void(const Event e)> mCallback;
 
 protected:
-	EventQueue* mEventQueue;
+	static LRESULT CALLBACK windowProcStatic(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
-	WindowConfig mDesc;
 
-	// Window State
-	WNDCLASSEX wndClass;
-
-	// Window Size/Position
-	RECT windowRect;
-
-	// Screen State
-	DEVMODE dmScreenSettings;
+	EventQueue *m_eventQueue;
+	WindowConfig m_desc;		
+	RECT m_windowRect;			// Window Size/Position	
+	DEVMODE m_screenSettings;	// Screen State
 
 	// Window Behavior
-	DWORD dwExStyle;
-	DWORD dwStyle;
-
-	// Taskbar Interface
-	ITaskbarList3* mTaskbarList;
+	DWORD m_exStyle;
+	DWORD m_style;
+	
+	ITaskbarList3 *m_taskbarList;// Taskbar Interface
 };
-
-static thread_local Window* _windowBeingCreated = nullptr;
-static thread_local std::unordered_map<HWND, Window*> _hwndMap = {};
-
-typedef Window WindowDelegate;
 
 SE_NAMESPACE_WND_END
 //=============================================================================

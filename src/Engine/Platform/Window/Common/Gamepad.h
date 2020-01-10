@@ -3,9 +3,6 @@
 //=============================================================================
 SE_NAMESPACE_WND_BEGIN
 
-/**
-* Gamepad Button pressed enum
-*/
 enum class GamepadButton : size_t
 {
 	DPadUp = 0,
@@ -25,9 +22,6 @@ enum class GamepadButton : size_t
 	GamepadButtonMax
 };
 
-/**
-* Gamepad analog stick enum
-*/
 enum class AnalogInput : size_t
 {
 	// gamepad
@@ -45,9 +39,6 @@ enum class AnalogInput : size_t
 
 	AnalogInputsMax
 };
-
-typedef const char*
-AnalogToStringMap[static_cast<size_t>(AnalogInput::AnalogInputsMax)];
 
 SE_NAMESPACE_WND_END
 //=============================================================================

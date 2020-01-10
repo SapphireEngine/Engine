@@ -23,7 +23,7 @@ SE_NAMESPACE_BEGIN
 #if SE_DIRECT3D11
 inline IDXGISwapChain* createSwapchain(SE_NAMESPACE_WND::Window *window, IDXGIFactory *factory, ID3D11Device *device, DXGI_SWAP_CHAIN_DESC *swapchainDesc)
 {
-	SE_NAMESPACE_WND::WindowConfig desc = window->getDesc();
+	SE_NAMESPACE_WND::WindowConfig desc = window->GetDesc();
 
 	swapchainDesc->OutputWindow = window->hwnd;
 	swapchainDesc->Windowed = !desc.fullscreen;

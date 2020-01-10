@@ -1,47 +1,39 @@
 #include "stdafx.h"
 #include "Win32Window.h"
-#include "Shobjidl.h"
-#include "dwmapi.h"
-#include <windowsx.h>
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "uxtheme.lib")
-
-enum Style : DWORD
-{
-	windowed = WS_OVERLAPPEDWINDOW,
-	aero_borderless = WS_POPUP | WS_THICKFRAME,
-	basic_borderless = WS_POPUP | WS_VISIBLE
-};
-
+//-----------------------------------------------------------------------------
+constexpr DWORD StyleWindowed = WS_OVERLAPPEDWINDOW;
+constexpr DWORD StyleAeroBorderless = WS_POPUP | WS_THICKFRAME;
+constexpr DWORD StyleBasicBorderless  = WS_POPUP | WS_VISIBLE;
+//-----------------------------------------------------------------------------
 HBRUSH hBrush = CreateSolidBrush(RGB(23, 26, 30));
+//-----------------------------------------------------------------------------
 
 //=============================================================================
 SE_NAMESPACE_WND_BEGIN
 //-----------------------------------------------------------------------------
+static thread_local Window *sWindowBeingCreated = nullptr;
+static thread_local std::unordered_map<HWND, Window*> sHwndMap = {};
+//-----------------------------------------------------------------------------
 Window::~Window()
 {
 	if ( hwnd != nullptr )
-	{
-		close();
-	}
+		Close();
 }
-
-const WindowConfig Window::getDesc()
+//-----------------------------------------------------------------------------
+bool Window::Create(WindowConfig &desc, EventQueue &eventQueue)
 {
-	return mDesc;
-}
-
-bool Window::create(WindowConfig& desc, EventQueue& eventQueue)
-{
-	mEventQueue = &eventQueue;
+	m_eventQueue = &eventQueue;
 
 	hinstance = GetModuleHandle(nullptr);
 
-	mDesc = desc;
+	m_desc = desc;
 
+	WNDCLASSEX wndClass;
 	wndClass.cbSize = sizeof(wndClass);
 	wndClass.style = CS_HREDRAW | CS_VREDRAW;
-	wndClass.lpfnWndProc = Window::WindowProcStatic;
+	wndClass.lpfnWndProc = Window::windowProcStatic;
 	wndClass.cbClsExtra = 0;
 	wndClass.cbWndExtra = WS_EX_NOPARENTNOTIFY;
 	wndClass.hInstance = hinstance;
@@ -49,22 +41,18 @@ bool Window::create(WindowConfig& desc, EventQueue& eventQueue)
 	wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wndClass.hbrBackground = hBrush;
 	wndClass.lpszMenuName = NULL;
-	wndClass.lpszClassName = mDesc.name.c_str();
+	wndClass.lpszClassName = m_desc.name.c_str();
 	wndClass.hIconSm = LoadIcon(NULL, IDI_WINLOGO);
 
 	if ( !RegisterClassEx(&wndClass) )
 	{
-		/**
-		* Either an OS Error or a window with the same "name" id will cause
-		* this to fail:
-		*/
 		return false;
 	}
 
 	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
 	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-	if ( mDesc.fullscreen )
+	if ( m_desc.fullscreen )
 	{
 		DEVMODE dmScreenSettings;
 		memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));
@@ -72,20 +60,13 @@ bool Window::create(WindowConfig& desc, EventQueue& eventQueue)
 		dmScreenSettings.dmPelsWidth = screenWidth;
 		dmScreenSettings.dmPelsHeight = screenHeight;
 		dmScreenSettings.dmBitsPerPel = 32;
-		dmScreenSettings.dmFields =
-			DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+		dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 
 		if ( (desc.width != screenWidth) && (desc.height != screenHeight) )
 		{
 			if ( ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN) !=
 				DISP_CHANGE_SUCCESSFUL )
 			{
-				if ( MessageBox(NULL,
-					L"Fullscreen Mode not supported!\n Switch to "
-					L"window mode?",
-					L"Error", MB_YESNO | MB_ICONEXCLAMATION) == IDYES )
-				{
-				}
 			}
 		}
 	}
@@ -93,7 +74,7 @@ bool Window::create(WindowConfig& desc, EventQueue& eventQueue)
 	DWORD dwExStyle = 0;
 	DWORD dwStyle = 0;
 
-	if ( mDesc.fullscreen )
+	if ( m_desc.fullscreen )
 	{
 		dwExStyle = WS_EX_APPWINDOW;
 		dwStyle = WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
@@ -101,38 +82,30 @@ bool Window::create(WindowConfig& desc, EventQueue& eventQueue)
 	else
 	{
 		dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
-		// dwExStyle &=
-		//    ~(WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
-		dwStyle = Style::basic_borderless;
-		dwStyle = Style::windowed;
+		//dwStyle = StyleBasicBorderless;
+		dwStyle = StyleWindowed;
 	}
 
 	RECT windowRect;
-	windowRect.left = mDesc.x;
-	windowRect.top = mDesc.y;
-	windowRect.right = mDesc.fullscreen ? (long)screenWidth : (long)desc.width;
-	windowRect.bottom =
-		mDesc.fullscreen ? (long)screenHeight : (long)desc.height;
+	windowRect.left = m_desc.x;
+	windowRect.top = m_desc.y;
+	windowRect.right = m_desc.fullscreen ? (long)screenWidth : (long)desc.width;
+	windowRect.bottom = m_desc.fullscreen ? (long)screenHeight : (long)desc.height;
 
 	AdjustWindowRectEx(&windowRect, dwStyle, FALSE, dwExStyle);
 
-	_windowBeingCreated = this;
-	hwnd = CreateWindowEx(0, mDesc.name.c_str(), mDesc.title.c_str(), dwStyle,
-		0, 0, windowRect.right - windowRect.left,
-		windowRect.bottom - windowRect.top, NULL, NULL,
-		hinstance, NULL);
-
-	BOOL isNCRenderingEnabled{ TRUE };
-	DwmSetWindowAttribute(hwnd, DWMWA_NCRENDERING_ENABLED,
-		&isNCRenderingEnabled, sizeof(isNCRenderingEnabled));
-
+	sWindowBeingCreated = this;
+	hwnd = CreateWindowEx(0, m_desc.name.c_str(), m_desc.title.c_str(), dwStyle, 0, 0, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, NULL, NULL, hinstance, NULL);
 	if ( !hwnd )
 	{
-		// Failed to create window...
 		return false;
 	}
 
-	if ( !mDesc.fullscreen )
+	BOOL isNCRenderingEnabled{ TRUE };
+	DwmSetWindowAttribute(hwnd, DWMWA_NCRENDERING_ENABLED, &isNCRenderingEnabled, sizeof(isNCRenderingEnabled));
+	
+
+	if ( !m_desc.fullscreen )
 	{
 		// Center on screen
 		unsigned x = (GetSystemMetrics(SM_CXSCREEN) - windowRect.right) / 2;
@@ -140,7 +113,7 @@ bool Window::create(WindowConfig& desc, EventQueue& eventQueue)
 		SetWindowPos(hwnd, 0, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 	}
 
-	if ( mDesc.visible )
+	if ( m_desc.visible )
 	{
 		ShowWindow(hwnd, SW_SHOW);
 		SetForegroundWindow(hwnd);
@@ -153,31 +126,12 @@ bool Window::create(WindowConfig& desc, EventQueue& eventQueue)
 	::DwmExtendFrameIntoClientArea(hwnd, &shadow_state[0]);
 
 	RegisterWindowMessage(L"TaskbarButtonCreated");
-	HRESULT hrf =
-		CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER,
-			IID_ITaskbarList3, (LPVOID*)&mTaskbarList);
-	setProgress(0.0f);
-
-	// FlashWindow(hwnd, true);
-	// MoveWindow(hwnd, 0, 0, desc.width,
-	//           desc.height + 8, true);
+	HRESULT hrf = CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (LPVOID*)&m_taskbarList);
 
 	return true;
 }
-
-void Window::updateDesc(WindowConfig& desc)
-{
-	windowRect.left = mDesc.x;
-	windowRect.top = mDesc.y;
-	windowRect.right = (long)desc.width;
-	windowRect.bottom = (long)desc.height;
-
-	AdjustWindowRectEx(&windowRect, dwStyle, FALSE, dwExStyle);
-
-	SetWindowPos(hwnd, 0, desc.x, desc.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-}
-
-void Window::close()
+//-----------------------------------------------------------------------------
+void Window::Close()
 {
 	if ( hwnd != nullptr )
 	{
@@ -185,15 +139,54 @@ void Window::close()
 		hwnd = nullptr;
 	}
 }
-
-void Window::setProgress(float progress)
+//-----------------------------------------------------------------------------
+void Window::SetTitle(std::wstring_view title)
 {
-	unsigned max = 10000;
-	unsigned cur = (unsigned)(progress * (float)max);
-	mTaskbarList->SetProgressValue(hwnd, cur, max);
+	m_desc.title = title;
+	SetWindowText(hwnd, m_desc.title.c_str());
 }
+//-----------------------------------------------------------------------------
+void Window::SetPosition(unsigned x, unsigned y)
+{
+	SetWindowPos(hwnd, 0, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+	m_desc.x = x;
+	m_desc.y = y;
+}
+//-----------------------------------------------------------------------------
+void Window::SetMousePosition(unsigned x, unsigned y)
+{
+	SetCursorPos(x, y);
+}
+//-----------------------------------------------------------------------------
+void Window::SetSize(unsigned width, unsigned height)
+{
+	m_windowRect.left = m_desc.x;
+	m_windowRect.top = m_desc.y;
+	m_windowRect.right = (long)width;
+	m_windowRect.bottom = (long)height;
 
-void Window::showMouse(bool show)
+	AdjustWindowRectEx(&m_windowRect, m_style, FALSE, m_exStyle);
+}
+//-----------------------------------------------------------------------------
+
+
+
+
+
+
+//-----------------------------------------------------------------------------
+const WindowConfig Window::GetDesc()
+{
+	return m_desc;
+}
+//-----------------------------------------------------------------------------
+
+
+
+
+
+
+void Window::ShowMouse(bool show)
 {
 	ShowCursor(show ? TRUE : FALSE);
 }
@@ -207,28 +200,10 @@ std::string Window::getTitle() const
 	return outStr;
 }
 
-void Window::setTitle(std::wstring title)
-{
-	mDesc.title = title;
-	SetWindowText(hwnd, mDesc.title.c_str());
-}
 
-void Window::setPosition(unsigned x, unsigned y)
-{
-	SetWindowPos(hwnd, 0, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-	mDesc.x = x;
-	mDesc.y = y;
-}
 
-void Window::setSize(unsigned width, unsigned height)
-{
-	windowRect.left = mDesc.x;
-	windowRect.top = mDesc.y;
-	windowRect.right = (long)width;
-	windowRect.bottom = (long)height;
 
-	AdjustWindowRectEx(&windowRect, dwStyle, FALSE, dwExStyle);
-}
+
 
 UVec2 Window::getWindowSize() const
 {
@@ -254,30 +229,27 @@ UVec2 Window::getCurrentDisplayPosition() const
 	return r;
 }
 
-void Window::setMousePosition(unsigned x, unsigned y)
-{
-	SetCursorPos(x, y);
-}
+
 
 void Window::executeEventCallback(const Event e)
 {
 	if ( mCallback ) mCallback(e);
 }
 
-LRESULT CALLBACK Window::WindowProcStatic(HWND hwnd, UINT msg, WPARAM wparam,
+LRESULT CALLBACK Window::windowProcStatic(HWND hwnd, UINT msg, WPARAM wparam,
 	LPARAM lparam)
 {
 	Window* _this;
-	if ( _windowBeingCreated != nullptr )
+	if ( sWindowBeingCreated != nullptr )
 	{
-		_hwndMap.emplace(hwnd, _windowBeingCreated);
-		_windowBeingCreated->hwnd = hwnd;
-		_this = _windowBeingCreated;
-		_windowBeingCreated = nullptr;
+		sHwndMap.emplace(hwnd, sWindowBeingCreated);
+		sWindowBeingCreated->hwnd = hwnd;
+		_this = sWindowBeingCreated;
+		sWindowBeingCreated = nullptr;
 	}
 	else
 	{
-		auto existing = _hwndMap.find(hwnd);
+		auto existing = sHwndMap.find(hwnd);
 		_this = existing->second;
 	}
 
@@ -293,7 +265,7 @@ LRESULT Window::WindowProc(UINT msg, WPARAM wparam, LPARAM lparam)
 	message.message = msg;
 	message.time = 0;
 
-	LRESULT result = mEventQueue->pushEvent(message, this);
+	LRESULT result = m_eventQueue->pushEvent(message, this);
 	if ( result > 0 ) return result;
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }

@@ -85,7 +85,7 @@ inline vk::SurfaceKHR getSurface(SE_NAMESPACE_WND::Window* window, vk::Instance&
         NULL, &surface);
 #elif defined(VK_USE_PLATFORM_MACOS_MVK)
 
-    window->setLayer(SE_NAMESPACE_WND::WindowDelegate::LayerType::Metal);
+    window->setLayer(SE_NAMESPACE_WND::Window::LayerType::Metal);
 
     VkMacOSSurfaceCreateInfoMVK info;
     info.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;

@@ -12,9 +12,6 @@ using namespace se;
 
 int main()
 {
-    window::Window window;
-    window::EventQueue eventQueue;
-
     window::WindowConfig windowDesc;
     windowDesc.name = L"Test";
     windowDesc.title = L"My Title";
@@ -22,7 +19,9 @@ int main()
     windowDesc.width = 1280;
     windowDesc.height = 720;
 
-    if( !window.create(windowDesc, eventQueue) )
+    window::Window window;
+    window::EventQueue eventQueue;
+    if( !window.Create(windowDesc, eventQueue) )
     {
         return 0;
     }
@@ -48,7 +47,7 @@ int main()
             }
             if( event.type == window::EventType::Close )
             {
-                window.close();
+                window.Close();
                 isRunning = false;
                 shouldRender = false;
             }

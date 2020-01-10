@@ -1,17 +1,8 @@
 #include "stdafx.h"
-#include "Key.h"
+#include "StrUtils.h"
 
 //=============================================================================
-SE_NAMESPACE_WND_BEGIN
+SE_NAMESPACE_BEGIN
 //-----------------------------------------------------------------------------
-const char* convertKeyToString(Key key)
-{
-	return nullptr;
-}
-
-Key convertStringToKey(const char* str)
-{
-	return Key();
-}
-SE_NAMESPACE_WND_END
+SE_NAMESPACE_END
 //=============================================================================
