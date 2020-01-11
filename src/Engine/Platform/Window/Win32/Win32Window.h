@@ -1,65 +1,52 @@
 #pragma once
 
 #include "Platform/Window/Common/WindowConfig.h"
-#include "Platform/Window/Win32/Win32EventQueue.h"
+#include "Platform/Window/Common/Event.h"
 
 struct ITaskbarList3;
 
 //=============================================================================
 SE_NAMESPACE_WND_BEGIN
 
+class EventQueue;
+
+struct WindowData
+{
+	HINSTANCE hinstance;
+	HWND hwnd = nullptr;
+};
+
 class Window
 {
+	friend class EventQueue;
 public:
 	~Window();
 
 	bool Create(WindowConfig &desc, EventQueue &eventQueue);
 	void Close();
 
+	void ShowMouse(bool show);
+
 	void SetTitle(std::wstring_view title);
 	void SetPosition(unsigned x, unsigned y);
 	void SetMousePosition(unsigned x, unsigned y);
 	void SetSize(unsigned width, unsigned height);
 
+	const WindowConfig GetDesc();	
+	UVec2 GetCurrentDisplaySize() const;	
+	UVec2 GetCurrentDisplayPosition() const; // returns the current top left corner this window is located in
+	UVec2 GetWindowSize() const;
 
-
-
-	const WindowConfig GetDesc();
-
-
-	
-
-
-
-	void ShowMouse(bool show);
-	
-	UVec2 getCurrentDisplaySize() const;
-
-	// returns the current top left corner this window is located in
-	UVec2 getCurrentDisplayPosition() const;
-
-	UVec2 getWindowSize() const;
-
-	std::string getTitle() const;
-
-	
-
-	// Executes an event callback asynchronously, use this for non-blocking
-	// events (resizing while rendering, etc.)
-	void executeEventCallback(const Event e);	
-
-	LRESULT WindowProc(UINT msg, WPARAM wparam, LPARAM lparam);
-
-	// Application Handle
 	HINSTANCE hinstance;
-
-	// Window Handle
 	HWND hwnd = nullptr;
 
 	std::function<void(const Event e)> mCallback;
 
 protected:
 	static LRESULT CALLBACK windowProcStatic(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+	// Executes an event callback asynchronously, use this for non-blocking events (resizing while rendering, etc.)
+	LRESULT windowProc(UINT msg, WPARAM wparam, LPARAM lparam);
+	void executeEventCallback(const Event e);
 
 
 	EventQueue *m_eventQueue;

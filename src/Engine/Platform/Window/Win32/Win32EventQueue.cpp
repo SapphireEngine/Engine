@@ -1,23 +1,17 @@
 #include "stdafx.h"
 #include "Win32EventQueue.h"
 #include "Win32Window.h"
-
-#include "Shobjidl.h"
-#include "dwmapi.h"
-#include <windowsx.h>
-
+//-----------------------------------------------------------------------------
 #ifndef HID_USAGE_PAGE_GENERIC
-#define HID_USAGE_PAGE_GENERIC ((USHORT)0x01)
+#   define HID_USAGE_PAGE_GENERIC ((USHORT)0x01)
 #endif
 #ifndef HID_USAGE_GENERIC_MOUSE
-#define HID_USAGE_GENERIC_MOUSE ((USHORT)0x02)
+#   define HID_USAGE_GENERIC_MOUSE ((USHORT)0x02)
 #endif
-
+//-----------------------------------------------------------------------------
 RAWINPUTDEVICE Rid[1];
-
-
+//-----------------------------------------------------------------------------
 // some sizing border definitions
-
 #define MINX 200
 #define MINY 200
 #define BORDERWIDTH 5
@@ -26,7 +20,7 @@ RAWINPUTDEVICE Rid[1];
 //=============================================================================
 SE_NAMESPACE_WND_BEGIN
 //-----------------------------------------------------------------------------
-void EventQueue::update()
+void EventQueue::Update()
 {
     MSG msg = {};
 
@@ -37,18 +31,36 @@ void EventQueue::update()
         DispatchMessage(&msg);
     }
 }
-
-LRESULT EventQueue::pushEvent(MSG msg, Window* window)
+//-----------------------------------------------------------------------------
+const Event& EventQueue::Front()
+{
+    return m_queue.front();
+}
+//-----------------------------------------------------------------------------
+void EventQueue::Pop()
+{
+    m_queue.pop();
+}
+//-----------------------------------------------------------------------------
+bool EventQueue::Empty()
+{
+    return m_queue.empty();
+}
+//-----------------------------------------------------------------------------
+size_t EventQueue::Size()
+{
+    return m_queue.size();
+}
+//-----------------------------------------------------------------------------
+LRESULT EventQueue::PushEvent(MSG msg, Window *window)
 {
     UINT message = msg.message;
     LRESULT result = 0;
-    // TODO: hwnd to Window unordered_map, when Window closes, it
-    // sends a message to the event queue to remove that hwnd
-    // and any remaining events that match that Window
+    // TODO: hwnd to Window unordered_map, when Window closes, it sends a message to the event queue to remove that hwnd and any remaining events that match that Window
 
-    if ( !initialized )
+    if ( !m_initialized )
     {
-        initialized = true;
+        m_initialized = true;
         Rid[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
         Rid[0].usUsage = HID_USAGE_GENERIC_MOUSE;
         Rid[0].dwFlags = RIDEV_INPUTSINK;
@@ -64,34 +76,12 @@ LRESULT EventQueue::pushEvent(MSG msg, Window* window)
         {
             e = Event(EventType::Create, window);
             //repaint window when borderless to avoid 6px resizable border.
-            CREATESTRUCT* WindowInfo = reinterpret_cast<CREATESTRUCT*>(msg.lParam);
-            MoveWindow(window->hwnd, WindowInfo->x, WindowInfo->y,
-                WindowInfo->cx - BORDERWIDTH, WindowInfo->cy - BORDERWIDTH,
-                TRUE);
+            CREATESTRUCT *WindowInfo = reinterpret_cast<CREATESTRUCT*>(msg.lParam);
+            MoveWindow(window->hwnd, WindowInfo->x, WindowInfo->y, WindowInfo->cx - BORDERWIDTH, WindowInfo->cy - BORDERWIDTH, TRUE);
             break;
         }
     case WM_PAINT:
         {
-            /*
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(window->hwnd, &ps);
-
-            RECT rc = ps.rcPaint;
-            BP_PAINTPARAMS params = {sizeof(params), BPPF_NOCLIP | BPPF_ERASE};
-            HDC memdc;
-            HPAINTBUFFER hbuffer =
-            BeginBufferedPaint(hdc, &rc, BPBF_TOPDOWNDIB, &params, &memdc);
-
-            HBRUSH brush = CreateSolidBrush(RGB(23, 26, 30));
-            FillRect(hdc, &rc, brush);
-            DeleteObject(brush);
-
-            BufferedPaintSetAlpha(hbuffer, &rc, 255);
-            EndBufferedPaint(hbuffer, TRUE);
-
-            EndPaint(window->hwnd, &ps);
-            */
-
             PAINTSTRUCT ps;
             BeginPaint(window->hwnd, &ps);
 
@@ -314,9 +304,6 @@ LRESULT EventQueue::pushEvent(MSG msg, Window* window)
                     MouseRawData(static_cast<int>(raw->data.mouse.lLastX),
                         static_cast<int>(raw->data.mouse.lLastY)),
                     window);
-
-                // printf("%.3f, %.3f\n",
-                // raw->data.mouse.lLastX,raw->data.mouse.lLastY)
             }
 
             delete[] lpb;
@@ -332,56 +319,7 @@ LRESULT EventQueue::pushEvent(MSG msg, Window* window)
             // Get the client area of the window
             RECT area;
             GetClientRect(hwnd, &area);
-            /*
-            // Capture the mouse in case the user wants to drag it outside
-            if ((msg.wParam & (MK_LBUTTON | MK_MBUTTON | MK_RBUTTON | MK_XBUTTON1 |
-            MK_XBUTTON2)) == 0)
-            {
-            // Only release the capture if we really have it
-            if (GetCapture() == hwnd)
-            ReleaseCapture();
-            }
-            else if (GetCapture() != hwnd)
-            {
-            // Set the capture to continue receiving mouse events
-            SetCapture(hwnd);
-            }
-
-            // If the cursor is outside the client area...
-            if ((x < area.left) || (x > area.right) || (y < area.top) || (y >
-            area.bottom))
-            {
-            // and it used to be inside, the mouse left it.
-            if (m_mouseInside)
-            {
-            m_mouseInside = false;
-
-            // No longer care for the mouse leaving the window
-            setTracking(false);
-
-            // Generate a MouseLeft event
-            Event event;
-            event.type = Event::MouseLeft;
-            pushEvent(event);
-            }
-            }
-            else
-            {
-            // and vice-versa
-            if (!m_mouseInside)
-            {
-            m_mouseInside = true;
-
-            // Look for the mouse leaving the window
-            setTracking(true);
-
-            // Generate a MouseEntered event
-            Event event;
-            event.type = Event::MouseEntered;
-            pushEvent(event);
-            }
-            }*/
-
+            
             e = Event(MouseMoveData(
                 static_cast<unsigned>(
                     area.left <= x && x <= area.right ? x - area.left
@@ -390,11 +328,11 @@ LRESULT EventQueue::pushEvent(MSG msg, Window* window)
                     area.top <= y && y <= area.bottom ? y - area.top
                     : 0xFFFFFFFF),
                 static_cast<unsigned>(x), static_cast<unsigned>(y),
-                static_cast<int>(x - prevMouseX),
-                static_cast<int>(y - prevMouseY)),
+                static_cast<int>(x - m_prevMouseX),
+                static_cast<int>(y - m_prevMouseY)),
                 window);
-            prevMouseX = static_cast<unsigned>(x);
-            prevMouseY = static_cast<unsigned>(y);
+            m_prevMouseX = static_cast<unsigned>(x);
+            m_prevMouseY = static_cast<unsigned>(y);
             break;
         }
     case WM_KEYDOWN:
@@ -686,29 +624,11 @@ LRESULT EventQueue::pushEvent(MSG msg, Window* window)
     }
     if ( e.type != EventType::None )
     {
-        mQueue.emplace(e);
+        m_queue.emplace(e);
     }
     window->executeEventCallback(e);
     return result;
 }
 
-const Event& EventQueue::front()
-{
-    return mQueue.front();
-}
-
-void EventQueue::pop()
-{
-    mQueue.pop();
-}
-
-bool EventQueue::empty()
-{
-    return mQueue.empty();
-}
-size_t EventQueue::size()
-{
-    return mQueue.size();
-}
 SE_NAMESPACE_WND_END
 //=============================================================================

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Win32Window.h"
+#include "Win32EventQueue.h"
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "uxtheme.lib")
 //-----------------------------------------------------------------------------
@@ -140,6 +141,11 @@ void Window::Close()
 	}
 }
 //-----------------------------------------------------------------------------
+void Window::ShowMouse(bool show)
+{
+	ShowCursor(show ? TRUE : FALSE);
+}
+//-----------------------------------------------------------------------------
 void Window::SetTitle(std::wstring_view title)
 {
 	m_desc.title = title;
@@ -168,79 +174,38 @@ void Window::SetSize(unsigned width, unsigned height)
 	AdjustWindowRectEx(&m_windowRect, m_style, FALSE, m_exStyle);
 }
 //-----------------------------------------------------------------------------
-
-
-
-
-
-
-//-----------------------------------------------------------------------------
 const WindowConfig Window::GetDesc()
 {
 	return m_desc;
 }
 //-----------------------------------------------------------------------------
-
-
-
-
-
-
-void Window::ShowMouse(bool show)
+UVec2 Window::GetCurrentDisplaySize() const
 {
-	ShowCursor(show ? TRUE : FALSE);
-}
-
-std::string Window::getTitle() const
-{
-	char str[1024];
-	memset(str, 0, sizeof(char) * 1024);
-	GetWindowTextA(hwnd, str, 1024);
-	std::string outStr = std::string(str);
-	return outStr;
-}
-
-
-
-
-
-
-UVec2 Window::getWindowSize() const
-{
-	LPRECT lpRect;
-	GetWindowRect(hwnd, lpRect);
-	return UVec2(lpRect->right - lpRect->left, lpRect->bottom - lpRect->top);
-}
-
-UVec2 Window::getCurrentDisplaySize() const
-{
-	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-	UVec2 r = UVec2(static_cast<unsigned>(screenWidth),
-		static_cast<unsigned>(screenHeight));
+	const int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+	const int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+	const UVec2 r = { static_cast<unsigned>(screenWidth), static_cast<unsigned>(screenHeight) };
 	return r;
 }
-
-UVec2 Window::getCurrentDisplayPosition() const
+//-----------------------------------------------------------------------------
+UVec2 Window::GetCurrentDisplayPosition() const
 {
 	WINDOWPLACEMENT lpwndpl;
 	GetWindowPlacement(hwnd, &lpwndpl);
-	UVec2 r = UVec2(lpwndpl.ptMinPosition.x, lpwndpl.ptMinPosition.y);
+	const UVec2 r = UVec2( lpwndpl.ptMinPosition.x, lpwndpl.ptMinPosition.y );
 	return r;
 }
-
-
-
-void Window::executeEventCallback(const Event e)
+//-----------------------------------------------------------------------------
+UVec2 Window::GetWindowSize() const
 {
-	if ( mCallback ) mCallback(e);
+	LPRECT lpRect = nullptr;
+	GetWindowRect(hwnd, lpRect);
+	return UVec2(lpRect->right - lpRect->left, lpRect->bottom - lpRect->top);
 }
-
-LRESULT CALLBACK Window::windowProcStatic(HWND hwnd, UINT msg, WPARAM wparam,
-	LPARAM lparam)
+//-----------------------------------------------------------------------------
+LRESULT CALLBACK Window::windowProcStatic(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	Window* _this;
-	if ( sWindowBeingCreated != nullptr )
+	Window *_this = nullptr;
+	if( sWindowBeingCreated != nullptr )
 	{
 		sHwndMap.emplace(hwnd, sWindowBeingCreated);
 		sWindowBeingCreated->hwnd = hwnd;
@@ -253,10 +218,10 @@ LRESULT CALLBACK Window::windowProcStatic(HWND hwnd, UINT msg, WPARAM wparam,
 		_this = existing->second;
 	}
 
-	return _this->WindowProc(msg, wparam, lparam);
+	return _this->windowProc(msg, wparam, lparam);
 }
-
-LRESULT Window::WindowProc(UINT msg, WPARAM wparam, LPARAM lparam)
+//-----------------------------------------------------------------------------
+LRESULT Window::windowProc(UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	MSG message;
 	message.hwnd = hwnd;
@@ -265,9 +230,16 @@ LRESULT Window::WindowProc(UINT msg, WPARAM wparam, LPARAM lparam)
 	message.message = msg;
 	message.time = 0;
 
-	LRESULT result = m_eventQueue->pushEvent(message, this);
-	if ( result > 0 ) return result;
+	LRESULT result = m_eventQueue->PushEvent(message, this);
+	if( result > 0 ) return result;
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
+//-----------------------------------------------------------------------------
+void Window::executeEventCallback(const Event e)
+{
+	if ( mCallback ) mCallback(e);
+}
+//-----------------------------------------------------------------------------
+
 SE_NAMESPACE_WND_END
 //=============================================================================

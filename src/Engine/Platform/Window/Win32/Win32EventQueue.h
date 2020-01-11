@@ -10,25 +10,25 @@ class Window;
 class EventQueue
 {
 public:
-	void update();
+	void Update();
 
-	const Event& front();
+	const Event& Front();
 
-	void pop();
+	void Pop();
 
-	bool empty();
+	bool Empty();
 
-	size_t size();
+	size_t Size();
 
-	LRESULT pushEvent(MSG msg, Window* window);
+	LRESULT PushEvent(MSG msg, Window *window);
 
 protected:
-	bool initialized = false;
+	bool m_initialized = false;
 
-	unsigned prevMouseX;
-	unsigned prevMouseY;
+	unsigned m_prevMouseX;
+	unsigned m_prevMouseY;
 
-	std::queue<Event> mQueue;
+	std::queue<Event> m_queue;
 
 	/**
 	* Virtual Key Codes in Win32 are an unsigned char:
@@ -36,7 +36,7 @@ protected:
 	*/
 	typedef Key Win32VKeyToDigitalInputMap[1 << (8 * sizeof(unsigned char))];
 
-	Win32VKeyToDigitalInputMap mVKeyToDigitalInputMap = 
+	Win32VKeyToDigitalInputMap m_VKeyToDigitalInputMap = 
 	{
 		/*NONE 0x00*/ Key::KeysMax,
 		/*VK_LBUTTON 0x01*/ Key::KeysMax,

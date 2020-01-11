@@ -4,6 +4,7 @@
 using namespace se;
 
 #include "Platform/Window/Window.h"
+#include "Platform/Window/EventQueue.h"
 //#include "RenderingBackend/Renderer/Renderer.h"
 
 /*
@@ -33,11 +34,11 @@ int main()
     {
         bool shouldRender = true;
 
-        eventQueue.update();
+        eventQueue.Update();
 
-        while( !eventQueue.empty() )
+        while( !eventQueue.Empty() )
         {
-            const window::Event &event = eventQueue.front();
+            const window::Event &event = eventQueue.Front();
 
             if( event.type == window::EventType::Resize )
             {
@@ -52,7 +53,7 @@ int main()
                 shouldRender = false;
             }
 
-            eventQueue.pop();
+            eventQueue.Pop();
         }
 
         if( shouldRender )
