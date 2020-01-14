@@ -7,10 +7,6 @@ using namespace se;
 #include "Platform/Window/EventQueue.h"
 //#include "RenderingBackend/Renderer/Renderer.h"
 
-/*
-- генератор данжей как ассет
-*/
-
 int main()
 {
     window::WindowConfig windowDesc;

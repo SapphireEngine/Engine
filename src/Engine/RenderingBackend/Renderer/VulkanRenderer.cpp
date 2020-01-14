@@ -74,7 +74,7 @@ uint32_t getMemoryTypeIndex(vk::PhysicalDevice& physicalDevice, uint32_t typeBit
 
 // Renderer
 
-Renderer::Renderer(SE_NAMESPACE_WND::Window& window)
+ORenderer::ORenderer(SE_NAMESPACE_WND::Window& window)
 {
 	initializeAPI(window);
 	initializeResources();
@@ -82,7 +82,7 @@ Renderer::Renderer(SE_NAMESPACE_WND::Window& window)
 	tStart = std::chrono::high_resolution_clock::now();
 }
 
-Renderer::~Renderer()
+ORenderer::~ORenderer()
 {
 	mDevice.waitIdle();
 
@@ -91,7 +91,7 @@ Renderer::~Renderer()
 	destroyAPI();
 }
 
-void Renderer::destroyAPI()
+void ORenderer::destroyAPI()
 {
 	// Command Pool
 	mDevice.destroyCommandPool(mCommandPool);
@@ -106,7 +106,7 @@ void Renderer::destroyAPI()
 	mInstance.destroy();
 }
 
-void Renderer::destroyFrameBuffer()
+void ORenderer::destroyFrameBuffer()
 {
 	// Depth Attachment
 	mDevice.freeMemory(mDepthImageMemory);
@@ -124,12 +124,12 @@ void Renderer::destroyFrameBuffer()
 	}
 }
 
-void Renderer::destroyCommands()
+void ORenderer::destroyCommands()
 {
 	mDevice.freeCommandBuffers(mCommandPool, mCommandBuffers);
 }
 
-void Renderer::initializeAPI(SE_NAMESPACE_WND::Window& window)
+void ORenderer::initializeAPI(SE_NAMESPACE_WND::Window& window)
 {
 	/**
 	 * Initialize the Vulkan API by creating its various API entry points:
@@ -303,7 +303,7 @@ void Renderer::initializeAPI(SE_NAMESPACE_WND::Window& window)
 	createSynchronization();
 }
 
-void Renderer::setupSwapchain(unsigned width, unsigned height)
+void ORenderer::setupSwapchain(unsigned width, unsigned height)
 {
 	// Setup viewports, Vsync
 	vk::Extent2D swapchainSize = vk::Extent2D(width, height);
@@ -375,7 +375,7 @@ void Renderer::setupSwapchain(unsigned width, unsigned height)
 	mSwapchainBuffers.resize(backbufferCount);
 }
 
-void Renderer::initFrameBuffer()
+void ORenderer::initFrameBuffer()
 {
 	// Create Depth Image Data
 	mDepthImage = mDevice.createImage(
@@ -471,7 +471,7 @@ void Renderer::initFrameBuffer()
 	}
 }
 
-void Renderer::createRenderPass()
+void ORenderer::createRenderPass()
 {
 	std::vector<vk::AttachmentDescription> attachmentDescriptions =
 	{
@@ -559,7 +559,7 @@ void Renderer::createRenderPass()
 	);
 }
 
-void Renderer::createSynchronization()
+void ORenderer::createSynchronization()
 {
 	// Semaphore used to ensures that image presentation is complete before starting to submit again
 	mPresentCompleteSemaphore = mDevice.createSemaphore(vk::SemaphoreCreateInfo());
@@ -576,7 +576,7 @@ void Renderer::createSynchronization()
 	}
 }
 
-void Renderer::initializeResources()
+void ORenderer::initializeResources()
 {
 	/**
 	* Create Shader uniform binding data structures:
@@ -1091,7 +1091,7 @@ void Renderer::initializeResources()
 	);
 }
 
-void Renderer::destroyResources()
+void ORenderer::destroyResources()
 {
 	// Vertices
 	mDevice.freeMemory(mVertices.memory);
@@ -1138,7 +1138,7 @@ void Renderer::destroyResources()
 
 }
 
-void Renderer::createCommands()
+void ORenderer::createCommands()
 {
 	mCommandBuffers = mDevice.allocateCommandBuffers(
 		vk::CommandBufferAllocateInfo(
@@ -1149,7 +1149,7 @@ void Renderer::createCommands()
 	);
 }
 
-void Renderer::setupCommands()
+void ORenderer::setupCommands()
 {
 	std::vector<vk::ClearValue> clearValues =
 	{
@@ -1196,7 +1196,7 @@ void Renderer::setupCommands()
 	}
 }
 
-void Renderer::render()
+void ORenderer::render()
 {
 	// Framelimit set to 60 fps
 	tEnd = std::chrono::high_resolution_clock::now();
@@ -1275,7 +1275,7 @@ void Renderer::render()
 	}
 }
 
-void Renderer::resize(unsigned width, unsigned height)
+void ORenderer::resize(unsigned width, unsigned height)
 {
 	mDevice.waitIdle();
 	destroyFrameBuffer();

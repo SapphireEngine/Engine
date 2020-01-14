@@ -1,9 +1,14 @@
 #pragma once
 
-#if defined(_WIN32_WINNT) || defined(WINVER)
-#	error "_WIN32_WINNT / WINVER"
+// Set Windows version to Windows 7 (0x0601)
+#ifdef _WIN32_WINNT
+#	undef _WIN32_WINNT
 #endif
-#define _WIN32_WINNT 0x0602
+#define _WIN32_WINNT 0x0601
+
+#ifdef WINVER
+#	undef WINVER
+#endif
 #define WINVER _WIN32_WINNT
 
 //#define WIN32_LEAN_AND_MEAN      // 

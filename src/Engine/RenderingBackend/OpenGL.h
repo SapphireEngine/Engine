@@ -3,7 +3,6 @@
 #if SE_OPENGL
 
 #	if SE_PLATFORM_WINDOWS
-#		pragma comment(lib, "opengl32.lib")
 #		if !defined(SE_OPENGL_VERSION_MAJOR)
 #			define SE_OPENGL_VERSION_MAJOR 4
 #		endif

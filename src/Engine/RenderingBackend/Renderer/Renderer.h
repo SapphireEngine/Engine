@@ -5,18 +5,6 @@
 #include "RenderingBackend/OpenGL.h"
 #include "RenderingBackend/Vulkan.h"
 
-#include <vector>
-#include <chrono>
-#include <algorithm>
-#include <fstream>
-#include <iostream>
-
-#if SE_PLATFORM_WINDOWS
-#	include <direct.h>
-#else
-#	include <unistd.h>
-#endif
-
 //=============================================================================
 SE_NAMESPACE_BEGIN
 
@@ -62,11 +50,11 @@ inline T clamp(const T& value, const T& low, const T& high)
 	return value < low ? low : (value > high ? high : value);
 }
 
-class Renderer
+class ORenderer
 {
 public:
-	Renderer(SE_NAMESPACE_WND::Window& window);
-	~Renderer();
+	ORenderer(SE_NAMESPACE_WND::Window& window);
+	~ORenderer();
 
 	void render();
 

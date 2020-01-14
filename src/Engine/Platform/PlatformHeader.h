@@ -8,4 +8,7 @@
 #	include <Shobjidl.h>
 #	include <dwmapi.h>
 #	include <windowsx.h>
+#	include <direct.h>
+#else
+#	include <unistd.h>
 #endif
