@@ -19,11 +19,11 @@ private:
 	IAllocator *m_defaultAlloc = nullptr;
 };
 
-#define SE_MALLOC(newNumberOfBytes) GetSubsystem<Memory>.DefaultAlloc()->Reallocate(nullptr, 0, newNumberOfBytes, 1)
-#define SE_MALLOC_TYPED(type, newNumberOfElements) reinterpret_cast<type*>(GetSubsystem<Memory>.DefaultAlloc()->Reallocate(nullptr, 0, sizeof(type) * (newNumberOfElements), 1))
-#define SE_FREE(oldPointer) GetSubsystem<Memory>.DefaultAlloc()->Reallocate(oldPointer, 0, 0, 1)
+#define SE_MALLOC(newNumberOfBytes) GetSubsystem<Memory>().DefaultAlloc()->Reallocate(nullptr, 0, newNumberOfBytes, 1)
+#define SE_MALLOC_TYPED(type, newNumberOfElements) reinterpret_cast<type*>(GetSubsystem<Memory>().DefaultAlloc()->Reallocate(nullptr, 0, sizeof(type) * (newNumberOfElements), 1))
+#define SE_FREE(oldPointer) GetSubsystem<Memory>().DefaultAlloc()->Reallocate(oldPointer, 0, 0, 1)
 
-#define SE_NEW(type) new (GetSubsystem<Memory>.DefaultAlloc()->Reallocate(nullptr, 0, sizeof(type), 1)) type
+#define SE_NEW(type) new (GetSubsystem<Memory>().DefaultAlloc()->Reallocate(nullptr, 0, sizeof(type), 1)) type
 #define SE_DELETE(type, oldPointer) \
 		do \
 		{ \
@@ -31,7 +31,7 @@ private:
 			{ \
 				typedef type destructor; \
 				static_cast<type*>(oldPointer)->~destructor(); \
-				GetSubsystem<Memory>.DefaultAlloc()->Reallocate(oldPointer, 0, 0, 1); \
+				GetSubsystem<Memory>().DefaultAlloc()->Reallocate(oldPointer, 0, 0, 1); \
 			} \
 		} while (0)
 

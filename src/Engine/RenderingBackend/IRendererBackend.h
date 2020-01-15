@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RenderingBackend/RenderCore.h"
+#include "RenderingBackend/Capabilities.h"
 #include "Platform/Window/Window.h"
 
 //=============================================================================
@@ -18,6 +19,9 @@ public:
 	virtual bool EndFrame() = 0;
 
 	virtual void Resize(unsigned width, unsigned height) = 0;
+
+protected:
+	Capabilities m_capabilities;
 };
 
 SE_NAMESPACE_END
