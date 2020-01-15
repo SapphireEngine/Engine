@@ -1,32 +1,30 @@
 #include "stdafx.h"
-#include "BaseErrorHanding.h"
+#include "VKRenderer.h"
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
 //-----------------------------------------------------------------------------
-static bool isCriticalError = false;
-const char *criticalErrorText = "";
-//-----------------------------------------------------------------------------
-bool IsCriticalError()
+bool VKRenderer::Create(RenderConfig &config, SE_NAMESPACE_WND::Window &window)
 {
-	return isCriticalError;
+	return false;
 }
 //-----------------------------------------------------------------------------
-void CriticalError()
+void VKRenderer::Destroy()
 {
-	isCriticalError = true;
-	throw "CriticalError";
 }
 //-----------------------------------------------------------------------------
-void CriticalError(const char *text)
+bool VKRenderer::BeginFrame()
 {
-	criticalErrorText = text;
-	CriticalError();
+	return false;
 }
 //-----------------------------------------------------------------------------
-const char* GetCriticalErrorText()
+bool VKRenderer::EndFrame()
 {
-	return criticalErrorText;
+	return false;
+}
+//-----------------------------------------------------------------------------
+void VKRenderer::Resize(unsigned width, unsigned height)
+{
 }
 //-----------------------------------------------------------------------------
 SE_NAMESPACE_END

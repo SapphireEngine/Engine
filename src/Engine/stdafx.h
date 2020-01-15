@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <queue>
@@ -28,7 +29,4 @@
 
 //-----------------------------------------------------------------------------
 // Other Engine Header
-#include "RenderingBackend/Direct3D11.h"
-#include "RenderingBackend/Direct3D12.h"
-#include "RenderingBackend/OpenGL.h"
-#include "RenderingBackend/Vulkan.h"
+#include "Core/Utility/MakeID.h"

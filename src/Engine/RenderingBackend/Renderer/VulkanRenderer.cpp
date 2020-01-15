@@ -1,5 +1,5 @@
 ﻿#include "stdafx.h"
-#include "Renderer.h"
+#include "ORenderer.h"
 
 #if SE_VULKAN && 1
 
@@ -183,7 +183,7 @@ void ORenderer::initializeAPI(SE_NAMESPACE_WND::Window& window)
 
 	findBestLayers(installedLayers, wantedLayers, layers);
 
-	// ⚪ Instance
+	// Instance
 	vk::ApplicationInfo appInfo(
 		"Hello Triangle",
 		0,

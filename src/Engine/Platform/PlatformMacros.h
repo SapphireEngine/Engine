@@ -18,3 +18,9 @@ namespace SE_NAMESPACE::SE_NAMESPACE_WND{}
 #elif SE_COMPILER_GNUC
 #	define SE_NO_VTABLE
 #endif
+
+#if SE_PLATFORM_WINDOWS
+#	define SE_DEBUG_BREAK __debugbreak()
+#elif SE_PLATFORM_LINUX
+#	define SE_DEBUG_BREAK __builtin_trap()
+#endif

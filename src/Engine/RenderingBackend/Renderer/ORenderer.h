@@ -1,9 +1,9 @@
 #pragma once
 
-#include "RenderingBackend/Direct3D11.h"
-#include "RenderingBackend/Direct3D12.h"
-#include "RenderingBackend/OpenGL.h"
-#include "RenderingBackend/Vulkan.h"
+#include "RenderingBackend/CoreHeader/Direct3D11.h"
+#include "RenderingBackend/CoreHeader/Direct3D12.h"
+#include "RenderingBackend/CoreHeader/OpenGL.h"
+#include "RenderingBackend/CoreHeader/Vulkan.h"
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
