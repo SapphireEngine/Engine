@@ -12,6 +12,9 @@ using namespace se;
 #include "Core/Debug/Assert.h"
 #include "Core/Memory/Memory.h"
 
+https://github.com/nfrechette/rtm
+http://nfrechette.github.io
+
 int main()
 {
     Log log;
