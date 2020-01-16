@@ -88,11 +88,11 @@ LRESULT EventQueue::PushEvent(MSG msg, Window *window)
             RECT ClientRect;
             GetClientRect(window->hwnd, &ClientRect);
             RECT BorderRect = { BORDERWIDTH, BORDERWIDTH,
-                ClientRect.right - BORDERWIDTH - BORDERWIDTH,
-                ClientRect.bottom - BORDERWIDTH - BORDERWIDTH },
+            ClientRect.right - BORDERWIDTH - BORDERWIDTH,
+            ClientRect.bottom - BORDERWIDTH - BORDERWIDTH },
                 TitleRect = { BORDERWIDTH, BORDERWIDTH,
-                    ClientRect.right - BORDERWIDTH - BORDERWIDTH,
-                    TITLEBARWIDTH };
+                ClientRect.right - BORDERWIDTH - BORDERWIDTH,
+                TITLEBARWIDTH };
 
             HBRUSH BorderBrush = CreateSolidBrush(RGB(23, 26, 30));
             FillRect(ps.hdc, &ClientRect, BorderBrush);
@@ -319,7 +319,7 @@ LRESULT EventQueue::PushEvent(MSG msg, Window *window)
             // Get the client area of the window
             RECT area;
             GetClientRect(hwnd, &area);
-            
+
             e = Event(MouseMoveData(
                 static_cast<unsigned>(
                     area.left <= x && x <= area.right ? x - area.left
@@ -570,10 +570,7 @@ LRESULT EventQueue::PushEvent(MSG msg, Window *window)
         }
     case WM_SIZING:
         {
-            unsigned WIDTH = 320;
-            unsigned HEIGHT = 320;
             unsigned width, height;
-            unsigned STEP = 1;
             PRECT rectp = (PRECT)msg.lParam;
             HWND hwnd = window->hwnd;
             // Get the window and client dimensions
@@ -583,8 +580,7 @@ LRESULT EventQueue::PushEvent(MSG msg, Window *window)
             width = rectp->right - rectp->left;
             height = rectp->bottom - rectp->top;
 
-            RedrawWindow(hwnd, NULL, NULL,
-                RDW_INVALIDATE | RDW_NOERASE | RDW_INTERNALPAINT);
+            RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_NOERASE | RDW_INTERNALPAINT);
 
             e = Event(ResizeData(width, height, true), window);
             break;
@@ -598,8 +594,8 @@ LRESULT EventQueue::PushEvent(MSG msg, Window *window)
                 {
                     sz->rgrc[0].bottom +=
                         BORDERWIDTH; // rgrc[0] is what makes this work, don't know
-                                    // what others (rgrc[1], rgrc[2]) do, but why
-                                    // not change them all?
+                        // what others (rgrc[1], rgrc[2]) do, but why
+                        // not change them all?
                     sz->rgrc[0].right += BORDERWIDTH;
                     sz->rgrc[1].bottom += BORDERWIDTH;
                     sz->rgrc[1].right += BORDERWIDTH;

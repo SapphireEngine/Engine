@@ -5,6 +5,9 @@
 #include "Base/BaseHeader.h"
 #include "Platform/PlatformHeader.h"
 
+SE_PRAGMA_WARNING_PUSH
+SE_PRAGMA_WARNING_DISABLE_MSVC(4324)
+
 //-----------------------------------------------------------------------------
 // STL Header
 #include <type_traits>
@@ -30,3 +33,5 @@
 //-----------------------------------------------------------------------------
 // Other Engine Header
 #include "RenderingBackend/CoreHeader/Vulkan.h"
+
+SE_PRAGMA_WARNING_POP
