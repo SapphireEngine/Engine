@@ -3,6 +3,14 @@
 #include "Core/Template/NonCopyable.h"
 #include "Core/Memory/IAllocator.h"
 
+/*
+Author:
+	Emil Persson, A.K.A. Humus.
+	http://www.humus.name
+License:
+	Public Domain
+*/
+
 //=============================================================================
 SE_NAMESPACE_BEGIN
 

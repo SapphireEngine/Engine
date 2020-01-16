@@ -19,9 +19,11 @@ SE_PRAGMA_WARNING_DISABLE_MSVC(4324)
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <array>
 #include <queue>
 #include <vector>
 #include <unordered_map>
@@ -32,7 +34,5 @@ SE_PRAGMA_WARNING_DISABLE_MSVC(4324)
 
 //-----------------------------------------------------------------------------
 // Other Engine Header
-#include "RenderingBackend/CoreHeader/Vulkan.h"
-#include "Core/Template/Ref.h"
 
 SE_PRAGMA_WARNING_POP

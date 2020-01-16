@@ -1,14 +1,16 @@
 #pragma once
 
+#include "Core/Template/Ref.h"
 #include "RenderingBackend/RenderCore.h"
 #include "RenderingBackend/Capabilities.h"
 #include "RenderingBackend/Statistics.h"
 #include "Platform/Window/Window.h"
 
+
 //=============================================================================
 SE_NAMESPACE_BEGIN
 
-class SE_NO_VTABLE IRendererBackend
+class SE_NO_VTABLE IRendererBackend : public RefCount<IRendererBackend>
 {
 public:
 	virtual ~IRendererBackend() = default;
