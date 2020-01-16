@@ -33,5 +33,6 @@ SE_PRAGMA_WARNING_DISABLE_MSVC(4324)
 //-----------------------------------------------------------------------------
 // Other Engine Header
 #include "RenderingBackend/CoreHeader/Vulkan.h"
+#include "Core/Template/Ref.h"
 
 SE_PRAGMA_WARNING_POP
