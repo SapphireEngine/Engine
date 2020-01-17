@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Core/Memory/Memory.h"
+#if SE_VULKAN
+
 #include "RenderingBackend/IRendererBackend.h"
 #include "RenderingBackend/Vulkan/VKHeader.h"
 
@@ -25,11 +26,7 @@ public:
 
 	[[nodiscard]] const VkAllocationCallbacks* GetVkAllocationCallbacks() const
 	{
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 		return &m_vkAllocationCallbacks;
-#else
-		return nullptr;
-#endif
 	}
 
 	[[nodiscard]] inline const VulkanRuntimeLinking& GetVulkanRuntimeLinking() const
@@ -38,12 +35,10 @@ public:
 	}
 
 protected:
-	virtual void selfDestruct() override
-	{
-		SE_DELETE(VKRenderer, this);
-	}
-
+	virtual void selfDestruct() override;
 private:
+	void initializeCapabilities();
+
 	VkAllocationCallbacks m_vkAllocationCallbacks;		// Vulkan allocation callbacks
 	VulkanRuntimeLinking *m_vulkanRuntimeLinking = nullptr;	// Vulkan runtime linking instance, always valid
 	VulkanContext *m_vulkanContext = nullptr; // Vulkan context instance, always valid
@@ -51,3 +46,5 @@ private:
 
 SE_NAMESPACE_END
 //=============================================================================
+
+#endif

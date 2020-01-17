@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "RenderSystem.h"
-#include "RenderingBackend/Vulkan/VKRenderer.h"
+//#include "RenderingBackend/Vulkan/VKRenderer.h"
+#include "IRendererBackend.h"
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
@@ -38,8 +39,8 @@ RenderSystem::RenderSystem(RenderConfig &config, SE_NAMESPACE_WND::Window &windo
 #if SE_OPENGL
 #endif
 #if SE_VULKAN
-	if ( m_config.render == RenderingBackend::Vulkan )
-		m_renderer = new VKRenderer();
+	//if ( m_config.render == RenderingBackend::Vulkan )
+	//	m_renderer = new VKRenderer();
 #endif
 
 	if ( !m_renderer || !m_renderer->Create(m_config, window) )

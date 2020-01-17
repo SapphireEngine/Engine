@@ -3,6 +3,7 @@
 #include "VKCore.h"
 #include "VKRuntimeLinking.h"
 #include "Core/Debug/Log.h"
+#include "VKRenderer.h"
 
 #if SE_VULKAN
 

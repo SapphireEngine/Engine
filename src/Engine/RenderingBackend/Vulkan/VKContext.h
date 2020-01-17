@@ -1,11 +1,13 @@
 #pragma once
 
-#include "RenderingBackend/Vulkan/VKRenderer.h"
+#include "RenderingBackend/Vulkan/VKHeader.h"
 
 #if SE_VULKAN
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
+
+class VKRenderer;
 
 class VulkanContext final
 {

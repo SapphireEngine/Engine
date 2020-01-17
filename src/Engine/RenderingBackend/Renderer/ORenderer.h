@@ -122,7 +122,7 @@ protected:
 		Matrix4 viewMatrix;
 	} uboVS;
 
-#if SE_VULKAN && 1
+#if SE_VULKAN && 0
 	// Initialization
 	vk::Instance mInstance;
 	vk::PhysicalDevice mPhysicalDevice;
@@ -256,7 +256,7 @@ protected:
 	ID3D12Fence* mFence;
 	UINT64 mFenceValue;
 
-#elif SE_DIRECT3D11 && 0
+#elif SE_DIRECT3D11 && 1
 
 	bool mVsync;
 	SE_NAMESPACE_WND::Window* mWindow;

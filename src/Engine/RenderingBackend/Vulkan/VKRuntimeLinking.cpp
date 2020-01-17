@@ -1,10 +1,55 @@
 #include "stdafx.h"
 #include "VKRuntimeLinking.h"
 #include "Core/Debug/Log.h"
+#include "VKRenderer.h"
 #include "VKCore.h"
+
+#if SE_VULKAN
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
+//-----------------------------------------------------------------------------
+VulkanRuntimeLinking::VulkanRuntimeLinking(VKRenderer &renderer, bool enableValidation)
+	: m_renderer(renderer)
+	, m_validationEnabled(enableValidation)
+	, m_vulkanSharedLibrary(nullptr)
+	, m_entryPointsRegistered(false)
+	, m_vkInstance(VK_NULL_HANDLE)
+	, m_vkDebugReportCallbackEXT(VK_NULL_HANDLE)
+	, m_instanceLevelFunctionsRegistered(false)
+	, m_initialized(false)
+{
+}
+//-----------------------------------------------------------------------------
+VulkanRuntimeLinking::~VulkanRuntimeLinking()
+{
+	// Destroy the Vulkan debug report callback
+	if ( VK_NULL_HANDLE != m_vkDebugReportCallbackEXT )
+	{
+		vkDestroyDebugReportCallbackEXT(m_vkInstance, m_vkDebugReportCallbackEXT, m_renderer.GetVkAllocationCallbacks());
+	}
+
+	// Destroy the Vulkan instance
+	if ( VK_NULL_HANDLE != m_vkInstance )
+	{
+		vkDestroyInstance(m_vkInstance, m_renderer.GetVkAllocationCallbacks());
+	}
+
+	// Destroy the shared library instances
+#if SE_PLATFORM_WINDOWS
+	if ( nullptr != m_vulkanSharedLibrary )
+	{
+		::FreeLibrary(static_cast<HMODULE>(m_vulkanSharedLibrary));
+	}
+#elif SE_PLATFORM_LINUX
+	if ( nullptr != mVulkanSharedLibrary )
+	{
+		::dlclose(mVulkanSharedLibrary);
+	}
+#else
+#	error "Unsupported platform"
+#endif
+}
 //-----------------------------------------------------------------------------
 bool VulkanRuntimeLinking::IsVulkanAvaiable()
 {
@@ -22,8 +67,8 @@ bool VulkanRuntimeLinking::IsVulkanAvaiable()
 			if( m_entryPointsRegistered )
 			{
 				// Create the Vulkan instance
-				const VkResult vkResult = createVulkanInstance(m_validationEnabled);
-				if( VK_SUCCESS == vkResult )
+				const VkResult result = createVulkanInstance(m_validationEnabled);
+				if( VK_SUCCESS == result )
 				{
 					// Load instance based instance level Vulkan function pointers
 					m_instanceLevelFunctionsRegistered = loadInstanceLevelVulkanEntryPoints();
@@ -422,3 +467,5 @@ void VulkanRuntimeLinking::setupDebugCallback()
 //-----------------------------------------------------------------------------
 SE_NAMESPACE_END
 //=============================================================================
+
+#endif

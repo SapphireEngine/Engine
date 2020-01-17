@@ -7,7 +7,7 @@
 #       pragma comment(lib, "vulkan-1.lib")
 #	endif
 
-#	include <vulkan/vulkan.hpp>
+//#	include <vulkan/vulkan.hpp>
 #	include "Platform/Window/Window.h"
 
 #endif
@@ -15,7 +15,7 @@
 //=============================================================================
 SE_NAMESPACE_BEGIN
 
-#if SE_VULKAN
+#if SE_VULKAN && 0
 
 inline vk::SurfaceKHR getSurface(SE_NAMESPACE_WND::Window* window, vk::Instance& instance)
 {

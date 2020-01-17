@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 #include "ORenderer.h"
 
-#if SE_VULKAN && 1
+#if SE_VULKAN && 0
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
