@@ -2,6 +2,7 @@
 
 #include "Platform/Window/Common/WindowConfig.h"
 #include "Platform/Window/Common/Event.h"
+#include "Core/Object/Subsystem.h"
 
 struct ITaskbarList3;
 
@@ -16,13 +17,21 @@ struct WindowData
 	HWND hwnd = nullptr;
 };
 
-class Window
+class IRenderWindow;
+struct WindowHandle final
+{
+	handle nativeWindowHandle;
+	IRenderWindow *renderWindow;
+};
+
+class Window : public Subsystem<Window>
 {
 	friend class EventQueue;
 public:
+	Window();
 	~Window();
 
-	bool Create(WindowConfig &desc, EventQueue &eventQueue);
+	bool Init(WindowConfig &desc, EventQueue &eventQueue);
 	void Close();
 
 	void ShowMouse(bool show);

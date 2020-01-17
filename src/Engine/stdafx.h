@@ -20,6 +20,7 @@ SE_PRAGMA_WARNING_DISABLE_MSVC(4324)
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <atomic>
 #include <mutex>
 #include <string>
 #include <string_view>
@@ -34,5 +35,6 @@ SE_PRAGMA_WARNING_DISABLE_MSVC(4324)
 
 //-----------------------------------------------------------------------------
 // Other Engine Header
+#include "RenderingBackend/Core/RootSignatureTypes.h"
 
 SE_PRAGMA_WARNING_POP

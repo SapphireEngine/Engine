@@ -4,7 +4,7 @@
 
 #	if SE_PLATFORM_WINDOWS
 #		define VK_USE_PLATFORM_WIN32_KHR
-#       pragma comment(lib, "vulkan-1.lib")
+//#       pragma comment(lib, "vulkan-1.lib")
 #	endif
 
 //#	include <vulkan/vulkan.hpp>

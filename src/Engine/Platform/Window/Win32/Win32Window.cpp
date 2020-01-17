@@ -17,13 +17,18 @@ SE_NAMESPACE_WND_BEGIN
 static thread_local Window *sWindowBeingCreated = nullptr;
 static thread_local std::unordered_map<HWND, Window*> sHwndMap = {};
 //-----------------------------------------------------------------------------
+Window::Window()
+{
+	setValid(true);
+}
+//-----------------------------------------------------------------------------
 Window::~Window()
 {
 	if ( hwnd != nullptr )
 		Close();
 }
 //-----------------------------------------------------------------------------
-bool Window::Create(WindowConfig &desc, EventQueue &eventQueue)
+bool Window::Init(WindowConfig &desc, EventQueue &eventQueue)
 {
 	m_eventQueue = &eventQueue;
 

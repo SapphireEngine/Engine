@@ -75,6 +75,11 @@ public:
 	[[nodiscard]] VkCommandBuffer CreateVkCommandBuffer() const;	
 	void DestroyVkCommandBuffer(VkCommandBuffer vkCommandBuffer) const;
 
+	[[nodiscard]] inline VKRenderer& GetRender() const
+	{
+		return m_renderer;
+	}
+
 private:
 	VKRenderer &m_renderer;
 	VkPhysicalDevice m_vkPhysicalDevice; // Vulkan physical device this context is using

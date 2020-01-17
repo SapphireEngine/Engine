@@ -459,6 +459,7 @@ void VulkanRuntimeLinking::setupDebugCallback()
 		detail::DebugReportCallback,								// pfnCallback (PFN_vkDebugReportCallbackEXT)
 		nullptr														// pUserData (void*)
 	};
+
 	if( vkCreateDebugReportCallbackEXT(m_vkInstance, &vkDebugReportCallbackCreateInfoEXT, m_renderer.GetVkAllocationCallbacks(), &m_vkDebugReportCallbackEXT) != VK_SUCCESS )
 	{
 		SE_LOG(WARNING, "Failed to create the Vulkan debug report callback");

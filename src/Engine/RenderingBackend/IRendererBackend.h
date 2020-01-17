@@ -21,7 +21,7 @@ public:
 	}
 
 #if SE_STATISTICS
-	[[nodiscard]] inline const Statistics& GetStatistics() const
+	[[nodiscard]] inline Statistics& GetStatistics()
 	{
 		return m_statistics;
 	}
@@ -37,7 +37,7 @@ public:
 
 protected:
 	Capabilities m_capabilities;
-#ifdef SE_STATISTICS
+#if SE_STATISTICS
 	Statistics m_statistics;
 #endif
 };
