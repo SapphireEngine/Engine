@@ -12,22 +12,28 @@ using namespace se;
 #include "Core/Debug/Assert.h"
 #include "Core/Memory/Memory.h"
 
+using namespace window;
+
 int main()
 {
-    Log log;
-    Assert assert;
-    Memory memory;
+    Log::Create();
+    Assert::Create();
+    Memory::Create();
 
-    window::WindowConfig windowDesc;
+    WindowConfig windowDesc;
     windowDesc.name = L"Test";
     windowDesc.title = L"My Title";
     windowDesc.visible = true;
     windowDesc.width = 1280;
     windowDesc.height = 720;
+    
+    Window::Create();
 
-    window::Window window;
+    auto &window = GetSubsystem<Window>();
+
+
     window::EventQueue eventQueue;
-    if( !window.Create(windowDesc, eventQueue) )
+    if( !window.Init(windowDesc, eventQueue) )
     {
         return 0;
     }
@@ -71,6 +77,11 @@ int main()
             render.EndFrame();
         }
     }
+
+    Window::Destroy();
+    Memory::Destroy();
+    Assert::Destroy();
+    Log::Destroy();
 
     return 0;
 }
