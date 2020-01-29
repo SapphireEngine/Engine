@@ -38,13 +38,16 @@ struct RenderConfig
 class SE_NO_VTABLE IRendererBackend : public RefCount<IRendererBackend>
 {
 public:
-	//[-------------------------------------------------------]
-	//[ Core                                                  ]
-	//[-------------------------------------------------------]
+	//[=======================================================================]
+	//[ Core                                                                  ]
+	//[=======================================================================]
 
 	virtual ~IRendererBackend() = default;
 
-	RenderingBackend GetRenderingBackendType() const {return m_config.render; }
+	[[nodiscard]] virtual bool Create(RenderConfig &config) = 0;
+	virtual void Destroy() = 0;
+
+	[[nodiscard]] RenderingBackend GetRenderingBackendType() const {return m_config.render; }
 
 	[[nodiscard]] inline const Capabilities& GetCapabilities() const
 	{
@@ -88,14 +91,13 @@ public:
 	*    -> Starting with Direct3D 11.1, the Direct3D 9 PIX functions no longer work. Instead, the new
 	*       "D3D11_CREATE_DEVICE_PREVENT_ALTERING_LAYER_SETTINGS_FROM_REGISTRY"-flag (does not work with <Direct3D 11.1)
 	*       is used when creating the device instance, then the "ID3DUserDefinedAnnotation"-API is used.
-	*    -> Optimization: You might want to use those methods only via macros to make it easier to avoid using them
-	*       within e.g. a final release build
+	*    -> Optimization: You might want to use those methods only via macros to make it easier to avoid using them within e.g. a final release build
 	*/
 	[[nodiscard]] virtual bool IsDebugEnabled() = 0;
 
-	//[-------------------------------------------------------]
-	//[ Shader language                                       ]
-	//[-------------------------------------------------------]
+	//[=======================================================================]
+	//[ Shader language                                                       ]
+	//[=======================================================================]
 
 	// Return the number of supported shader languages
 	[[nodiscard]] virtual uint32_t GetNumberOfShaderLanguages() const = 0;
@@ -118,9 +120,9 @@ public:
 	*/
 	[[nodiscard]] virtual IShaderLanguage* GetShaderLanguage(const char *shaderLanguageName = nullptr) = 0;
 
-	//[-------------------------------------------------------]
-	//[ Resource creation                                     ]
-	//[-------------------------------------------------------]
+	//[=======================================================================]
+	//[ Resource creation                                                     ]
+	//[=======================================================================]
 
 	/**
 	*  @brief
@@ -169,7 +171,7 @@ public:
 	*  @return
 	*    The created swap chain instance, null pointer on error. Release the returned instance if you no longer need it.
 	*/
-	[[nodiscard]] virtual ISwapChain* CreateSwapChain(IRenderPass &renderPass, SE_NAMESPACE_WND::WindowHandle windowHandle, bool useExternalContext = false SE_DEBUG_NAME_PARAMETER) = 0;
+	[[nodiscard]] virtual ISwapChain* CreateSwapChain(IRenderPass &renderPass, bool useExternalContext = false SE_DEBUG_NAME_PARAMETER) = 0;
 
 	/**
 	*  @brief
@@ -193,186 +195,54 @@ public:
 	*    - Depending on the used RHI implementation and feature set, there might be the requirement that all provided textures have the same size
 	*      (in order to be on the save side, ensure that all provided textures have the same size and same MSAA sample count)
 	*/
-	[[nodiscard]] virtual IFramebuffer* CreateFramebuffer(IRenderPass& renderPass, const FramebufferAttachment* colorFramebufferAttachments, const FramebufferAttachment* depthStencilFramebufferAttachment = nullptr SE_DEBUG_NAME_PARAMETER) = 0;
+	[[nodiscard]] virtual IFramebuffer* CreateFramebuffer(IRenderPass &renderPass, const FramebufferAttachment *colorFramebufferAttachments, const FramebufferAttachment *depthStencilFramebufferAttachment = nullptr SE_DEBUG_NAME_PARAMETER) = 0;
 
-	/**
-	*  @brief
-	*    Create a buffer manager instance
-	*
-	*  @return
-	*    The created buffer manager instance, null pointer on error. Release the returned instance if you no longer need it.
-	*/
 	[[nodiscard]] virtual IBufferManager* CreateBufferManager() = 0;
 
-	/**
-	*  @brief
-	*    Create a texture manager instance
-	*
-	*  @return
-	*    The created texture manager instance, null pointer on error. Release the returned instance if you no longer need it.
-	*/
 	[[nodiscard]] virtual ITextureManager* CreateTextureManager() = 0;
 
-	/**
-	*  @brief
-	*    Create a root signature instance
-	*
-	*  @param[in] rootSignature
-	*    Root signature to use
-	*
-	*  @return
-	*    The root signature instance, null pointer on error. Release the returned instance if you no longer need it.
-	*/
-	[[nodiscard]] virtual IRootSignature* CreateRootSignature(const RootSignature& rootSignature SE_DEBUG_NAME_PARAMETER) = 0;
+	[[nodiscard]] virtual IRootSignature* CreateRootSignature(const RootSignature &rootSignature SE_DEBUG_NAME_PARAMETER) = 0;
 
-	/**
-	*  @brief
-	*    Create a graphics pipeline state instance
-	*
-	*  @param[in] graphicsPipelineState
-	*    Graphics pipeline state to use
-	*
-	*  @return
-	*    The graphics pipeline state instance, null pointer on error. Release the returned instance if you no longer need it.
-	*/
-	[[nodiscard]] virtual IGraphicsPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineState& graphicsPipelineState SE_DEBUG_NAME_PARAMETER) = 0;
+	[[nodiscard]] virtual IGraphicsPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineState &graphicsPipelineState SE_DEBUG_NAME_PARAMETER) = 0;
 
-	/**
-	*  @brief
-	*    Create a compute pipeline state instance
-	*
-	*  @param[in] rootSignature
-	*    Root signature (compute pipeline state instances keep a reference to the root signature)
-	*  @param[in] computeShader
-	*    Compute shader used by the compute pipeline state (compute pipeline state instances keep a reference to the shader)
-	*
-	*  @return
-	*    The compute pipeline state instance, null pointer on error. Release the returned instance if you no longer need it.
-	*/
-	[[nodiscard]] virtual IComputePipelineState* CreateComputePipelineState(IRootSignature& rootSignature, IComputeShader& computeShader SE_DEBUG_NAME_PARAMETER) = 0;
+	[[nodiscard]] virtual IComputePipelineState* CreateComputePipelineState(IRootSignature &rootSignature, IComputeShader& computeShader SE_DEBUG_NAME_PARAMETER) = 0;
 
-	/**
-	*  @brief
-	*    Create a sampler state instance
-	*
-	*  @param[in] samplerState
-	*    Sampler state to use
-	*
-	*  @return
-	*    The sampler state instance, null pointer on error. Release the returned instance if you no longer need it.
-	*/
 	[[nodiscard]] virtual ISamplerState* CreateSamplerState(const SamplerState &samplerState SE_DEBUG_NAME_PARAMETER) = 0;
 
-	//[-------------------------------------------------------]
-	//[ Resource handling                                     ]
-	//[-------------------------------------------------------]
+	//[=======================================================================]
+	//[ Resource handling                                                     ]
+	//[=======================================================================]
 
-	/**
-	*  @brief
-	*    Map a resource
-	*
-	*  @param[in]  resource
-	*    Resource to map, there's no internal resource validation, so, do only use valid resources in here!
-	*  @param[in]  subresource
-	*    Subresource
-	*  @param[in]  mapType
-	*    Map type
-	*  @param[in]  mapFlags
-	*    Map flags, see "MapFlag"-flags
-	*  @param[out] mappedSubresource
-	*    Receives the mapped subresource information, do only use this data in case this method returns successfully
-	*
-	*  @return
-	*    "true" if all went fine, else "false"
-	*/
-	[[nodiscard]] virtual bool Map(IResource& resource, uint32_t subresource, MapType mapType, uint32_t mapFlags, MappedSubresource& mappedSubresource) = 0;
+	[[nodiscard]] virtual bool Map(IResource &resource, uint32_t subresource, MapType mapType, uint32_t mapFlags, MappedSubresource &mappedSubresource) = 0;
 
-	/**
-	*  @brief
-	*    Unmap a resource
-	*
-	*  @param[in] resource
-	*    Resource to unmap, there's no internal resource validation, so, do only use valid resources in here!
-	*  @param[in] subresource
-	*    Subresource
-	*/
-	virtual void Unmap(IResource& resource, uint32_t subresource) = 0;
+	virtual void Unmap(IResource &resource, uint32_t subresource) = 0;
 
-	/**
-	*  @brief
-	*    Get asynchronous query pool results
-	*
-	*  @param[in] queryPool
-	*    Query pool
-	*  @param[in] numberOfDataBytes
-	*    Number of data bytes
-	*  @param[out] data
-	*    Receives the query data
-	*  @param[in] firstQueryIndex
-	*    First query index (e.g. 0)
-	*  @param[in] numberOfQueries
-	*    Number of queries (e.g. 1)
-	*  @param[in] strideInBytes
-	*    Stride in bytes, 0 is only valid in case there's just a single query
-	*  @param[in] queryResultFlags
-	*    Query control flags (e.g. "QueryResultFlags::WAIT")
-	*
-	*  @return
-	*    "true" if all went fine, else "false"
-	*/
-	[[nodiscard]] virtual bool GetQueryPoolResults(IQueryPool& queryPool, uint32_t numberOfDataBytes, uint8_t* data, uint32_t firstQueryIndex = 0, uint32_t numberOfQueries = 1, uint32_t strideInBytes = 0, uint32_t queryResultFlags = QueryResultFlags::WAIT) = 0;
+	// Get asynchronous query pool results
+	[[nodiscard]] virtual bool GetQueryPoolResults(IQueryPool &queryPool, uint32_t numberOfDataBytes, uint8_t *data, uint32_t firstQueryIndex = 0, uint32_t numberOfQueries = 1, uint32_t strideInBytes = 0, uint32_t queryResultFlags = QueryResultFlags::WAIT) = 0;
 
-	//[-------------------------------------------------------]
-	//[ Operations                                            ]
-	//[-------------------------------------------------------]
-	/**
-	*  @brief
-	*    Begin scene rendering
-	*
-	*  @return
-	*    "true" if all went fine, else "false" (In this case: Don't dare to render something)
-	*
-	*  @note
-	*    - In order to be RHI implementation independent, call this method when starting to render something
-	*/
+	//[=======================================================================]
+	//[ Operations                                                            ]
+	//[=======================================================================]
+	
 	[[nodiscard]] virtual bool BeginScene() = 0;
 
-	/**
-	*  @brief
-	*    Submit command buffer to RHI
-	*
-	*  @param[in] commandBuffer
-	*    Command buffer to submit
-	*/
-	virtual void SubmitCommandBuffer(const CommandBuffer& commandBuffer) = 0;
+	virtual void SubmitCommandBuffer(const CommandBuffer &commandBuffer) = 0;
 
-	/**
-	*  @brief
-	*    End scene rendering
-	*
-	*  @note
-	*    - In order to be RHI implementation independent, call this method when you're done with rendering
-	*/
 	virtual void EndScene() = 0;
 
-	//[-------------------------------------------------------]
-	//[ Synchronization                                       ]
-	//[-------------------------------------------------------]
-	/**
-	*  @brief
-	*    Force the execution of render commands in finite time (synchronization)
-	*/
+	//[=======================================================================]
+	//[ Synchronization                                                       ]
+	//[=======================================================================]
+
+	// Force the execution of render commands in finite time (synchronization)
 	virtual void Flush() = 0;
 
-	/**
-	*  @brief
-	*    Force the execution of render commands in finite time and wait until it's done (synchronization)
-	*/
+	// Force the execution of render commands in finite time and wait until it's done (synchronization)
 	virtual void Finish() = 0;
 
-	//[-------------------------------------------------------]
-	//[ RHI implementation specific                           ]
-	//[-------------------------------------------------------]
+	//[=======================================================================]
+	//[ Render implementation specific                                        ]
+	//[=======================================================================]
 	[[nodiscard]] virtual void* GetD3D11DevicePointer() const
 	{
 		return nullptr;
@@ -398,45 +268,6 @@ protected:
 #if SE_STATISTICS
 	Statistics m_statistics;
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// OLD
-public:
-	virtual bool Create(RenderConfig &config) = 0;
-	virtual void Destroy() = 0;
-
-	virtual bool BeginFrame() = 0;
-	virtual bool EndFrame() = 0;
-
-	virtual void Resize(unsigned width, unsigned height) = 0;
-protected:
 };
 
 SE_NAMESPACE_END
