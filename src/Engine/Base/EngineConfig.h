@@ -3,6 +3,7 @@
 // Enable Profiling
 #define SE_PROFILING_ENABLED    1
 
+// Enable Statistics
 #define SE_STATISTICS           1
 
 // Enable GAPI

@@ -1,7 +1,7 @@
 #pragma once
 
 #if SE_PLATFORM_WINDOWS
-#	include "Platform/ConfigPlatformWin32.h"
+#	include "Platform/Base/Win32PlatformDefinitions.h"
 #	include <Windows.h>
 #	include <Shobjidl.h>
 #	include <dwmapi.h>
@@ -11,5 +11,5 @@
 #	include <unistd.h>
 #endif
 
-#include "Platform/PlatformMacros.h"
-#include "Platform/PlatformTypes.h"
+#include "Platform/Base/PlatformMacros.h"
+#include "Platform/Base/PlatformTypes.h"

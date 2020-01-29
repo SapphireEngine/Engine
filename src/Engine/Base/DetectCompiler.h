@@ -64,5 +64,5 @@
 #	undef  SE_COMPILER_MSVC
 #	define SE_COMPILER_MSVC _MSC_VER
 #else
-#	error "Unknown compiler"
+#	error "Unknown compiler."
 #endif

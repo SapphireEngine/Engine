@@ -24,4 +24,6 @@
 #elif defined(__EMSCRIPTEN__)
 #	undef  SE_PLATFORM_EMSCRIPTEN
 #	define SE_PLATFORM_EMSCRIPTEN 1
+#else
+#	error Unknown platform.
 #endif

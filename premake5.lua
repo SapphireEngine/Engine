@@ -1,7 +1,3 @@
--- Include directories relative to root folder (solution directory)
-IncludeDir = {}
-IncludeDir["Engine"] = "src/Engine"
-
 workspace "SapphireEngine"
 	location "build"
 	startproject "Test"
@@ -35,20 +31,21 @@ workspace "SapphireEngine"
 	filter "configurations:Debug"
 		defines { "_DEBUG" }
 		runtime "Debug"
+		optimize "Debug"
 		symbols "on"
 
 	filter "configurations:Release"
 		defines { "NDEBUG" }
 		runtime "Release"
-		optimize "on"
+		optimize "Full"
 	
 project "Engine"
 	location "build/Engine"
 	kind "StaticLib"
 	
-	if _ACTION == "vs2015" or _ACTION == "vs2017" or _ACTION == "vs2019" then
-		targetdir ("$(SolutionDir)_lib/$(Configuration)/$(PlatformName)/")
-		objdir ("!$(SolutionDir)_obj/$(Configuration)/$(PlatformName)/$(ProjectName)/")
+	if _ACTION == "vs2017" or _ACTION == "vs2019" then
+		targetdir ("$(SolutionDir)_lib/$(Configuration)/$(PlatformTarget)/")
+		objdir ("!$(SolutionDir)_obj/$(Configuration)/$(PlatformTarget)/$(ProjectName)/")
 		targetname "$(ProjectName)"
 	end
 	
@@ -63,7 +60,7 @@ project "Engine"
 	
 	includedirs
 	{
-		"src/3rdParty",
+		"src/3rdParty/include",
 		"src/Engine"		
 	}
 	
@@ -71,10 +68,10 @@ project "Test"
 	location "build/Test"
 	kind "ConsoleApp"
 	
-	if _ACTION == "vs2015" or _ACTION == "vs2017" or _ACTION == "vs2019" then
+	if _ACTION == "vs2017" or _ACTION == "vs2019" then
 		targetdir ("$(SolutionDir)../bin/")
-		objdir ("!$(SolutionDir)_obj/$(Configuration)/$(PlatformName)/$(ProjectName)/")
-		targetname "$(ProjectName)_$(PlatformName)_$(Configuration)"
+		objdir ("!$(SolutionDir)_obj/$(Configuration)/$(PlatformTarget)/$(ProjectName)/")
+		targetname "$(ProjectName)_$(PlatformTarget)_$(Configuration)"
 	end
 	
 	files
@@ -84,17 +81,17 @@ project "Test"
 	
 	includedirs
 	{
-		"src/3rdParty",
+		"src/3rdParty/include",
 		"src/Engine",
 		"src/Test"
 	}
 	
-	if _ACTION == "vs2015" or _ACTION == "vs2017" or _ACTION == "vs2019" then
+	if _ACTION == "vs2017" or _ACTION == "vs2019" then
 	
 		libdirs 
 		{
-			"$(SolutionDir)../src/3rdParty/Lib$(PlatformName)/",
-			"$(SolutionDir)_lib/$(Configuration)/$(PlatformName)/"
+			"$(SolutionDir)../src/3rdParty/Lib/$(PlatformTarget)/",
+			"$(SolutionDir)_lib/$(Configuration)/$(PlatformTarget)/"
 		}
 	
 	end

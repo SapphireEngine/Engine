@@ -3,7 +3,7 @@
 //-----------------------------------------------------------------------------
 // Base Engine Header
 #include "Base/BaseHeader.h"
-#include "Platform/PlatformHeader.h"
+#include "Platform/Base/PlatformHeader.h"
 
 SE_PRAGMA_WARNING_PUSH
 SE_PRAGMA_WARNING_DISABLE_MSVC(4324)
@@ -35,6 +35,5 @@ SE_PRAGMA_WARNING_DISABLE_MSVC(4324)
 
 //-----------------------------------------------------------------------------
 // Other Engine Header
-#include "RenderingBackend/Core/RootSignatureTypes.h"
 
 SE_PRAGMA_WARNING_POP

@@ -20,4 +20,3 @@ template<typename T, size_t N>
 {
 	return N;
 }
-
