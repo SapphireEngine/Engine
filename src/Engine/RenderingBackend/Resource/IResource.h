@@ -2,7 +2,6 @@
 
 #include "Core/Template/Ref.h"
 #include "Core/Debug/Assert.h"
-#include "RenderingBackend/Core/ResourceType.h"
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
@@ -15,17 +14,6 @@ class IResource : public RefCount<IResource>
 public:
 	virtual ~IResource() override = default;
 
-	// Return the render implementation specific resource handle(e.g.native Direct3D texture pointer or OpenGL texture ID)
-	[[nodiscard]] inline virtual void* GetInternalResourceHandle() const
-	{
-		return nullptr;
-	}
-
-	[[nodiscard]] inline ResourceType GetResourceType() const
-	{
-		return m_resourceType;
-	}
-
 #if SE_DEBUG
 	[[nodiscard]] inline const char* GetDebugName() const
 	{
@@ -33,9 +21,20 @@ public:
 	}
 #endif
 
+	[[nodiscard]] inline ResourceType GetResourceType() const
+	{
+		return m_resourceType;
+	}
+
 	[[nodiscard]] inline IRendererBackend& GetRender() const
 	{
 		return *m_render;
+	}
+
+	// Return the render implementation specific resource handle(e.g.native Direct3D texture pointer or OpenGL texture ID)
+	[[nodiscard]] inline virtual void* GetInternalResourceHandle() const
+	{
+		return nullptr;
 	}
 
 protected:

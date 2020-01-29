@@ -257,7 +257,7 @@ protected:
 	explicit IRendererBackend(const IRendererBackend&) = delete;
 	IRendererBackend& operator=(const IRendererBackend&) = delete;
 
-#ifdef SE_STATISTICS
+#if SE_STATISTICS
 	[[nodiscard]] inline Statistics& getStatistics()
 	{
 		return m_statistics;
