@@ -1,35 +1,11 @@
 #include "stdafx.h"
 #include "RenderSystem.h"
-#include "RenderingBackend/Vulkan/VKRenderer.h"
-#include "IRendererBackend.h"
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
 
 //-----------------------------------------------------------------------------
-inline void logRenderBackend(RenderingBackend backend)
-{
-	std::string text;
-
-	switch ( backend )
-	{
-	case RenderingBackend::Direct3D11:
-		text = "Render Backend: Direct3D 11";
-		break;
-	case RenderingBackend::Direct3D12:
-		text = "Render Backend: Direct3D 12";
-		break;
-	case RenderingBackend::OpenGL:
-		text = "Render Backend: OpenGL";
-		break;
-	case RenderingBackend::Vulkan:
-		text = "Render Backend: Vulkan";
-		break;
-	}
-	//Logs::Info(text);
-}
-//-----------------------------------------------------------------------------
-RenderSystem::RenderSystem(RenderConfig &config, SE_NAMESPACE_WND::Window &window)
+RenderSystem::RenderSystem(RenderConfig &config)
 	: m_config(config)
 {
 #if SE_DIRECT3D11
@@ -39,14 +15,23 @@ RenderSystem::RenderSystem(RenderConfig &config, SE_NAMESPACE_WND::Window &windo
 #if SE_OPENGL
 #endif
 #if SE_VULKAN
-	if ( m_config.render == RenderingBackend::Vulkan )
-		m_renderer = new VKRenderer();
+	//if ( m_config.render == RenderingBackend::Vulkan )
+	//	m_renderer = new VKRenderer();
 #endif
 
-	if ( !m_renderer || !m_renderer->Create(m_config, window) )
+	if ( !m_renderer || !m_renderer->Create(m_config) )
 		return;
 
-	logRenderBackend(m_config.render);
+	std::string text = "Render Backend: ";
+	switch ( m_config.render )
+	{
+	case RenderingBackend::Direct3D11: text += "Direct3D 11"; break;
+	case RenderingBackend::Direct3D12: text += "Direct3D 12"; break;
+	case RenderingBackend::OpenGL: text += "OpenGL"; break;
+	case RenderingBackend::Vulkan: text += "Vulkan"; break;
+	//Logs::Info(text);
+
+	setValid(true);
 }
 //-----------------------------------------------------------------------------
 RenderSystem::~RenderSystem()

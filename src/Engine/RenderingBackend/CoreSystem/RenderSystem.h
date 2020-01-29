@@ -1,17 +1,15 @@
 #pragma once
 
-#include "RenderingBackend/RenderCore.h"
-#include "Platform/Window/Window.h"
+#include "Core/Object/Subsystem.h"
+#include "RenderingBackend/CoreSystem/IRendererBackend.h"
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
 
-class IRendererBackend;
-
-class RenderSystem
+class RenderSystem : public Subsystem<RenderSystem>
 {
 public:
-	RenderSystem(RenderConfig &config, SE_NAMESPACE_WND::Window &window);
+	RenderSystem(RenderConfig &config);
 	~RenderSystem();
 
 	bool BeginFrame();

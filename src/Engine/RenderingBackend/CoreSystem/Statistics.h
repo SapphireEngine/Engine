@@ -1,14 +1,13 @@
 #pragma once
 
 #include "Core/Debug/Log.h"
-#include "Core/Template/NonCopyable.h"
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
 
 #if SE_STATISTICS
 
-class Statistics final : NonCopyable
+class Statistics final
 {
 public:
 	[[nodiscard]] inline uint32_t GetNumberOfCurrentResources() const
@@ -101,8 +100,7 @@ public:
 		// End
 		SE_LOG(INFORMATION, "***************************************************")
 	}
-
-
+	
 	// Resources
 	std::atomic<uint32_t> currentNumberOfRootSignatures = 0;		// Current number of root signature instances
 	std::atomic<uint32_t> numberOfCreatedRootSignatures = 0;		// Number of created root signature instances
@@ -169,6 +167,10 @@ public:
 	std::atomic<uint32_t> numberOfCreatedFragmentShaders = 0;		// Number of created fragment shader (FS, "pixel shader" in Direct3D terminology) instances
 	std::atomic<uint32_t> currentNumberOfComputeShaders = 0;		// Current number of compute shader (CS) instances
 	std::atomic<uint32_t> numberOfCreatedComputeShaders = 0;		// Number of created compute shader (CS) instances
+
+private:
+	explicit Statistics(const Statistics& source) = delete;
+	Statistics& operator =(const Statistics& source) = delete;
 };
 
 #endif

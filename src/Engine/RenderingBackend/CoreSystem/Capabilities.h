@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderingBackend/Core/TextureTypes.h"
+#include "RenderingBackend/CoreTypes/TextureTypes.h"
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
@@ -38,7 +38,6 @@ public:
 		, computeShader(false)
 	{}
 
-
 	char deviceName[128] = {}; // UTF-8 device name of the used graphics card
 
 	TextureFormat::Enum preferredSwapChainColorTextureFormat; // Preferred swap chain color texture format
@@ -73,6 +72,10 @@ public:
 	bool fragmentShader; // Is there support for fragment shaders (FS)?
 	// Compute-shader (CS)
 	bool computeShader; // Is there support for compute shaders (CS)?
+
+private:
+	explicit Capabilities(const Capabilities& source) = delete;
+	Capabilities& operator =(const Capabilities& source) = delete;
 };
 
 SE_NAMESPACE_END

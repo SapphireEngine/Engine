@@ -3,18 +3,7 @@
 //=============================================================================
 SE_NAMESPACE_BEGIN
 
-enum class RenderingBackend
-{
-	Direct3D11,
-	Direct3D12,
-	OpenGL,
-	Vulkan
-};
 
-struct RenderConfig
-{
-	RenderingBackend render = RenderingBackend::Vulkan;
-};
 
 // Calculate the mipmap size at the given mipmap index
 inline void GetMipmapSize(uint32_t mipmapIndex, uint32_t &width)
