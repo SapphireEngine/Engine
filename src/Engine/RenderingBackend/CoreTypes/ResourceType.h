@@ -7,8 +7,8 @@ enum class ResourceType
 {
 	ROOT_SIGNATURE = 0,		// Root signature
 	RESOURCE_GROUP = 1,		// Resource group
-	GRAPHICS_PROGRAM = 2,	// Graphics program, "Rhi::IShader"-related
-	VERTEX_ARRAY = 3,		// Vertex array object (VAO, input-assembler (IA) stage), "Rhi::IBuffer"-related
+	GRAPHICS_PROGRAM = 2,	// Graphics program, "IShader"-related
+	VERTEX_ARRAY = 3,		// Vertex array object (VAO, input-assembler (IA) stage), "IBuffer"-related
 	RENDER_PASS = 4,		// Render pass
 	QUERY_POOL = 5,			// Asynchronous query pool
 	// IRenderTarget

@@ -57,6 +57,9 @@ public:
 		return requestDebugBreak;
 	}
 private:
+	explicit Assert(const Assert&) = delete;
+	Assert& operator=(const Assert&) = delete;
+
 	[[nodiscard]] inline bool handleAssertInternal(const char *expression, const char *file, uint32_t line, const char *message)
 	{
 		std::lock_guard<std::mutex> mutexLock(m_mutex);

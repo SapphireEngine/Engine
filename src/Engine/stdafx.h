@@ -31,9 +31,9 @@ SE_PRAGMA_WARNING_DISABLE_MSVC(4324)
 
 //-----------------------------------------------------------------------------
 // 3rdparty Header
-#include <vectormath/vectormath.hpp>
 
 //-----------------------------------------------------------------------------
 // Other Engine Header
+#include "RenderingBackend/Core/CoreTypes.h"
 
 SE_PRAGMA_WARNING_POP

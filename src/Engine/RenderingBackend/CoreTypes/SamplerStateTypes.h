@@ -1,7 +1,5 @@
 #pragma once
 
-#include "RenderingBackend/Core/Types.h"
-
 //=============================================================================
 SE_NAMESPACE_BEGIN
 

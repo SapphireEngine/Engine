@@ -1,8 +1,6 @@
 #pragma once
 
-#include "RenderingBackend/Core/ResourceType.h"
 #include "Core/Debug/Assert.h"
-#include "RenderingBackend/Core/SamplerStateTypes.h"
 
 //=============================================================================
 SE_NAMESPACE_BEGIN

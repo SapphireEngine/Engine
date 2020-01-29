@@ -61,6 +61,9 @@ class DefaultAllocator final : public IAllocator
 {
 public:
 	DefaultAllocator() : IAllocator(&detail::Reallocate){}
+private:
+	explicit DefaultAllocator(const DefaultAllocator&) = delete;
+	DefaultAllocator& operator=(const DefaultAllocator&) = delete;
 };
 
 SE_NAMESPACE_END

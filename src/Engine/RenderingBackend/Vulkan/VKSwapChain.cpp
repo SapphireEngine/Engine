@@ -41,12 +41,12 @@ SE_NAMESPACE_BEGIN
 		vkSurfaceKHR = VK_NULL_HANDLE;
 	}
 #elif defined VK_USE_PLATFORM_XLIB_KHR || defined VK_USE_PLATFORM_WAYLAND_KHR
-	SE_ASSERT(context, context.getType() == Rhi::Context::ContextType::X11 || context.getType() == Rhi::Context::ContextType::WAYLAND, "Invalid Vulkan context type")
+	SE_ASSERT(context, context.getType() == Context::ContextType::X11 || context.getType() == Context::ContextType::WAYLAND, "Invalid Vulkan context type")
 
 		// If the given RHI context is an X11 context use the display connection object provided by the context
-		if ( context.getType() == Rhi::Context::ContextType::X11 )
+		if ( context.getType() == Context::ContextType::X11 )
 		{
-			const Rhi::X11Context& x11Context = static_cast<const Rhi::X11Context&>(context);
+			const X11Context& x11Context = static_cast<const X11Context&>(context);
 			const VkXlibSurfaceCreateInfoKHR vkXlibSurfaceCreateInfoKHR =
 			{
 				VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,	// sType (VkStructureType)
@@ -61,9 +61,9 @@ SE_NAMESPACE_BEGIN
 				vkSurfaceKHR = VK_NULL_HANDLE;
 			}
 		}
-		else if ( context.getType() == Rhi::Context::ContextType::WAYLAND )
+		else if ( context.getType() == Context::ContextType::WAYLAND )
 		{
-			const Rhi::WaylandContext& waylandContext = static_cast<const Rhi::WaylandContext&>(context);
+			const WaylandContext& waylandContext = static_cast<const WaylandContext&>(context);
 			const VkWaylandSurfaceCreateInfoKHR vkWaylandSurfaceCreateInfoKHR =
 			{
 				VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,	// sType (VkStructureType)

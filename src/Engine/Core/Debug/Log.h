@@ -88,6 +88,9 @@ public:
 	}
 
 private:
+	explicit Log(const Log&) = delete;
+	Log& operator=(const Log&) = delete;
+
 	[[nodiscard]] inline virtual bool printInternal(Type type, const char *file, uint32_t line, const char *message)
 	{
 		std::lock_guard<std::mutex> mutexLock(m_mutex);
