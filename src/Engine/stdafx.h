@@ -36,7 +36,6 @@ SE_PRAGMA_WARNING_DISABLE_MSVC(4324)
 // Other Engine Header
 #include "RenderingBackend/CoreSystem/IRendererBackend.h"
 #include "RenderingBackend/CoreSystem/IShaderLanguage.h"
-#include "RenderingBackend/Resource/IResource.h"
-
+#include "RenderingBackend/Resource/ResourceInterface.h"
 
 SE_PRAGMA_WARNING_POP

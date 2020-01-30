@@ -37,6 +37,13 @@ struct RenderConfig
 
 class SE_NO_VTABLE IRendererBackend : public RefCount<IRendererBackend>
 {
+	friend class IRootSignature;
+	friend class IResourceGroup;
+	friend class IGraphicsProgram;
+	friend class IRenderPass;
+	friend class IQueryPool;
+	friend class IRenderTarget;
+	friend class ISwapChain;
 public:
 	//[=======================================================================]
 	//[ Core                                                                  ]

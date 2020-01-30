@@ -39,9 +39,9 @@ public:
 
 protected:
 #if SE_DEBUG
-	IResource(ResourceType resourceType, IRendererBackend *render, const char debugName[])
+	IResource(ResourceType resourceType, IRendererBackend &render, const char debugName[])
 		: m_resourceType(resourceType)
-		, m_render(render)
+		, m_render(&render)
 	{
 		SE_ASSERT(strlen(debugName) < 256, "Resource debug name is not allowed to exceed 255 characters")
 			strncpy(m_debugName, debugName, 256);
