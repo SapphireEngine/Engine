@@ -24,25 +24,7 @@ public:
 	{
 		setValid(true);
 	}
-	
-	/*
-	*  @brief
-	*    Receives an already formatted message for further processing
-	*
-	*  @param[in] type
-	*    Log message type
-	*  @param[in] file
-	*    File as ASCII string
-	*  @param[in] line
-	*    Line number
-	*  @param[in] message
-	*    UTF-8 message
-	*  @param[in] numberOfCharacters
-	*    Number of characters inside the message, does not include the terminating zero character
-	*
-	*  @return
-	*    "true" to request debug break, else "false"
-	*/
+
 	[[nodiscard]] inline bool Print(Type type, const char *file, uint32_t line, const char *format, ...)
 	{
 		bool requestDebugBreak = false;

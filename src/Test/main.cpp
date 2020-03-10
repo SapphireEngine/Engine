@@ -5,8 +5,6 @@ using namespace se;
 
 #include "Platform/Window/Window.h"
 #include "Platform/Window/EventQueue.h"
-//#include "RenderingBackend/Renderer/Renderer.h"
-#include "RenderingBackend/RenderSystem.h"
 #include "Core/Utility/MakeID.h"
 #include "Core/Debug/Log.h"
 #include "Core/Debug/Assert.h"
@@ -38,10 +36,6 @@ int main()
         return 0;
     }
 
-    //Renderer renderer(window);
-    RenderConfig rconfig;
-    RenderSystem render(rconfig, window);
-
     bool isRunning = true;
     while( isRunning )
     {
@@ -56,8 +50,7 @@ int main()
             if( event.type == window::EventType::Resize )
             {
                 const window::ResizeData data = event.data.resize;
-                //renderer.resize(data.width, data.height);
-                render.Resize(data.width, data.height);
+
                 shouldRender = false;
             }
             if( event.type == window::EventType::Close )
@@ -72,9 +65,6 @@ int main()
 
         if( shouldRender )
         {
-            // renderer.render();
-            render.BeginFrame();
-            render.EndFrame();
         }
     }
 
