@@ -1,9 +1,9 @@
-﻿#include "stdafx.h"
-#pragma comment(lib, "Engine.lib")
-
-using namespace se;
-
-int main()
+﻿#pragma comment(lib, "Engine.lib")
+#include "stdafx.h"
+#include "Platform/Main.h"
+//-----------------------------------------------------------------------------
+int main(int argc, char **argv)
 {
-    return 0;
+    return se::Main(argc, argv);
 }
+//-----------------------------------------------------------------------------
