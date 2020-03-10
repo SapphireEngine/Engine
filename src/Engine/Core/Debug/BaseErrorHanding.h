@@ -5,7 +5,7 @@ SE_NAMESPACE_BEGIN
 
 bool IsCriticalError();
 void CriticalError();
-void CriticalError(const char*);
+void CriticalError(const char *text);
 const char* GetCriticalErrorText();
 
 SE_NAMESPACE_END
