@@ -38,6 +38,28 @@ workspace "SapphireEngine"
 		defines { "NDEBUG" }
 		runtime "Release"
 		optimize "Full"
+		
+project "3rdPartyLib"
+	location "build/3rdPartyLib"
+	kind "StaticLib"
+	
+	if _ACTION == "vs2017" or _ACTION == "vs2019" then
+		targetdir ("$(SolutionDir)_lib/$(Configuration)/$(PlatformTarget)/")
+		objdir ("!$(SolutionDir)_obj/$(Configuration)/$(PlatformTarget)/$(ProjectName)/")
+		targetname "$(ProjectName)"
+	end
+	
+	files
+	{
+		"src/3rdPartyLib/**.h",
+		"src/3rdPartyLib/**.cpp",
+	}
+	
+	includedirs
+	{
+		"src/3rdParty/include"
+	}	
+		
 	
 project "Engine"
 	location "build/Engine"
@@ -61,6 +83,7 @@ project "Engine"
 	includedirs
 	{
 		"src/3rdParty/include",
+		"src/3rdPartyLib",
 		"src/Engine"		
 	}
 	
@@ -82,6 +105,7 @@ project "Test"
 	includedirs
 	{
 		"src/3rdParty/include",
+		"src/3rdPartyLib",
 		"src/Engine",
 		"src/Test"
 	}
@@ -98,5 +122,6 @@ project "Test"
 	
 	dependson 
 	{
-		"Engine"
+		"Engine",
+		"3rdPartyLib"
 	}
