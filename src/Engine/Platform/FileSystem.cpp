@@ -1,9 +1,8 @@
-#pragma once
+#include "stdafx.h"
+#include "FileSystem.h"
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
-
-int Main(int argc, char **argv);
 
 SE_NAMESPACE_END
 //=============================================================================
