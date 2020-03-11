@@ -8,12 +8,12 @@ SE_NAMESPACE_BEGIN
 static Log* pLogger;
 static bool gOnce = true;
 
-eastl::string GetTimeStamp()
+stl::string GetTimeStamp()
 {
 	time_t sysTime;
 	time(&sysTime);
-	eastl::string dateTime = ctime(&sysTime);
-	eastl::replace(dateTime.begin(), dateTime.end(), '\n', ' ');
+	stl::string dateTime = ctime(&sysTime);
+	stl::replace(dateTime.begin(), dateTime.end(), '\n', ' ');
 	return dateTime;
 }
 
@@ -31,7 +31,7 @@ const char* get_filename(const char* path)
 }
 
 // Default callback
-void log_write(void * user_data, const eastl::string & message)
+void log_write(void * user_data, const stl::string & message)
 {
 	FileStream* fh = (FileStream*)user_data;
 	ASSERT(fh);
@@ -127,7 +127,7 @@ uint32_t Log::GetLevel()
 {
 	return pLogger->mLogLevel;
 }
-eastl::string Log::GetLastMessage()
+stl::string Log::GetLastMessage()
 {
 	return pLogger->mLastMessage;
 }
@@ -167,7 +167,7 @@ void Log::AddFile(const char * filename, FileMode file_mode, LogLevel log_level)
 			MutexLock lock{ pLogger->mLogMutex }; // scope lock as Write will try to acquire mutex
 
 			// Header
-			eastl::string header;
+			stl::string header;
 			if ( pLogger->mRecordTimestamp )
 				header += "date       time     ";
 			if ( pLogger->mRecordThreadName )
@@ -181,11 +181,11 @@ void Log::AddFile(const char * filename, FileMode file_mode, LogLevel log_level)
 			//file->Flush();
 		}
 
-		Write(LogLevel::eINFO, "Opened log file " + eastl::string{ filename }, __FILE__, __LINE__);
+		Write(LogLevel::eINFO, "Opened log file " + stl::string{ filename }, __FILE__, __LINE__);
 	}
 	else
 	{
-		Write(LogLevel::eERROR, "Failed to create log file " + eastl::string{ filename }, __FILE__, __LINE__); // will try to acquire mutex
+		Write(LogLevel::eERROR, "Failed to create log file " + stl::string{ filename }, __FILE__, __LINE__); // will try to acquire mutex
 	}
 }
 
@@ -200,24 +200,24 @@ void Log::AddCallback(const char * id, uint32_t log_level, void * user_data, log
 		close(user_data);
 }
 
-void Log::Write(uint32_t level, const eastl::string & message, const char * filename, int line_number)
+void Log::Write(uint32_t level, const stl::string & message, const char * filename, int line_number)
 {
-	static eastl::pair<uint32_t, eastl::string> logLevelPrefixes[] =
+	static stl::pair<uint32_t, stl::string> logLevelPrefixes[] =
 	{
-		eastl::pair<uint32_t, eastl::string>{ LogLevel::eWARNING, eastl::string{ "WARN" } },
-		eastl::pair<uint32_t, eastl::string>{ LogLevel::eINFO, eastl::string{ "INFO" } },
-		eastl::pair<uint32_t, eastl::string>{ LogLevel::eDEBUG, eastl::string{ " DBG" } },
-		eastl::pair<uint32_t, eastl::string>{ LogLevel::eERROR, eastl::string{ " ERR" } }
+		stl::pair<uint32_t, stl::string>{ LogLevel::eWARNING, stl::string{ "WARN" } },
+		stl::pair<uint32_t, stl::string>{ LogLevel::eINFO, stl::string{ "INFO" } },
+		stl::pair<uint32_t, stl::string>{ LogLevel::eDEBUG, stl::string{ " DBG" } },
+		stl::pair<uint32_t, stl::string>{ LogLevel::eERROR, stl::string{ " ERR" } }
 	};
 
-	eastl::string log_level_strings[LEVELS_LOG];
+	stl::string log_level_strings[LEVELS_LOG];
 	uint32_t log_levels[LEVELS_LOG];
 	uint32_t log_level_count = 0;
 
 	// Check flags
 	for ( uint32_t i = 0; i < sizeof(logLevelPrefixes) / sizeof(logLevelPrefixes[0]); ++i )
 	{
-		const eastl::pair<uint32_t, eastl::string>* it = &logLevelPrefixes[i];
+		const stl::pair<uint32_t, stl::string>* it = &logLevelPrefixes[i];
 		if ( it->first & level )
 		{
 			log_level_strings[log_level_count] = it->second + "| ";
@@ -242,14 +242,14 @@ void Log::Write(uint32_t level, const eastl::string & message, const char * file
 	WritePreamble(preamble, LOG_PREAMBLE_SIZE, filename, line_number);
 
 	// Prepare indentation
-	eastl::string indentation;
+	stl::string indentation;
 	indentation.resize(pLogger->mIndentation * INDENTATION_SIZE_LOG);
 	memset(indentation.begin(), ' ', indentation.size());
 
 	// Log for each flag
 	for ( uint32_t i = 0; i < log_level_count; ++i )
 	{
-		eastl::string formattedMessage = preamble + log_level_strings[i] + indentation + message;
+		stl::string formattedMessage = preamble + log_level_strings[i] + indentation + message;
 
 		if ( pLogger->mQuietMode )
 		{
@@ -273,7 +273,7 @@ void Log::Write(uint32_t level, const eastl::string & message, const char * file
 	}
 }
 
-void Log::WriteRaw(uint32_t level, const eastl::string & message, bool error)
+void Log::WriteRaw(uint32_t level, const stl::string & message, bool error)
 {
 	bool do_once = false;
 	{
@@ -403,7 +403,7 @@ Log::~Log()
 	mCallbacks.clear();
 }
 
-eastl::string ToString(const char* format, ...)
+stl::string ToString(const char* format, ...)
 {
 	const unsigned BUFFER_SIZE = 4096;
 	char           buf[BUFFER_SIZE];
@@ -413,7 +413,7 @@ eastl::string ToString(const char* format, ...)
 	vsprintf_s(buf, BUFFER_SIZE, format, arglist);
 	va_end(arglist);
 
-	return eastl::string(buf);
+	return stl::string(buf);
 }
 
 #if SE_PLATFORM_WINDOWS
@@ -486,7 +486,7 @@ void _FailedAssert(const char* file, int line, const char* statement)
 	}
 }
 
-void _PrintUnicode(const eastl::string& str, bool error)
+void _PrintUnicode(const stl::string& str, bool error)
 {
 	// If the output stream has been redirected, use fprintf instead of WriteConsoleW,
 	// though it means that proper Unicode output will not work
@@ -504,7 +504,7 @@ void _PrintUnicode(const eastl::string& str, bool error)
 	outputLogString(str.c_str());
 }
 
-void _PrintUnicodeLine(const eastl::string& str, bool error)
+void _PrintUnicodeLine(const stl::string& str, bool error)
 {
 	_PrintUnicode(str, error);
 }

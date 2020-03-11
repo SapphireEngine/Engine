@@ -38,7 +38,7 @@ enum LogLevel
 };
 
 
-typedef void(*log_callback_t)(void * user_data, const eastl::string & message);
+typedef void(*log_callback_t)(void * user_data, const stl::string & message);
 typedef void(*log_close_t)(void * user_data);
 typedef void(*log_flush_t)(void * user_data);
 
@@ -51,7 +51,7 @@ public:
 		LogScope(uint32_t log_level, const char * file, int line, const char * format, ...);
 		~LogScope();
 
-		eastl::string mMessage;
+		stl::string mMessage;
 		const char * mFile;
 		int mLine;
 		uint32_t mLevel;
@@ -70,7 +70,7 @@ public:
 	static void SetRecordingThreadName(bool bEnable);
 
 	static uint32_t        GetLevel();
-	static eastl::string   GetLastMessage();
+	static stl::string   GetLastMessage();
 	static bool            IsQuiet();
 	static bool            IsRecordingTimeStamp();
 	static bool            IsRecordingFile();
@@ -79,8 +79,8 @@ public:
 	static void AddFile(const char * filename, FileMode file_mode, LogLevel log_level);
 	static void AddCallback(const char * id, uint32_t log_level, void * user_data, log_callback_t callback, log_close_t close = nullptr, log_flush_t flush = nullptr);
 
-	static void Write(uint32_t level, const eastl::string& message, const char * filename, int line_number);
-	static void WriteRaw(uint32_t level, const eastl::string& message, bool error = false);
+	static void Write(uint32_t level, const stl::string& message, const char * filename, int line_number);
+	static void WriteRaw(uint32_t level, const stl::string& message, bool error = false);
 
 private:
 	static void AddInitialLogFile();
@@ -95,7 +95,7 @@ private:
 
 	struct LogCallback
 	{
-		LogCallback(const eastl::string & id, void * user_data, log_callback_t callback, log_close_t close, log_flush_t flush, uint32_t level)
+		LogCallback(const stl::string & id, void * user_data, log_callback_t callback, log_close_t close, log_flush_t flush, uint32_t level)
 			: mID(id)
 			, mUserData(user_data)
 			, mCallback(callback)
@@ -105,7 +105,7 @@ private:
 		{
 		}
 
-		eastl::string mID;
+		stl::string mID;
 		void * mUserData;
 		log_callback_t mCallback;
 		log_close_t mClose = nullptr;
@@ -113,10 +113,10 @@ private:
 		uint32_t mLevel;
 	};
 
-	eastl::vector<LogCallback> mCallbacks;
+	stl::vector<LogCallback> mCallbacks;
 	/// Mutex for threaded operation.
 	Mutex           mLogMutex;
-	eastl::string   mLastMessage;
+	stl::string   mLastMessage;
 	uint32_t        mLogLevel;
 	uint32_t        mIndentation;
 	bool            mQuietMode;
@@ -131,19 +131,12 @@ void _FailedAssert(const char* file, int line, const char* statement);
 void _OutputDebugString(const char* str, ...);
 void _OutputDebugStringV(const char* str, va_list args);
 
-void _PrintUnicode(const eastl::string& str, bool error = false);
-void _PrintUnicodeLine(const eastl::string& str, bool error = false);
+void _PrintUnicode(const stl::string& str, bool error = false);
+void _PrintUnicodeLine(const stl::string& str, bool error = false);
 
-#if _MSC_VER >= 1400
-// To make MSVC 2005 happy
 #pragma warning(disable : 4996)
 #define assume(x) __assume(x)
 #define no_alias __declspec(noalias)
-#else
-#define assume(x)
-#define no_alias
-#endif
-
 #ifdef _DEBUG
 #define ASSERT(b) assume(b)
 #else
