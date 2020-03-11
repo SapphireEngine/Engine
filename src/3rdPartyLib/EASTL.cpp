@@ -1,6 +1,8 @@
 #include <EASTL/EAStdC/EAMemory.cpp>
 #include <EASTL/EAStdC/EASprintf.cpp>
 
+#include <EASTL/MemoryTracking.cpp>
+
 #include <EASTL/allocator_forge.cpp>
 #include <EASTL/assert.cpp>
 #include <EASTL/fixed_pool.cpp>
