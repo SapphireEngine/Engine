@@ -3,34 +3,28 @@
 //-----------------------------------------------------------------------------
 // Base Engine Header
 #include "Base/BaseHeader.h"
-#include "Platform/Base/PlatformHeader.h"
 
 SE_PRAGMA_WARNING_PUSH
 SE_PRAGMA_WARNING_DISABLE_MSVC(4324)
 
 //-----------------------------------------------------------------------------
 // STL Header
-#include <type_traits>
-#include <codecvt>
-#include <locale>
-#include <memory>
-#include <functional>
-#include <chrono>
-#include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <atomic>
-#include <mutex>
-#include <string>
-#include <string_view>
-#include <array>
-#include <queue>
-#include <vector>
-#include <unordered_map>
+#include <cstdio>
+
+#if SE_EASTL_ENABLED
+#	include <EASTL/internal/move_help.h>
+#else
+#	include <string>
+#	include <string_view>
+#	include <vector>
+#	include <unordered_map>
+#endif
+
 
 //-----------------------------------------------------------------------------
 // 3rdparty Header
+#include "Base/STL.h"
+#include "Platform/Base/PlatformHeader.h"
 
 //-----------------------------------------------------------------------------
 // Other Engine Header

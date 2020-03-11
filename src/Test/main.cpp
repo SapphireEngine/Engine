@@ -1,4 +1,5 @@
-﻿#pragma comment(lib, "Engine.lib")
+﻿#pragma comment(lib, "3rdPartyLib.lib")
+#pragma comment(lib, "Engine.lib")
 #include "stdafx.h"
 #include "Platform/Main.h"
 //-----------------------------------------------------------------------------

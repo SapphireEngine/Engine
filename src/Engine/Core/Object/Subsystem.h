@@ -19,7 +19,7 @@ public:
 			return false;
 		}
 
-		instance() = new T(std::forward<Args>(args)...);
+		instance() = new T(stl::forward<Args>(args)...);
 		isCreate() = true;
 		return IsValid();
 	}
@@ -33,7 +33,7 @@ public:
 			return false;
 		}
 
-		instance() = static_cast<T*>(new SubClass(std::forward<Args>(args)...));
+		instance() = static_cast<T*>(new SubClass(stl::forward<Args>(args)...));
 		isCreate() = true;
 		return IsValid();
 	}

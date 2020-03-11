@@ -1,5 +1,8 @@
 #pragma once
 
+// Enable EASTL
+#define SE_EASTL_ENABLED        1
+
 // Enable Profiling
 #define SE_PROFILING_ENABLED    1
 
