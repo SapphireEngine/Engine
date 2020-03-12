@@ -144,7 +144,7 @@ void _PrintUnicodeLine(const stl::string& str, bool error = false);
 #endif
 
 // Usage: LOGF(LogLevel::eINFO | LogLevel::eDEBUG, "Whatever string %s, this is an int %d", "This is a string", 1)
-#define LOGF(log_level, ...) Log::Write((log_level), ToString(__VA_ARGS__), __FILE__, __LINE__)
+#define LOGF(log_level, ...) se::Log::Write((log_level), se::ToString(__VA_ARGS__), __FILE__, __LINE__)
 
 SE_NAMESPACE_END
 //=============================================================================

@@ -57,7 +57,8 @@ project "3rdPartyLib"
 	
 	includedirs
 	{
-		"src/3rdParty/include"
+		"src/3rdParty/include",
+		"src/Engine"
 	}	
 		
 	

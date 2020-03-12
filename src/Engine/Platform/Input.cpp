@@ -707,7 +707,7 @@ struct InputSystemImpl : public gainput::InputListener
 	{
 		ASSERT(pWindow);
 
-#if defined(_WIN32) && !defined(_DURANGO)
+#if defined(_WIN32)
 		static int32_t lastCursorPosX = 0;
 		static int32_t lastCursorPosY = 0;
 
@@ -1295,7 +1295,7 @@ static InputSystemImpl* pInputSystem = NULL;
 
 static int32_t InputSystemHandleMessage(WindowsDesc* pWindow, void* msg)
 {
-#if defined(_WIN32) && !defined(_DURANGO)
+#if defined(_WIN32)
 	pInputSystem->pInputManager->HandleMessage(*(MSG*)msg);
 #elif defined(__ANDROID__)
 	return pInputSystem->pInputManager->HandleInput((AInputEvent*)msg);

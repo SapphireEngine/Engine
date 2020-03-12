@@ -11,7 +11,7 @@ SE_NAMESPACE_BEGIN
 #endif
 
 #if (PROFILE_ENABLED)
-#	if defined(DIRECT3D12) || defined(VULKAN) || defined(DIRECT3D11) || defined(METAL) || defined(ORBIS)
+#	if defined(DIRECT3D12) || defined(VULKAN) || defined(DIRECT3D11) || defined(METAL)
 #		define GPU_PROFILER_SUPPORTED 1
 #	endif
 

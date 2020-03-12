@@ -18,3 +18,8 @@
 // Specific GAPI config
 #define SE_OPENGL_VERSION_MAJOR 4
 #define SE_OPENGL_VERSION_MINOR 6
+
+
+
+// TODO:
+#define VULKAN 1

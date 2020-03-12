@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ProfilerBase.h"
 #include "Platform/FileSystem/FileSystem.h"
+#include "Core/Debug/Log.h"
 
 //=============================================================================
 SE_NAMESPACE_BEGIN

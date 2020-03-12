@@ -30,8 +30,6 @@
 //For getting rid of unreferenced parameter warnings
 #ifdef _MSC_VER    //If on Visual Studio
 #define UNREF_PARAM(x) (x)
-#elif defined(ORBIS)
-#define UNREF_PARAM(x) ((void)(x))
 #else
 //Add more compilers and platforms as we need them
 #define UNREF_PARAM(x)

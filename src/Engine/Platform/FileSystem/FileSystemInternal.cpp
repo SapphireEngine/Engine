@@ -729,7 +729,7 @@ bool fsFileSystemIsReadOnly(const FileSystem* fileSystem)
 
 // MARK: - Resource Directories
 
-#if defined(DIRECT3D12) && !defined(_DURANGO)
+#if defined(DIRECT3D12)
 #define SHADER_DIR "Shaders/D3D12"
 #elif defined(DIRECT3D11)
 #define SHADER_DIR "Shaders/D3D11"
@@ -1026,7 +1026,7 @@ eastl::vector<PathHandle> fsGetSubDirectories(const Path* directory)
 
 bool fsPlatformUsesBundledResources()
 {
-#if defined(__ANDROID__) || defined(_DURANGO) || defined(TARGET_IOS) || defined(NX64) || defined(FORGE_IGNORE_PSZBASE) || defined(ORBIS)
+#if defined(__ANDROID__) || defined(TARGET_IOS)
 	return true;
 #else
 	return false;

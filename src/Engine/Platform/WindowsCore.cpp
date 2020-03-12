@@ -13,11 +13,7 @@ SE_NAMESPACE_BEGIN
 //-----------------------------------------------------------------------------
 int systemRun(const char* command, const char** arguments, size_t argumentCount, const Path* stdOutFile)
 {
-#ifdef _DURANGO
-	ASSERT(!"UNIMPLEMENTED");
-	return -1;
-
-#elif defined(_WIN32)
+#if defined(_WIN32)
 
 	eastl::string commandLine = "\"" + eastl::string(command) + "\"";
 	for ( size_t i = 0; i < argumentCount; ++i )
@@ -110,7 +106,7 @@ int systemRun(const char* command, const char** arguments, size_t argumentCount,
 #endif
 }
 
-#define CONFETTI_WINDOW_CLASS L"confetti"
+#define SAPPHIRE_WINDOW_CLASS L"sapphire"
 #define MAX_KEYS 256
 
 #define GETX(l) ((int)LOWORD(l))
@@ -373,7 +369,7 @@ public:
 			gWindowClass.hInstance = instance;
 			gWindowClass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 			gWindowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-			gWindowClass.lpszClassName = CONFETTI_WINDOW_CLASS;
+			gWindowClass.lpszClassName = SAPPHIRE_WINDOW_CLASS;
 
 			bool success = RegisterClassW(&gWindowClass) != 0;
 
@@ -432,7 +428,7 @@ void openWindow(const char* app_name, WindowsDesc* winDesc)
 	mbstowcs_s(&charConverted, app, app_name, MAX_PATH);
 
 	HWND hwnd = CreateWindowW(
-		CONFETTI_WINDOW_CLASS, app, WS_OVERLAPPEDWINDOW | ((winDesc->hide) ? 0 : WS_VISIBLE), CW_USEDEFAULT, CW_USEDEFAULT,
+		SAPPHIRE_WINDOW_CLASS, app, WS_OVERLAPPEDWINDOW | ((winDesc->hide) ? 0 : WS_VISIBLE), CW_USEDEFAULT, CW_USEDEFAULT,
 		rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, (HINSTANCE)GetModuleHandle(NULL), 0);
 
 	if ( hwnd )
