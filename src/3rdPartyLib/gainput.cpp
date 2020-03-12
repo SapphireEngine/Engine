@@ -1,0 +1,26 @@
+#define GAINPUT_LIB_DYNAMIC 1
+#include <gainput/gainput/gainput.cpp>
+#include <gainput/gainput/GainputAllocator.cpp>
+#include <gainput/gainput/gestures/GainputButtonStickGesture.cpp>
+#include <gainput/gainput/dev/GainputDev.cpp>
+#include <gainput/gainput/gestures/GainputDoubleClickGesture.cpp>
+#include <gainput/gainput/gestures/GainputHoldGesture.cpp>
+#include <gainput/gainput/GainputInputDeltaState.cpp>
+#include <gainput/gainput/GainputInputDevice.cpp>
+//#include <gainput/gainput/builtin/GainputInputDeviceBuiltIn.cpp>
+#include <gainput/gainput/keyboard/GainputInputDeviceKeyboard.cpp>
+//#include <gainput/gainput/mouse/GainputInputDeviceMouse.cpp>
+//#include <gainput/gainput/pad/GainputInputDevicePad.cpp>
+#include <gainput/gainput/touch/GainputInputDeviceTouch.cpp>
+//#include <gainput/gainput/GainputInputManager.cpp>
+#include <gainput/gainput/GainputInputMap.cpp>
+#include <gainput/gainput/recorder/GainputInputPlayer.cpp>
+#include <gainput/gainput/recorder/GainputInputRecorder.cpp>
+#include <gainput/gainput/recorder/GainputInputRecording.cpp>
+#include <gainput/gainput/GainputInputState.cpp>
+#include <gainput/gainput/GainputMapFilters.cpp>
+#include <gainput/gainput/dev/GainputMemoryStream.cpp>
+#include <gainput/gainput/gestures/GainputPinchGesture.cpp>
+#include <gainput/gainput/gestures/GainputRotateGesture.cpp>
+#include <gainput/gainput/gestures/GainputSimultaneouslyDownGesture.cpp>
+#include <gainput/gainput/gestures/GainputTapGesture.cpp>

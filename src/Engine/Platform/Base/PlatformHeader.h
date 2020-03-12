@@ -5,6 +5,10 @@
 #	include <Windows.h>
 #	include <timeapi.h>
 #	include <io.h>
+#	include <intrin.h>
+#	include <WinBase.h>
+#	include <shlobj.h>
+#	include <commdlg.h>
 #endif
 
 #include "Platform/Base/PlatformMacros.h"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Platform/Thread.h"
-#include "Platform/FileSystem.h"
+#include "Platform/FileSystem/FileSystem.h"
 
 //=============================================================================
 SE_NAMESPACE_BEGIN
