@@ -1,7 +1,6 @@
 #include "stdafx.h"
-#include "Renderer/Renderer.h"
-
 #ifdef VULKAN
+#include "Renderer/Renderer.h"
 
 #define RENDERER_IMPLEMENTATION
 #define VMA_IMPLEMENTATION

@@ -85,7 +85,8 @@ project "Engine"
 	{
 		"src/3rdParty/include",
 		"src/3rdPartyLib",
-		"src/Engine"		
+		"src/Engine",
+		"$(VULKAN_SDK)/Include"
 	}
 	
 project "Test"
@@ -108,15 +109,18 @@ project "Test"
 		"src/3rdParty/include",
 		"src/3rdPartyLib",
 		"src/Engine",
-		"src/Test"
+		"src/Test",
+		"$(VULKAN_SDK)/Include"
 	}
 	
 	if _ACTION == "vs2017" or _ACTION == "vs2019" then
 	
 		libdirs 
 		{
+			"$(SolutionDir)../src/3rdParty/Lib/",		
 			"$(SolutionDir)../src/3rdParty/Lib/$(PlatformTarget)/",
-			"$(SolutionDir)_lib/$(Configuration)/$(PlatformTarget)/"
+			"$(SolutionDir)_lib/$(Configuration)/$(PlatformTarget)/",
+			"$(VULKAN_SDK)/Lib/"
 		}
 	
 	end

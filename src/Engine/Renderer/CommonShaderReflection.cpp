@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#ifdef VULKAN
-
 #include "Renderer/Renderer.h"
 #include "Core/Debug/Log.h"
 
@@ -263,5 +261,3 @@ void destroyPipelineReflection(PipelineReflection* pReflection)
 
 SE_NAMESPACE_END
 //=============================================================================
-
-#endif

@@ -4,5 +4,6 @@ Thumbs.db
 #Ignore project folders
 /_lib/
 /_obj/
-/bin/
 /build/
+/bin/
+/bin/*x64_Debug.*

@@ -22,4 +22,10 @@
 
 
 // TODO:
-#define VULKAN 1
+//#define VULKAN 1
+//#define DIRECT3D11 1
+#define DIRECT3D12 1
+#define _WINDOWS
+#define USE_MEMORY_TRACKING
+#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_NONSTDC_NO_DEPRECATE

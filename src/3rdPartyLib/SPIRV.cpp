@@ -1,3 +1,4 @@
+#include "define.h"
 #include <SPIRV_Cross/spirv_cfg.cpp>
 #include <SPIRV_Cross/spirv_cpp.cpp>
 #include <SPIRV_Cross/spirv_cross.cpp>

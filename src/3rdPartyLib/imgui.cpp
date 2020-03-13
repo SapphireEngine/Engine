@@ -1,3 +1,4 @@
+#include "define.h"
 #include "stdafx.h"
 using namespace se;
 #include <imgui/imgui.cpp>

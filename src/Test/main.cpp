@@ -4,7 +4,7 @@
 #pragma comment(lib, "Xinput9_1_0.lib")
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "vulkan-1.lib")
-#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "WinPixEventRuntime.lib")
 
 #include "stdafx.h"
 #include "Platform/Main.h"

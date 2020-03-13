@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#ifdef VULKAN
-
 #define IMAGE_CLASS_ALLOWED
 
 #include <tinyimageformat/tinyimageformat_bits.h>
@@ -3372,5 +3370,3 @@ void addShader(Renderer* pRenderer, const ShaderLoadDesc* pDesc, Shader** ppShad
 
 SE_NAMESPACE_END
 //=============================================================================
-
-#endif

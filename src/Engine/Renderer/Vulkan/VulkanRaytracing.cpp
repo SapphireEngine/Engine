@@ -1,9 +1,10 @@
 #include "stdafx.h"
+#ifdef VULKAN
 #include "Renderer/IRay.h"
 #include "Renderer/IResourceLoader.h"
 #include "Core/Debug/Log.h"
 
-#ifdef VULKAN
+
 
 //=============================================================================
 SE_NAMESPACE_BEGIN

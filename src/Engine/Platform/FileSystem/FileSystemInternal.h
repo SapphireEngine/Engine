@@ -3,15 +3,16 @@
 #include "Platform/FileSystem/FileSystem.h"
 #include "Platform/Atomics.h"
 
-//=============================================================================
-SE_NAMESPACE_BEGIN
-
 // Include the functions to set the log file directory and executable name
 // for the memory manager.
 // We need to set these manually as the memory manager doesn't know when it is safe to call
 // FileSystem functions.
 void mmgrSetExecutableName(const char* name, size_t length);
 void mmgrSetLogFileDirectory(const char* directory);
+
+
+//=============================================================================
+SE_NAMESPACE_BEGIN
 
 // MARK: - FileSystem
 

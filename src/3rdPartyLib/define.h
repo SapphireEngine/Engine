@@ -1,0 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+#define WIN32
+#define _WINDOWS
+#define USE_MEMORY_TRACKING
+#define _CRT_NONSTDC_NO_DEPRECATE

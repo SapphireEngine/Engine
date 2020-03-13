@@ -1,3 +1,4 @@
+#include "define.h"
 #include <EASTL/EAStdC/EAMemory.cpp>
 #include <EASTL/EAStdC/EASprintf.cpp>
 
