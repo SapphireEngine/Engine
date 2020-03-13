@@ -5,4 +5,8 @@
 [submodule "src/3rdParty"]
 	path = src/3rdParty
 	url = https://github.com/SapphireEngine/3rdParty
+	branch = master	
+[submodule "bin/EngineData"]
+	path = bin/EngineData
+	url = https://github.com/SapphireEngine/EngineData
 	branch = master

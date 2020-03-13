@@ -114,13 +114,13 @@ public:
 		PathHandle programDirectory = fsCopyProgramDirectoryPath();
 		if ( !fsPlatformUsesBundledResources() )
 		{
-			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "data");
+			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "EngineData");
 			fsSetResourceDirectoryRootPath(resourceDirRoot);
 
-			fsSetRelativePathForResourceDirectory(RD_TEXTURES, "UnitTestResources/Textures");
-			fsSetRelativePathForResourceDirectory(RD_MESHES, "UnitTestResources/Meshes");
-			fsSetRelativePathForResourceDirectory(RD_BUILTIN_FONTS, "UnitTestResources/Fonts");
-			fsSetRelativePathForResourceDirectory(RD_ANIMATIONS, "UnitTestResources/Animation");
+			fsSetRelativePathForResourceDirectory(RD_TEXTURES, "TestResources/Textures");
+			fsSetRelativePathForResourceDirectory(RD_MESHES, "TestResources/Meshes");
+			fsSetRelativePathForResourceDirectory(RD_BUILTIN_FONTS, "TestResources/Fonts");
+			fsSetRelativePathForResourceDirectory(RD_ANIMATIONS, "TestResources/Animation");
 			fsSetRelativePathForResourceDirectory(RD_MIDDLEWARE_TEXT, "Text");
 			fsSetRelativePathForResourceDirectory(RD_MIDDLEWARE_UI, "UI");
 		}
