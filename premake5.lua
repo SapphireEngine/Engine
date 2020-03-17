@@ -1,4 +1,25 @@
-workspace "SapphireEngine"
+--print (_ACTION)
+--print (_ARGS[0])
+--print (_ARGS[1])
+
+newoption
+{
+	trigger     = "examples",
+	description = "enable examples"
+}
+
+bSelectVS = false
+bEnableExamples = false
+
+if _ACTION == "vs2017" or _ACTION == "vs2019" then
+	bSelectVS = true
+end
+if _OPTIONS["examples"] then
+	bEnableExamples = true
+end
+
+-- Engine Lib
+workspace "Engine"
 	location "build"
 	startproject "Test"
 	language "C++"
@@ -39,94 +60,10 @@ workspace "SapphireEngine"
 		runtime "Release"
 		optimize "Full"
 		
-project "3rdPartyLib"
-	location "build/3rdPartyLib"
-	kind "StaticLib"
-	
-	if _ACTION == "vs2017" or _ACTION == "vs2019" then
-		targetdir ("$(SolutionDir)_lib/$(Configuration)/$(PlatformTarget)/")
-		objdir ("!$(SolutionDir)_obj/$(Configuration)/$(PlatformTarget)/$(ProjectName)/")
-		targetname "$(ProjectName)"
-	end
-	
-	files
-	{
-		"src/3rdPartyLib/**.h",
-		"src/3rdPartyLib/**.cpp",
-	}
-	
-	includedirs
-	{
-		"src/3rdParty/include",
-		"src/Engine"
-	}	
-		
-	
-project "Engine"
-	location "build/Engine"
-	kind "StaticLib"
-	
-	if _ACTION == "vs2017" or _ACTION == "vs2019" then
-		targetdir ("$(SolutionDir)_lib/$(Configuration)/$(PlatformTarget)/")
-		objdir ("!$(SolutionDir)_obj/$(Configuration)/$(PlatformTarget)/$(ProjectName)/")
-		targetname "$(ProjectName)"
-	end
-	
-	pchheader "stdafx.h"
-	pchsource "src/Engine/stdafx.cpp"
+include "scripts/3rdPartyLib.lua"
+include "scripts/Engine.lua"
+include "scripts/Test.lua"
 
-	files
-	{
-		"src/Engine/**.h",
-		"src/Engine/**.cpp",
-	}
-	
-	includedirs
-	{
-		"src/3rdParty/include",
-		"src/3rdPartyLib",
-		"src/Engine",
-		"$(VULKAN_SDK)/Include"
-	}
-	
-project "Test"
-	location "build/Test"
-	kind "ConsoleApp"
-	
-	if _ACTION == "vs2017" or _ACTION == "vs2019" then
-		targetdir ("$(SolutionDir)../bin/")
-		objdir ("!$(SolutionDir)_obj/$(Configuration)/$(PlatformTarget)/$(ProjectName)/")
-		targetname "$(ProjectName)_$(PlatformTarget)_$(Configuration)"
-	end
-	
-	files
-	{
-		"src/Test/**.cpp",
-	}
-	
-	includedirs
-	{
-		"src/3rdParty/include",
-		"src/3rdPartyLib",
-		"src/Engine",
-		"src/Test",
-		"$(VULKAN_SDK)/Include"
-	}
-	
-	if _ACTION == "vs2017" or _ACTION == "vs2019" then
-	
-		libdirs 
-		{
-			"$(SolutionDir)../src/3rdParty/Lib/",		
-			"$(SolutionDir)../src/3rdParty/Lib/$(PlatformTarget)/",
-			"$(SolutionDir)_lib/$(Configuration)/$(PlatformTarget)/",
-			"$(VULKAN_SDK)/Lib/"
-		}
-	
-	end
-	
-	dependson 
-	{
-		"Engine",
-		"3rdPartyLib"
-	}
+if bEnableExamples==true then
+include "scripts/Examples/00.lua"
+end
