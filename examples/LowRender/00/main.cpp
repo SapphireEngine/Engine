@@ -114,15 +114,15 @@ public:
 		PathHandle programDirectory = fsCopyProgramDirectoryPath();
 		if ( !fsPlatformUsesBundledResources() )
 		{
-			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "EngineData");
+			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "EngineData/LowRender/00");
 			fsSetResourceDirectoryRootPath(resourceDirRoot);
 
-			fsSetRelativePathForResourceDirectory(RD_TEXTURES, "TestResources/Textures");
-			fsSetRelativePathForResourceDirectory(RD_MESHES, "TestResources/Meshes");
-			fsSetRelativePathForResourceDirectory(RD_BUILTIN_FONTS, "TestResources/Fonts");
-			fsSetRelativePathForResourceDirectory(RD_ANIMATIONS, "TestResources/Animation");
-			fsSetRelativePathForResourceDirectory(RD_MIDDLEWARE_TEXT, "Text");
-			fsSetRelativePathForResourceDirectory(RD_MIDDLEWARE_UI, "UI");
+			fsSetRelativePathForResourceDirectory(RD_TEXTURES, "../../TestResources/Textures");
+			fsSetRelativePathForResourceDirectory(RD_MESHES, "../../TestResources/Meshes");
+			fsSetRelativePathForResourceDirectory(RD_BUILTIN_FONTS, "../../TestResources/Fonts");
+			fsSetRelativePathForResourceDirectory(RD_ANIMATIONS, "../../TestResources/Animation");
+			fsSetRelativePathForResourceDirectory(RD_MIDDLEWARE_TEXT, "../../Text");
+			fsSetRelativePathForResourceDirectory(RD_MIDDLEWARE_UI, "../../UI");
 		}
 
 		// window and renderer setup

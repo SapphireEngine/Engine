@@ -8,6 +8,21 @@ newoption
 	description = "enable examples"
 }
 
+newoption
+{
+	trigger     = "gapi",
+	value       = "API",
+	description = "Choose a particular 3D API for rendering",
+	default     = "vulkan",
+	allowed =
+	{
+		{ "opengl",    "OpenGL" },
+		{ "direct3d11",  "Direct3D 11" },
+		{ "direct3d12",  "Direct3D 12" },
+		{ "vulkan",  "Vulkan" }
+	}
+}
+
 bSelectVS = false
 bEnableExamples = false
 
@@ -65,5 +80,13 @@ include "scripts/Engine.lua"
 include "scripts/Test.lua"
 
 if bEnableExamples==true then
-include "scripts/Examples/00.lua"
+	group "Examples/LowRender"
+		include "scripts/Examples/LowRender/00.lua"
+		include "scripts/Examples/LowRender/01.lua"
+		include "scripts/Examples/LowRender/02.lua"	
+		include "scripts/Examples/LowRender/03.lua"	
+		include "scripts/Examples/LowRender/04.lua"	
+		include "scripts/Examples/LowRender/05.lua"	
+		include "scripts/Examples/LowRender/06.lua"	
+	group ""
 end
