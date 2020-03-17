@@ -1,4 +1,6 @@
-﻿#pragma comment(lib, "3rdPartyLib.lib")
+﻿// MultiThread
+
+#pragma comment(lib, "3rdPartyLib.lib")
 #pragma comment(lib, "Engine.lib")
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "Xinput9_1_0.lib")
@@ -18,88 +20,163 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/IResourceLoader.h"
 #include "Math/MathTypes.h"
+#include "Platform/ThreadSystem.h"
+#include "tinyimageformat/tinyimageformat_query.h"
 
 #include "UI/AppUI.h"
 
+#include <comdef.h>
+#include <Wbemidl.h>
+#pragma comment(lib, "wbemuuid.lib")
+#pragma comment(lib, "comsuppw.lib")
+
+#define M_PI       3.14159265358979323846 
+
 using namespace se;
 
-#define MAX_PLANETS 20    // Does not affect test, just for allocating space in uniform block. Must match with shader.
+// startdust hash function, use this to generate all the seed and update the position of all particles
+#define RND_GEN(x) (x = x * 196314165 + 907633515)
 
-/// Demo structures
-struct PlanetInfoStruct
+struct ParticleData
 {
-	uint  mParentIndex;
-	vec4  mColor;
-	float mYOrbitSpeed;    // Rotation speed around parent
-	float mZOrbitSpeed;
-	float mRotationSpeed;    // Rotation speed around self
-	mat4  mTranslationMat;
-	mat4  mScaleMat;
-	mat4  mSharedMat;    // Matrix to pass down to children
+	float    mPaletteFactor;
+	uint32_t mData;
+	uint32_t mTextureIndex;
 };
 
-struct UniformBlock
+struct ThreadData
 {
-	mat4 mProjectView;
-	mat4 mToWorldMat[MAX_PLANETS];
-	vec4 mColor[MAX_PLANETS];
-
-	// Point Light Information
-	vec3 mLightPosition;
-	vec3 mLightColor;
+	CmdPool*          pCmdPool;
+	Cmd**             ppCmds;
+	RenderTarget*     pRenderTarget;
+	int               mStartPoint;
+	int               mDrawCount;
+	int               mThreadIndex;
+	ThreadID          mThreadID;
+	uint32_t          mFrameIndex;
 };
 
+struct ObjectProperty
+{
+	float mRotX = 0, mRotY = 0;
+} gObjSettings;
+
+const uint32_t gSampleCount = 60;
 const uint32_t gImageCount = 3;
-const int      gSphereResolution = 30;    // Increase for higher resolution spheres
-const float    gSphereDiameter = 0.5f;
-const uint     gNumPlanets = 11;        // Sun, Mercury -> Neptune, Pluto, Moon
-const uint     gTimeOffset = 600000;    // For visually better starting locations
-const float    gRotSelfScale = 0.0004f;
-const float    gRotOrbitYScale = 0.001f;
-const float    gRotOrbitZScale = 0.00001f;
+
+struct CpuGraphData
+{
+	int   mSampleIdx;
+	float mSample[gSampleCount];
+	float mSampley[gSampleCount];
+	float mScale;
+	int   mEmptyFlag;
+};
+
+struct ViewPortState
+{
+	float mOffsetX;
+	float mOffsetY;
+	float mWidth;
+	float mHeight;
+};
+
+struct GraphVertex
+{
+	vec2 mPosition;
+	vec4 mColor;
+};
+
+struct CpuGraph
+{
+	Buffer*       mVertexBuffer[gImageCount];    // vetex buffer for cpu sample
+	ViewPortState mViewPort;                     //view port for different core
+};
+
+const int gTotalParticleCount = 2000000;
+uint32_t  gGraphWidth = 200;
+uint32_t  gGraphHeight = 100;
 
 Renderer* pRenderer = NULL;
 
 Queue*   pGraphicsQueue = NULL;
 CmdPool* pCmdPool = NULL;
 Cmd**    ppCmds = NULL;
+CmdPool* pGraphCmdPool = NULL;
+Cmd**    ppGraphCmds = NULL;
 
-SwapChain*    pSwapChain = NULL;
-RenderTarget* pDepthBuffer = NULL;
-Fence*        pRenderCompleteFences[gImageCount] = { NULL };
-Semaphore*    pImageAcquiredSemaphore = NULL;
-Semaphore*    pRenderCompleteSemaphores[gImageCount] = { NULL };
+Fence*     pRenderCompleteFences[gImageCount] = { NULL };
+Semaphore* pImageAcquiredSemaphore = NULL;
+Semaphore* pRenderCompleteSemaphores[gImageCount] = { NULL };
 
-Shader*   pSphereShader = NULL;
-Buffer*   pSphereVertexBuffer = NULL;
-Pipeline* pSpherePipeline = NULL;
+SwapChain* pSwapChain = NULL;
 
+Shader*        pShader = NULL;
 Shader*        pSkyBoxDrawShader = NULL;
+Shader*        pGraphShader = NULL;
+Buffer*        pParticleVertexBuffer = NULL;
+Buffer*        pProjViewUniformBuffer[gImageCount] = { NULL };
+Buffer*        pSkyboxUniformBuffer[gImageCount] = { NULL };
 Buffer*        pSkyBoxVertexBuffer = NULL;
+Buffer*        pBackGroundVertexBuffer[gImageCount] = { NULL };
+Pipeline*      pPipeline = NULL;
 Pipeline*      pSkyBoxDrawPipeline = NULL;
+Pipeline*      pGraphLinePipeline = NULL;
+Pipeline*      pGraphLineListPipeline = NULL;
+Pipeline*      pGraphTrianglePipeline = NULL;
 RootSignature* pRootSignature = NULL;
-Sampler*       pSamplerSkyBox = NULL;
+RootSignature* pGraphRootSignature = NULL;
+DescriptorSet* pDescriptorSet = NULL;
+DescriptorSet* pDescriptorSetUniforms = NULL;
+Texture*       pTextures[5];
 Texture*       pSkyBoxTextures[6];
-DescriptorSet* pDescriptorSetTexture = { NULL };
-DescriptorSet* pDescriptorSetUniforms = { NULL };
 VirtualJoystickUI gVirtualJoystick;
-
-Buffer* pProjViewUniformBuffer[gImageCount] = { NULL };
-Buffer* pSkyboxUniformBuffer[gImageCount] = { NULL };
-
+Sampler* pSampler = NULL;
+Sampler* pSamplerSkyBox = NULL;
 uint32_t gFrameIndex = 0;
-ProfileToken gGpuProfileToken = PROFILE_INVALID_TOKEN;
 
-int              gNumberOfSpherePoints;
-UniformBlock     gUniformData;
-UniformBlock     gUniformDataSky;
-PlanetInfoStruct gPlanetInfoData[gNumPlanets];
+#if defined(_WIN32)
+#if defined(_DURANGO)
+#else
+IWbemServices* pService;
+IWbemLocator*  pLocator;
+uint64_t*      pOldTimeStamp;
+uint64_t*      pOldPprocUsage;
+#endif
+#elif (__linux__)
+uint64_t* pOldTimeStamp;
+uint64_t* pOldPprocUsage;
+#elif defined(NX64)
+//todo
+#elif defined(__APPLE__)
+NSLock*                CPUUsageLock;
+processor_info_array_t prevCpuInfo;
+mach_msg_type_number_t numPrevCpuInfo;
+#endif
 
+uint   gCoresCount;
+float* pCoresLoadData;
+
+uint32_t     gThreadCount = 0;
+ThreadData*  pThreadData;
+mat4         gProjectView;
+mat4         gSkyboxProjectView;
+ParticleData gParticleData;
+uint32_t     gSeed;
+float        gPaletteFactor;
+uint         gTextureIndex;
+
+UIApp              gAppUI;
 ICameraController* pCameraController = NULL;
 
-/// UI
-UIApp gAppUI;
+ThreadSystem* pThreadSystem;
 
+ProfileToken* pGpuProfiletokens;
+
+CpuGraphData* pCpuData;
+CpuGraph*     pCpuGraph;
+
+const char* pImageFileNames[] = { "Palette_Fire", "Palette_Purple", "Palette_Muted", "Palette_Rainbow", "Palette_Sky" };
 const char* pSkyBoxImageFileNames[] = { "Skybox_right1",  "Skybox_left2",  "Skybox_top3",
 										"Skybox_bottom4", "Skybox_front5", "Skybox_back6" };
 
@@ -108,13 +185,20 @@ TextDrawDesc gFrameTimeDraw = TextDrawDesc(0, 0xff00ffff, 18);
 class Sample : public IApp
 {
 public:
+	Sample()
+	{
+#ifdef TARGET_IOS
+		mSettings.mContentScaleFactor = 1.f;
+#endif
+	}
+
 	bool Init()
 	{
 		// FILE PATHS
 		PathHandle programDirectory = fsCopyProgramDirectoryPath();
 		if ( !fsPlatformUsesBundledResources() )
 		{
-			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "EngineData/LowRender/00");
+			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "EngineData/LowRender/03");
 			fsSetResourceDirectoryRootPath(resourceDirRoot);
 
 			fsSetRelativePathForResourceDirectory(RD_TEXTURES, "../../TestResources/Textures");
@@ -125,8 +209,20 @@ public:
 			fsSetRelativePathForResourceDirectory(RD_MIDDLEWARE_UI, "../../UI");
 		}
 
-		// window and renderer setup
+		InitCpuUsage();
+
+		gThreadCount = gCoresCount - 1;
+		pThreadData = (ThreadData*)conf_calloc(gThreadCount, sizeof(ThreadData));
+		pGpuProfiletokens = (ProfileToken*)conf_calloc(gThreadCount, sizeof(ProfileToken));
+		eastl::string* ppGpuProfileNames = (eastl::string*)conf_calloc(gThreadCount, sizeof(eastl::string));
+		const char** ppConstGpuProfileNames = (const char**)conf_calloc(gThreadCount, sizeof(const char*));
+		Queue** ppQueues = (Queue**)conf_calloc(gThreadCount, sizeof(Queue*));
+
+		gGraphWidth = mSettings.mWidth / 6;    //200;
+		gGraphHeight = gCoresCount ? (mSettings.mHeight - 30 - gCoresCount * 10) / gCoresCount : 0;
+
 		RendererDesc settings = { 0 };
+		// settings.pLogFn = RendererLog;
 		initRenderer(GetName(), &settings, &pRenderer);
 		//check for init success
 		if ( !pRenderer )
@@ -143,6 +239,30 @@ public:
 		cmdDesc.pPool = pCmdPool;
 		addCmd_n(pRenderer, &cmdDesc, gImageCount, &ppCmds);
 
+		addCmdPool(pRenderer, &cmdPoolDesc, &pGraphCmdPool);
+		cmdDesc.pPool = pGraphCmdPool;
+		addCmd_n(pRenderer, &cmdDesc, gImageCount, &ppGraphCmds);
+
+		// initial needed datat for each thread
+		for ( uint32_t i = 0; i < gThreadCount; ++i )
+		{
+			// create cmd pools and and cmdbuffers for all thread
+			addCmdPool(pRenderer, &cmdPoolDesc, &pThreadData[i].pCmdPool);
+			cmdDesc.pPool = pThreadData[i].pCmdPool;
+			addCmd_n(pRenderer, &cmdDesc, gImageCount, &pThreadData[i].ppCmds);
+
+			// fill up the data for drawing point
+			pThreadData[i].mStartPoint = i * (gTotalParticleCount / gThreadCount);
+			pThreadData[i].mDrawCount = (gTotalParticleCount / gThreadCount);
+			pThreadData[i].mThreadIndex = i;
+			pThreadData[i].mThreadID = Thread::mainThreadID;
+
+			ppGpuProfileNames[i] = eastl::string().sprintf("GpuProfiler %u", i);
+			ppConstGpuProfileNames[i] = ppGpuProfileNames[i].c_str();
+
+			ppQueues[i] = pGraphicsQueue;
+		}
+
 		for ( uint32_t i = 0; i < gImageCount; ++i )
 		{
 			addFence(pRenderer, &pRenderCompleteFences[i]);
@@ -150,14 +270,24 @@ public:
 		}
 		addSemaphore(pRenderer, &pImageAcquiredSemaphore);
 
+		HiresTimer timer;
 		initResourceLoaderInterface(pRenderer);
 
-		// Loads Skybox Textures
+		// load all image to GPU
+		for ( int i = 0; i < 5; ++i )
+		{
+			PathHandle path = fsCopyPathInResourceDirectory(RD_TEXTURES, pImageFileNames[i]);
+			TextureLoadDesc textureDesc = {};
+			textureDesc.pFilePath = path;
+			textureDesc.ppTexture = &pTextures[i];
+			addResource(&textureDesc, NULL, LOAD_PRIORITY_NORMAL);
+		}
+
 		for ( int i = 0; i < 6; ++i )
 		{
-			PathHandle textureFilePath = fsCopyPathInResourceDirectory(RD_TEXTURES, pSkyBoxImageFileNames[i]);
+			PathHandle path = fsCopyPathInResourceDirectory(RD_TEXTURES, pSkyBoxImageFileNames[i]);
 			TextureLoadDesc textureDesc = {};
-			textureDesc.pFilePath = textureFilePath;
+			textureDesc.pFilePath = path;
 			textureDesc.ppTexture = &pSkyBoxTextures[i];
 			addResource(&textureDesc, NULL, LOAD_PRIORITY_NORMAL);
 		}
@@ -168,51 +298,64 @@ public:
 			return false;
 		}
 
+		ShaderLoadDesc graphShader = {};
+		graphShader.mStages[0] = { "Graph.vert", NULL, 0, RD_SHADER_SOURCES };
+		graphShader.mStages[1] = { "Graph.frag", NULL, 0, RD_SHADER_SOURCES };
+
+		ShaderLoadDesc particleShader = {};
+		particleShader.mStages[0] = { "Particle.vert", NULL, 0, RD_SHADER_SOURCES };
+		particleShader.mStages[1] = { "Particle.frag", NULL, 0, RD_SHADER_SOURCES };
+
 		ShaderLoadDesc skyShader = {};
-		skyShader.mStages[0] = { "skybox.vert", NULL, 0, RD_SHADER_SOURCES };
-		skyShader.mStages[1] = { "skybox.frag", NULL, 0, RD_SHADER_SOURCES };
-		ShaderLoadDesc basicShader = {};
-		basicShader.mStages[0] = { "basic.vert", NULL, 0, RD_SHADER_SOURCES };
-		basicShader.mStages[1] = { "basic.frag", NULL, 0, RD_SHADER_SOURCES };
+		skyShader.mStages[0] = { "Skybox.vert", NULL, 0, RD_SHADER_SOURCES };
+		skyShader.mStages[1] = { "Skybox.frag", NULL, 0, RD_SHADER_SOURCES };
 
+		addShader(pRenderer, &particleShader, &pShader);
 		addShader(pRenderer, &skyShader, &pSkyBoxDrawShader);
-		addShader(pRenderer, &basicShader, &pSphereShader);
+		addShader(pRenderer, &graphShader, &pGraphShader);
 
-		SamplerDesc samplerDesc = { FILTER_LINEAR,
-									FILTER_LINEAR,
-									MIPMAP_MODE_NEAREST,
-									ADDRESS_MODE_CLAMP_TO_EDGE,
-									ADDRESS_MODE_CLAMP_TO_EDGE,
-									ADDRESS_MODE_CLAMP_TO_EDGE };
-		addSampler(pRenderer, &samplerDesc, &pSamplerSkyBox);
+		SamplerDesc samplerDesc = { FILTER_LINEAR,       FILTER_LINEAR,       MIPMAP_MODE_NEAREST,
+									ADDRESS_MODE_REPEAT, ADDRESS_MODE_REPEAT, ADDRESS_MODE_REPEAT };
+		SamplerDesc skyBoxSamplerDesc = { FILTER_LINEAR,
+										  FILTER_LINEAR,
+										  MIPMAP_MODE_NEAREST,
+										  ADDRESS_MODE_CLAMP_TO_EDGE,
+										  ADDRESS_MODE_CLAMP_TO_EDGE,
+										  ADDRESS_MODE_CLAMP_TO_EDGE };
+		addSampler(pRenderer, &samplerDesc, &pSampler);
+		addSampler(pRenderer, &skyBoxSamplerDesc, &pSamplerSkyBox);
 
-		Shader*           shaders[] = { pSphereShader, pSkyBoxDrawShader };
-		const char*       pStaticSamplers[] = { "uSampler0" };
-		RootSignatureDesc rootDesc = {};
-		rootDesc.mStaticSamplerCount = 1;
-		rootDesc.ppStaticSamplerNames = pStaticSamplers;
-		rootDesc.ppStaticSamplers = &pSamplerSkyBox;
-		rootDesc.mShaderCount = 2;
-		rootDesc.ppShaders = shaders;
-		addRootSignature(pRenderer, &rootDesc, &pRootSignature);
+		const char*       pStaticSamplerNames[] = { "uSampler0", "uSkyboxSampler" };
+		Sampler*          pSamplers[] = { pSampler, pSamplerSkyBox };
+		Shader*           shaders[] = { pShader, pSkyBoxDrawShader };
+		RootSignatureDesc skyBoxRootDesc = {};
+		skyBoxRootDesc.mStaticSamplerCount = 2;
+		skyBoxRootDesc.ppStaticSamplerNames = pStaticSamplerNames;
+		skyBoxRootDesc.ppStaticSamplers = pSamplers;
+		skyBoxRootDesc.mShaderCount = 2;
+		skyBoxRootDesc.ppShaders = shaders;
+		skyBoxRootDesc.mMaxBindlessTextures = 5;
+		addRootSignature(pRenderer, &skyBoxRootDesc, &pRootSignature);
 
-		DescriptorSetDesc desc = { pRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
-		addDescriptorSet(pRenderer, &desc, &pDescriptorSetTexture);
-		desc = { pRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount * 2 };
-		addDescriptorSet(pRenderer, &desc, &pDescriptorSetUniforms);
+		RootSignatureDesc graphRootDesc = {};
+		graphRootDesc.mShaderCount = 1;
+		graphRootDesc.ppShaders = &pGraphShader;
+		addRootSignature(pRenderer, &graphRootDesc, &pGraphRootSignature);
 
-		// Generate sphere vertex buffer
-		float* pSpherePoints;
-		generateSpherePoints(&pSpherePoints, &gNumberOfSpherePoints, gSphereResolution, gSphereDiameter);
+		DescriptorSetDesc setDesc = { pRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 2 };
+		addDescriptorSet(pRenderer, &setDesc, &pDescriptorSet);
+		setDesc = { pRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount * 2 };
+		addDescriptorSet(pRenderer, &setDesc, &pDescriptorSetUniforms);
 
-		uint64_t       sphereDataSize = gNumberOfSpherePoints * sizeof(float);
-		BufferLoadDesc sphereVbDesc = {};
-		sphereVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
-		sphereVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-		sphereVbDesc.mDesc.mSize = sphereDataSize;
-		sphereVbDesc.pData = pSpherePoints;
-		sphereVbDesc.ppBuffer = &pSphereVertexBuffer;
-		addResource(&sphereVbDesc, NULL, LOAD_PRIORITY_NORMAL);
+		gTextureIndex = 0;
+
+		//#ifdef _WIN32
+		//	  SYSTEM_INFO sysinfo;
+		//	  GetSystemInfo(&sysinfo);
+		//	  gCPUCoreCount = sysinfo.dwNumberOfProcessors;
+		//#elif defined(__APPLE__)
+		//	  gCPUCoreCount = (unsigned int)[[NSProcessInfo processInfo] processorCount];
+		//#endif
 
 		//Generate sky box vertex buffer
 		float skyBoxPoints[] = {
@@ -253,7 +396,7 @@ public:
 		BufferLoadDesc ubDesc = {};
 		ubDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		ubDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
-		ubDesc.mDesc.mSize = sizeof(UniformBlock);
+		ubDesc.mDesc.mSize = sizeof(mat4);
 		ubDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 		ubDesc.pData = NULL;
 		for ( uint32_t i = 0; i < gImageCount; ++i )
@@ -264,133 +407,97 @@ public:
 			addResource(&ubDesc, NULL, LOAD_PRIORITY_NORMAL);
 		}
 
-		// Setup planets (Rotation speeds are relative to Earth's, some values randomly given)
+		// generate partcile data
+		unsigned int particleSeed = 23232323;    //we have gseed as global declaration, pick a name that is not gseed
+		for ( int i = 0; i < 6 * 9; ++i )
+		{
+			RND_GEN(particleSeed);
+		}
+		uint32_t* seedArray = NULL;
+		seedArray = (uint32_t*)conf_malloc(gTotalParticleCount * sizeof(uint32_t));
+		for ( int i = 0; i < gTotalParticleCount; ++i )
+		{
+			RND_GEN(particleSeed);
+			seedArray[i] = particleSeed;
+		}
+		uint64_t parDataSize = sizeof(uint32_t) * (uint64_t)gTotalParticleCount;
 
-		// Sun
-		gPlanetInfoData[0].mParentIndex = 0;
-		gPlanetInfoData[0].mYOrbitSpeed = 0;    // Earth years for one orbit
-		gPlanetInfoData[0].mZOrbitSpeed = 0;
-		gPlanetInfoData[0].mRotationSpeed = 24.0f;    // Earth days for one rotation
-		gPlanetInfoData[0].mTranslationMat = mat4::identity();
-		gPlanetInfoData[0].mScaleMat = mat4::scale(vec3(10.0f));
-		gPlanetInfoData[0].mColor = vec4(0.9f, 0.6f, 0.1f, 0.0f);
+		BufferLoadDesc particleVbDesc = {};
+		particleVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
+		particleVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
+		particleVbDesc.mDesc.mSize = parDataSize;
+		particleVbDesc.pData = seedArray;
+		particleVbDesc.ppBuffer = &pParticleVertexBuffer;
+		addResource(&particleVbDesc, NULL, LOAD_PRIORITY_NORMAL);
 
-		// Mercury
-		gPlanetInfoData[1].mParentIndex = 0;
-		gPlanetInfoData[1].mYOrbitSpeed = 0.5f;
-		gPlanetInfoData[1].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[1].mRotationSpeed = 58.7f;
-		gPlanetInfoData[1].mTranslationMat = mat4::translation(vec3(10.0f, 0, 0));
-		gPlanetInfoData[1].mScaleMat = mat4::scale(vec3(1.0f));
-		gPlanetInfoData[1].mColor = vec4(0.7f, 0.3f, 0.1f, 1.0f);
+		uint32_t graphDataSize = sizeof(GraphVertex) * gSampleCount * 3;    // 2 vertex for tri, 1 vertex for line strip
 
-		// Venus
-		gPlanetInfoData[2].mParentIndex = 0;
-		gPlanetInfoData[2].mYOrbitSpeed = 0.8f;
-		gPlanetInfoData[2].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[2].mRotationSpeed = 243.0f;
-		gPlanetInfoData[2].mTranslationMat = mat4::translation(vec3(20.0f, 0, 5));
-		gPlanetInfoData[2].mScaleMat = mat4::scale(vec3(2));
-		gPlanetInfoData[2].mColor = vec4(0.8f, 0.6f, 0.1f, 1.0f);
-
-		// Earth
-		gPlanetInfoData[3].mParentIndex = 0;
-		gPlanetInfoData[3].mYOrbitSpeed = 1.0f;
-		gPlanetInfoData[3].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[3].mRotationSpeed = 1.0f;
-		gPlanetInfoData[3].mTranslationMat = mat4::translation(vec3(30.0f, 0, 0));
-		gPlanetInfoData[3].mScaleMat = mat4::scale(vec3(4));
-		gPlanetInfoData[3].mColor = vec4(0.3f, 0.2f, 0.8f, 1.0f);
-
-		// Mars
-		gPlanetInfoData[4].mParentIndex = 0;
-		gPlanetInfoData[4].mYOrbitSpeed = 2.0f;
-		gPlanetInfoData[4].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[4].mRotationSpeed = 1.1f;
-		gPlanetInfoData[4].mTranslationMat = mat4::translation(vec3(40.0f, 0, 0));
-		gPlanetInfoData[4].mScaleMat = mat4::scale(vec3(3));
-		gPlanetInfoData[4].mColor = vec4(0.9f, 0.3f, 0.1f, 1.0f);
-
-		// Jupiter
-		gPlanetInfoData[5].mParentIndex = 0;
-		gPlanetInfoData[5].mYOrbitSpeed = 11.0f;
-		gPlanetInfoData[5].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[5].mRotationSpeed = 0.4f;
-		gPlanetInfoData[5].mTranslationMat = mat4::translation(vec3(50.0f, 0, 0));
-		gPlanetInfoData[5].mScaleMat = mat4::scale(vec3(8));
-		gPlanetInfoData[5].mColor = vec4(0.6f, 0.4f, 0.4f, 1.0f);
-
-		// Saturn
-		gPlanetInfoData[6].mParentIndex = 0;
-		gPlanetInfoData[6].mYOrbitSpeed = 29.4f;
-		gPlanetInfoData[6].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[6].mRotationSpeed = 0.5f;
-		gPlanetInfoData[6].mTranslationMat = mat4::translation(vec3(60.0f, 0, 0));
-		gPlanetInfoData[6].mScaleMat = mat4::scale(vec3(6));
-		gPlanetInfoData[6].mColor = vec4(0.7f, 0.7f, 0.5f, 1.0f);
-
-		// Uranus
-		gPlanetInfoData[7].mParentIndex = 0;
-		gPlanetInfoData[7].mYOrbitSpeed = 84.07f;
-		gPlanetInfoData[7].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[7].mRotationSpeed = 0.8f;
-		gPlanetInfoData[7].mTranslationMat = mat4::translation(vec3(70.0f, 0, 0));
-		gPlanetInfoData[7].mScaleMat = mat4::scale(vec3(7));
-		gPlanetInfoData[7].mColor = vec4(0.4f, 0.4f, 0.6f, 1.0f);
-
-		// Neptune
-		gPlanetInfoData[8].mParentIndex = 0;
-		gPlanetInfoData[8].mYOrbitSpeed = 164.81f;
-		gPlanetInfoData[8].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[8].mRotationSpeed = 0.9f;
-		gPlanetInfoData[8].mTranslationMat = mat4::translation(vec3(80.0f, 0, 0));
-		gPlanetInfoData[8].mScaleMat = mat4::scale(vec3(8));
-		gPlanetInfoData[8].mColor = vec4(0.5f, 0.2f, 0.9f, 1.0f);
-
-		// Pluto - Not a planet XDD
-		gPlanetInfoData[9].mParentIndex = 0;
-		gPlanetInfoData[9].mYOrbitSpeed = 247.7f;
-		gPlanetInfoData[9].mZOrbitSpeed = 1.0f;
-		gPlanetInfoData[9].mRotationSpeed = 7.0f;
-		gPlanetInfoData[9].mTranslationMat = mat4::translation(vec3(90.0f, 0, 0));
-		gPlanetInfoData[9].mScaleMat = mat4::scale(vec3(1.0f));
-		gPlanetInfoData[9].mColor = vec4(0.7f, 0.5f, 0.5f, 1.0f);
-
-		// Moon
-		gPlanetInfoData[10].mParentIndex = 3;
-		gPlanetInfoData[10].mYOrbitSpeed = 1.0f;
-		gPlanetInfoData[10].mZOrbitSpeed = 200.0f;
-		gPlanetInfoData[10].mRotationSpeed = 27.0f;
-		gPlanetInfoData[10].mTranslationMat = mat4::translation(vec3(5.0f, 0, 0));
-		gPlanetInfoData[10].mScaleMat = mat4::scale(vec3(1));
-		gPlanetInfoData[10].mColor = vec4(0.3f, 0.3f, 0.4f, 1.0f);
+		//generate vertex buffer for all cores to draw cpu graph and setting up view port for each graph
+		pCpuGraph = (CpuGraph*)conf_malloc(sizeof(CpuGraph) * gCoresCount);
+		for ( uint i = 0; i < gCoresCount; ++i )
+		{
+			pCpuGraph[i].mViewPort.mOffsetX = mSettings.mWidth - 10.0f - gGraphWidth;
+			pCpuGraph[i].mViewPort.mWidth = (float)gGraphWidth;
+			pCpuGraph[i].mViewPort.mOffsetY = 36 + i * (gGraphHeight + 4.0f);
+			pCpuGraph[i].mViewPort.mHeight = (float)gGraphHeight;
+			// create vertex buffer for each swapchain
+			for ( uint j = 0; j < gImageCount; ++j )
+			{
+				BufferLoadDesc vbDesc = {};
+				vbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
+				vbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
+				vbDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_NONE;
+				vbDesc.mDesc.mSize = graphDataSize;
+				vbDesc.pData = NULL;
+				vbDesc.ppBuffer = &pCpuGraph[i].mVertexBuffer[j];
+				addResource(&vbDesc, NULL, LOAD_PRIORITY_NORMAL);
+			}
+		}
+		graphDataSize = sizeof(GraphVertex) * gSampleCount;
+		for ( uint i = 0; i < gImageCount; ++i )
+		{
+			BufferLoadDesc vbDesc = {};
+			vbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
+			vbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
+			vbDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_NONE;
+			vbDesc.mDesc.mSize = graphDataSize;
+			vbDesc.pData = NULL;
+			vbDesc.ppBuffer = &pBackGroundVertexBuffer[i];
+			addResource(&vbDesc, NULL, LOAD_PRIORITY_NORMAL);
+		}
 
 		if ( !gAppUI.Init(pRenderer) )
 			return false;
 
 		gAppUI.LoadFont("TitilliumText/TitilliumText-Bold.otf", RD_BUILTIN_FONTS);
 
-		CameraMotionParameters cmp{ 160.0f, 600.0f, 200.0f };
-		vec3                   camPos{ 48.0f, 48.0f, 20.0f };
-		vec3                   lookAt{ vec3(0) };
+		GuiDesc guiDesc = {};
+		float   dpiScale = getDpiScale().x;
+		guiDesc.mStartSize = vec2(140.0f / dpiScale, 320.0f / dpiScale);
+		guiDesc.mStartPosition = vec2(mSettings.mWidth - guiDesc.mStartSize.getX() * 4.1f, guiDesc.mStartSize.getY() * 0.5f);
+
+		// Initialize profiler
+		initProfiler(pRenderer, ppQueues, ppConstGpuProfileNames, pGpuProfiletokens, gThreadCount);
+		conf_free(ppQueues);
+		conf_free(ppConstGpuProfileNames);
+		conf_free(ppGpuProfileNames);
+
+		InitThreadSystem(&pThreadSystem);
+
+		CameraMotionParameters cmp{ 100.0f, 800.0f, 1000.0f };
+		vec3                   camPos{ 24.0f, 24.0f, 10.0f };
+		vec3                   lookAt{ 0 };
 
 		pCameraController = createFpsCameraController(camPos, lookAt);
 
 		pCameraController->setMotionParameters(cmp);
 
+
 		if ( !initInputSystem(pWindow) )
 			return false;
 
-		// Initialize microprofiler and it's UI.
-		initProfiler();
-
-		// Gpu profiler can only be added after initProfile.
-		gGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "GpuProfiler");
-
 		// App Actions
-		InputActionDesc actionDesc = { InputBindings::BUTTON_DUMP, [](InputActionContext* ctx) { dumpProfileData(((IApp*)ctx->pUserData)->GetName()); return true; }, this };
-		addInputAction(&actionDesc);
-		actionDesc = { InputBindings::BUTTON_FULLSCREEN, [](InputActionContext* ctx) { toggleFullscreen(((IApp*)ctx->pUserData)->pWindow); return true; }, this };
+		InputActionDesc actionDesc = { InputBindings::BUTTON_FULLSCREEN, [](InputActionContext* ctx) { toggleFullscreen(((IApp*)ctx->pUserData)->pWindow); return true; }, this };
 		addInputAction(&actionDesc);
 		actionDesc = { InputBindings::BUTTON_EXIT, [](InputActionContext* ctx) { requestShutdown(); return true; } };
 		addInputAction(&actionDesc);
@@ -414,7 +521,7 @@ public:
 			}
 			return true;
 		};
-		actionDesc = { InputBindings::FLOAT_RIGHTSTICK, [](InputActionContext* ctx) { return onCameraInput(ctx, 1); }, NULL, 20.0f, 200.0f, 0.5f };
+		actionDesc = { InputBindings::FLOAT_RIGHTSTICK, [](InputActionContext* ctx) { return onCameraInput(ctx, 1); }, NULL, 20.0f, 200.0f, 1.0f };
 		addInputAction(&actionDesc);
 		actionDesc = { InputBindings::FLOAT_LEFTSTICK, [](InputActionContext* ctx) { return onCameraInput(ctx, 0); }, NULL, 20.0f, 200.0f, 1.0f };
 		addInputAction(&actionDesc);
@@ -422,12 +529,11 @@ public:
 		addInputAction(&actionDesc);
 
 		waitForAllResourceLoads();
-
-		// Need to free memory;
-		conf_free(pSpherePoints);
+		LOGF(LogLevel::eINFO, "Load Time %lld", timer.GetUSec(false) / 1000);
+		conf_free(seedArray);
 
 		// Prepare descriptor sets
-		DescriptorData params[6] = {};
+		DescriptorData params[7] = {};
 		params[0].pName = "RightText";
 		params[0].ppTextures = &pSkyBoxTextures[0];
 		params[1].pName = "LeftText";
@@ -440,16 +546,19 @@ public:
 		params[4].ppTextures = &pSkyBoxTextures[4];
 		params[5].pName = "BackText";
 		params[5].ppTextures = &pSkyBoxTextures[5];
-		updateDescriptorSet(pRenderer, 0, pDescriptorSetTexture, 6, params);
+		updateDescriptorSet(pRenderer, 0, pDescriptorSet, 6, params);
+
+		params[0].pName = "uTex0";
+		params[0].mCount = sizeof(pImageFileNames) / sizeof(pImageFileNames[0]);
+		params[0].ppTextures = pTextures;
+		updateDescriptorSet(pRenderer, 1, pDescriptorSet, 1, params);
 
 		for ( uint32_t i = 0; i < gImageCount; ++i )
 		{
-			DescriptorData params[1] = {};
+			params[0] = {};
 			params[0].pName = "uniformBlock";
 			params[0].ppBuffers = &pSkyboxUniformBuffer[i];
 			updateDescriptorSet(pRenderer, i * 2 + 0, pDescriptorSetUniforms, 1, params);
-
-			params[0].pName = "uniformBlock";
 			params[0].ppBuffers = &pProjViewUniformBuffer[i];
 			updateDescriptorSet(pRenderer, i * 2 + 1, pDescriptorSetUniforms, 1, params);
 		}
@@ -459,38 +568,54 @@ public:
 
 	void Exit()
 	{
-		waitQueueIdle(pGraphicsQueue);
-
 		exitInputSystem();
+		ShutdownThreadSystem(pThreadSystem);
+		waitQueueIdle(pGraphicsQueue);
 
 		destroyCameraController(pCameraController);
 
-		gVirtualJoystick.Exit();
+		exitProfiler();
 
 		gAppUI.Exit();
-
-		// Exit profile
-		exitProfiler();
 
 		for ( uint32_t i = 0; i < gImageCount; ++i )
 		{
 			removeResource(pProjViewUniformBuffer[i]);
 			removeResource(pSkyboxUniformBuffer[i]);
 		}
-
-		removeDescriptorSet(pRenderer, pDescriptorSetTexture);
-		removeDescriptorSet(pRenderer, pDescriptorSetUniforms);
-
-		removeResource(pSphereVertexBuffer);
+		removeResource(pParticleVertexBuffer);
 		removeResource(pSkyBoxVertexBuffer);
 
+		for ( uint i = 0; i < gImageCount; ++i )
+			removeResource(pBackGroundVertexBuffer[i]);
+
+		for ( uint i = 0; i < gCoresCount; ++i )
+		{
+			// remove all vertex buffer belongs to graph
+			for ( uint j = 0; j < gImageCount; ++j )
+				removeResource(pCpuGraph[i].mVertexBuffer[j]);
+		}
+
+		conf_free(pCpuGraph);
+
+		for ( uint i = 0; i < 5; ++i )
+			removeResource(pTextures[i]);
 		for ( uint i = 0; i < 6; ++i )
 			removeResource(pSkyBoxTextures[i]);
 
+		gVirtualJoystick.Exit();
+
+		removeSampler(pRenderer, pSampler);
 		removeSampler(pRenderer, pSamplerSkyBox);
-		removeShader(pRenderer, pSphereShader);
+
+		removeDescriptorSet(pRenderer, pDescriptorSet);
+		removeDescriptorSet(pRenderer, pDescriptorSetUniforms);
+
+		removeShader(pRenderer, pShader);
 		removeShader(pRenderer, pSkyBoxDrawShader);
+		removeShader(pRenderer, pGraphShader);
 		removeRootSignature(pRenderer, pRootSignature);
+		removeRootSignature(pRenderer, pGraphRootSignature);
 
 		for ( uint32_t i = 0; i < gImageCount; ++i )
 		{
@@ -501,18 +626,29 @@ public:
 
 		removeCmd_n(pRenderer, gImageCount, ppCmds);
 		removeCmdPool(pRenderer, pCmdPool);
+		removeCmd_n(pRenderer, gImageCount, ppGraphCmds);
+		removeCmdPool(pRenderer, pGraphCmdPool);
+
+		for ( uint32_t i = 0; i < gThreadCount; ++i )
+		{
+			removeCmd_n(pRenderer, gImageCount, pThreadData[i].ppCmds);
+			removeCmdPool(pRenderer, pThreadData[i].pCmdPool);
+		}
+
+		removeQueue(pRenderer, pGraphicsQueue);
 
 		exitResourceLoaderInterface(pRenderer);
-		removeQueue(pRenderer, pGraphicsQueue);
 		removeRenderer(pRenderer);
+
+		RemoveCpuUsage();
+
+		conf_free(pThreadData);
+		conf_free(pGpuProfiletokens);
 	}
 
 	bool Load()
 	{
 		if ( !addSwapChain() )
-			return false;
-
-		if ( !addDepthBuffer() )
 			return false;
 
 		if ( !gAppUI.Load(pSwapChain->ppRenderTargets) )
@@ -523,46 +659,41 @@ public:
 
 		loadProfilerUI(&gAppUI, mSettings.mWidth, mSettings.mHeight);
 
-		//layout and pipeline for sphere draw
+		//vertexlayout and pipeline for particles
 		VertexLayout vertexLayout = {};
-		vertexLayout.mAttribCount = 2;
+		vertexLayout.mAttribCount = 1;
 		vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-		vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
+		vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32_UINT;
 		vertexLayout.mAttribs[0].mBinding = 0;
 		vertexLayout.mAttribs[0].mLocation = 0;
 		vertexLayout.mAttribs[0].mOffset = 0;
-		vertexLayout.mAttribs[1].mSemantic = SEMANTIC_NORMAL;
-		vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
-		vertexLayout.mAttribs[1].mBinding = 0;
-		vertexLayout.mAttribs[1].mLocation = 1;
-		vertexLayout.mAttribs[1].mOffset = 3 * sizeof(float);
+
+		BlendStateDesc blendStateDesc = {};
+		blendStateDesc.mSrcAlphaFactors[0] = BC_ONE;
+		blendStateDesc.mDstAlphaFactors[0] = BC_ONE;
+		blendStateDesc.mSrcFactors[0] = BC_ONE;
+		blendStateDesc.mDstFactors[0] = BC_ONE;
+		blendStateDesc.mMasks[0] = ALL;
+		blendStateDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
+		blendStateDesc.mIndependentBlend = false;
 
 		RasterizerStateDesc rasterizerStateDesc = {};
 		rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
 
-		RasterizerStateDesc sphereRasterizerStateDesc = {};
-		sphereRasterizerStateDesc.mCullMode = CULL_MODE_FRONT;
-
-		DepthStateDesc depthStateDesc = {};
-		depthStateDesc.mDepthTest = true;
-		depthStateDesc.mDepthWrite = true;
-		depthStateDesc.mDepthFunc = CMP_GEQUAL;
-
-		PipelineDesc desc = {};
-		desc.mType = PIPELINE_TYPE_GRAPHICS;
-		GraphicsPipelineDesc& pipelineSettings = desc.mGraphicsDesc;
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
+		PipelineDesc graphicsPipelineDesc = {};
+		graphicsPipelineDesc.mType = PIPELINE_TYPE_GRAPHICS;
+		GraphicsPipelineDesc& pipelineSettings = graphicsPipelineDesc.mGraphicsDesc;
+		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
 		pipelineSettings.mRenderTargetCount = 1;
-		pipelineSettings.pDepthState = &depthStateDesc;
+		pipelineSettings.pBlendState = &blendStateDesc;
+		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 		pipelineSettings.pColorFormats = &pSwapChain->ppRenderTargets[0]->mFormat;
 		pipelineSettings.mSampleCount = pSwapChain->ppRenderTargets[0]->mSampleCount;
 		pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mSampleQuality;
-		pipelineSettings.mDepthStencilFormat = pDepthBuffer->mFormat;
 		pipelineSettings.pRootSignature = pRootSignature;
-		pipelineSettings.pShaderProgram = pSphereShader;
+		pipelineSettings.pShaderProgram = pShader;
 		pipelineSettings.pVertexLayout = &vertexLayout;
-		pipelineSettings.pRasterizerState = &sphereRasterizerStateDesc;
-		addPipeline(pRenderer, &desc, &pSpherePipeline);
+		addPipeline(pRenderer, &graphicsPipelineDesc, &pPipeline);
 
 		//layout and pipeline for skybox draw
 		vertexLayout = {};
@@ -573,10 +704,52 @@ public:
 		vertexLayout.mAttribs[0].mLocation = 0;
 		vertexLayout.mAttribs[0].mOffset = 0;
 
-		pipelineSettings.pDepthState = NULL;
+		pipelineSettings = { 0 };
+		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
+		pipelineSettings.mRenderTargetCount = 1;
 		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
+		pipelineSettings.pColorFormats = &pSwapChain->ppRenderTargets[0]->mFormat;
+		pipelineSettings.mSampleCount = pSwapChain->ppRenderTargets[0]->mSampleCount;
+		pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mSampleQuality;
+		pipelineSettings.pRootSignature = pRootSignature;
 		pipelineSettings.pShaderProgram = pSkyBoxDrawShader;
-		addPipeline(pRenderer, &desc, &pSkyBoxDrawPipeline);
+		pipelineSettings.pVertexLayout = &vertexLayout;
+		addPipeline(pRenderer, &graphicsPipelineDesc, &pSkyBoxDrawPipeline);
+
+		/********** layout and pipeline for graph draw*****************/
+		vertexLayout = {};
+		vertexLayout.mAttribCount = 2;
+		vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
+		vertexLayout.mAttribs[0].mFormat =
+			(sizeof(GraphVertex) > 24
+				? TinyImageFormat_R32G32B32A32_SFLOAT
+				: TinyImageFormat_R32G32_SFLOAT);    // Handle the case when padding is added to the struct (yielding 32 bytes instead of 24) on macOS
+		vertexLayout.mAttribs[0].mBinding = 0;
+		vertexLayout.mAttribs[0].mLocation = 0;
+		vertexLayout.mAttribs[0].mOffset = 0;
+		vertexLayout.mAttribs[1].mSemantic = SEMANTIC_COLOR;
+		vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
+		vertexLayout.mAttribs[1].mBinding = 0;
+		vertexLayout.mAttribs[1].mLocation = 1;
+		vertexLayout.mAttribs[1].mOffset = TinyImageFormat_BitSizeOfBlock(vertexLayout.mAttribs[0].mFormat) / 8;
+
+		pipelineSettings = { 0 };
+		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_LINE_STRIP;
+		pipelineSettings.mRenderTargetCount = 1;
+		pipelineSettings.pColorFormats = &pSwapChain->ppRenderTargets[0]->mFormat;
+		pipelineSettings.mSampleCount = pSwapChain->ppRenderTargets[0]->mSampleCount;
+		pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mSampleQuality;
+		pipelineSettings.pRootSignature = pGraphRootSignature;
+		pipelineSettings.pShaderProgram = pGraphShader;
+		pipelineSettings.pVertexLayout = &vertexLayout;
+		addPipeline(pRenderer, &graphicsPipelineDesc, &pGraphLinePipeline);
+
+		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_STRIP;
+		addPipeline(pRenderer, &graphicsPipelineDesc, &pGraphTrianglePipeline);
+
+		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_LINE_LIST;
+		addPipeline(pRenderer, &graphicsPipelineDesc, &pGraphLineListPipeline);
+		/********************************************************************/
 
 		return true;
 	}
@@ -586,65 +759,86 @@ public:
 		waitQueueIdle(pGraphicsQueue);
 
 		unloadProfilerUI();
-		gAppUI.Unload();
-
 		gVirtualJoystick.Unload();
 
+
+		gAppUI.Unload();
+
+		removePipeline(pRenderer, pPipeline);
 		removePipeline(pRenderer, pSkyBoxDrawPipeline);
-		removePipeline(pRenderer, pSpherePipeline);
+		removePipeline(pRenderer, pGraphLineListPipeline);
+		removePipeline(pRenderer, pGraphLinePipeline);
+		removePipeline(pRenderer, pGraphTrianglePipeline);
 
 		removeSwapChain(pRenderer, pSwapChain);
-		removeRenderTarget(pRenderer, pDepthBuffer);
 	}
 
 	void Update(float deltaTime)
 	{
 		updateInputSystem(mSettings.mWidth, mSettings.mHeight);
-
+		/************************************************************************/
+		// Input
+		/************************************************************************/
 		pCameraController->update(deltaTime);
-		/************************************************************************/
-		// Scene Update
-		/************************************************************************/
-		static float currentTime = 0.0f;
-		currentTime += deltaTime * 1000.0f;
 
+		const float k_wrapAround = (float)(M_PI * 2.0);
+		if ( gObjSettings.mRotX > k_wrapAround )
+			gObjSettings.mRotX -= k_wrapAround;
+		if ( gObjSettings.mRotX < -k_wrapAround )
+			gObjSettings.mRotX += k_wrapAround;
+		if ( gObjSettings.mRotY > k_wrapAround )
+			gObjSettings.mRotY -= k_wrapAround;
+		if ( gObjSettings.mRotY < -k_wrapAround )
+			gObjSettings.mRotY += k_wrapAround;
+		/************************************************************************/
+		// Compute matrices
+		/************************************************************************/
 		// update camera with time
+		mat4 modelMat = mat4::rotationX(gObjSettings.mRotX) * mat4::rotationY(gObjSettings.mRotY);
 		mat4 viewMat = pCameraController->getViewMatrix();
 
 		const float aspectInverse = (float)mSettings.mHeight / (float)mSettings.mWidth;
 		const float horizontal_fov = PI / 2.0f;
-		mat4        projMat = mat4::perspective(horizontal_fov, aspectInverse, 1000.0f, 0.1f);
-		gUniformData.mProjectView = projMat * viewMat;
-
-		// point light parameters
-		gUniformData.mLightPosition = vec3(0, 0, 0);
-		gUniformData.mLightColor = vec3(0.9f, 0.9f, 0.7f);    // Pale Yellow
-
-		// update planet transformations
-		for ( unsigned int i = 0; i < gNumPlanets; i++ )
-		{
-			mat4 rotSelf, rotOrbitY, rotOrbitZ, trans, scale, parentMat;
-			rotSelf = rotOrbitY = rotOrbitZ = trans = scale = parentMat = mat4::identity();
-			if ( gPlanetInfoData[i].mRotationSpeed > 0.0f )
-				rotSelf = mat4::rotationY(gRotSelfScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mRotationSpeed);
-			if ( gPlanetInfoData[i].mYOrbitSpeed > 0.0f )
-				rotOrbitY = mat4::rotationY(gRotOrbitYScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mYOrbitSpeed);
-			if ( gPlanetInfoData[i].mZOrbitSpeed > 0.0f )
-				rotOrbitZ = mat4::rotationZ(gRotOrbitZScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mZOrbitSpeed);
-			if ( gPlanetInfoData[i].mParentIndex > 0 )
-				parentMat = gPlanetInfoData[gPlanetInfoData[i].mParentIndex].mSharedMat;
-
-			trans = gPlanetInfoData[i].mTranslationMat;
-			scale = gPlanetInfoData[i].mScaleMat;
-
-			gPlanetInfoData[i].mSharedMat = parentMat * rotOrbitY * trans;
-			gUniformData.mToWorldMat[i] = parentMat * rotOrbitY * rotOrbitZ * trans * rotSelf * scale;
-			gUniformData.mColor[i] = gPlanetInfoData[i].mColor;
-		}
+		mat4        projMat = mat4::perspective(horizontal_fov, aspectInverse, 0.1f, 100.0f);
+		gProjectView = projMat * viewMat * modelMat;
+		// update particle position matrix
 
 		viewMat.setTranslation(vec3(0));
-		gUniformDataSky = gUniformData;
-		gUniformDataSky.mProjectView = projMat * viewMat;
+		gSkyboxProjectView = projMat * viewMat;
+
+		gPaletteFactor += deltaTime * 0.25f;
+		if ( gPaletteFactor > 1.0f )
+		{
+			for ( int i = 0; i < 9; ++i )
+			{
+				RND_GEN(gSeed);
+			}
+			gPaletteFactor = 0.0f;
+
+			gTextureIndex = (gTextureIndex + 1) % 5;
+
+			//   gPaletteFactor = 1.0;
+		}
+		gParticleData.mPaletteFactor = gPaletteFactor * gPaletteFactor * (3.0f - 2.0f * gPaletteFactor);
+		gParticleData.mData = gSeed;
+		gParticleData.mTextureIndex = gTextureIndex;
+
+		static float currentTime = 0.0f;
+		currentTime += deltaTime;
+
+		// update cpu data graph
+		if ( currentTime * 1000.0f > 500 )
+		{
+			CalCpuUsage();
+			for ( uint i = 0; i < gCoresCount; ++i )
+			{
+				pCpuData[i].mSampley[pCpuData[i].mSampleIdx] = 0.0f;
+				pCpuData[i].mSample[pCpuData[i].mSampleIdx] = pCoresLoadData[i] / 100.0f;
+				pCpuData[i].mSampleIdx = (pCpuData[i].mSampleIdx + 1) % gSampleCount;
+			}
+
+			currentTime = 0.0f;
+		}
 
 		/************************************************************************/
 		// Update GUI
@@ -666,92 +860,148 @@ public:
 		if ( fenceStatus == FENCE_STATUS_INCOMPLETE )
 			waitForFences(pRenderer, 1, &pRenderCompleteFence);
 
-		// Update uniform buffers
+		uint32_t frameIdx = gFrameIndex;
+
+		SyncToken graphUpdateToken = {};
+
+		for ( uint32_t i = 0; i < gCoresCount; ++i )
+			CpuGraphcmdUpdateBuffer(frameIdx, &pCpuData[i], &pCpuGraph[i], &graphUpdateToken);    // update vertex buffer for each cpugraph
+
+		// update vertex buffer for background of the graph (grid)
+		CpuGraphBackGroundUpdate(frameIdx, &graphUpdateToken);
+		/*******record command for drawing particles***************/
+		for ( uint32_t i = 0; i < gThreadCount; ++i )
+		{
+			pThreadData[i].pRenderTarget = pRenderTarget;
+			pThreadData[i].mFrameIndex = frameIdx;
+		}
+		AddThreadSystemRangeTask(pThreadSystem, &Sample::ParticleThreadDraw, pThreadData, gThreadCount);
+		// simply record the screen cleaning command
+
+		LoadActionsDesc loadActions = {};
+		loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
+		loadActions.mClearColorValues[0].r = 0.0f;
+		loadActions.mClearColorValues[0].g = 0.0f;
+		loadActions.mClearColorValues[0].b = 0.0f;
+		loadActions.mClearColorValues[0].a = 0.0f;
+
+		Cmd* cmd = ppCmds[frameIdx];
+		beginCmd(cmd);
+
 		BufferUpdateDesc viewProjCbv = { pProjViewUniformBuffer[gFrameIndex] };
 		beginUpdateResource(&viewProjCbv);
-		*(UniformBlock*)viewProjCbv.pMappedData = gUniformData;
+		*(mat4*)viewProjCbv.pMappedData = gProjectView;
 		endUpdateResource(&viewProjCbv, NULL);
 
 		BufferUpdateDesc skyboxViewProjCbv = { pSkyboxUniformBuffer[gFrameIndex] };
 		beginUpdateResource(&skyboxViewProjCbv);
-		*(UniformBlock*)skyboxViewProjCbv.pMappedData = gUniformDataSky;
+		*(mat4*)skyboxViewProjCbv.pMappedData = gSkyboxProjectView;
 		endUpdateResource(&skyboxViewProjCbv, NULL);
 
-		Cmd* cmd = ppCmds[gFrameIndex];
-		beginCmd(cmd);
-
-		cmdBeginGpuFrameProfile(cmd, gGpuProfileToken);
-
-		RenderTargetBarrier barriers[] = {
-			{ pRenderTarget, RESOURCE_STATE_RENDER_TARGET },
-			{ pDepthBuffer, RESOURCE_STATE_DEPTH_WRITE },
-		};
-		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 2, barriers);
-
-		// simply record the screen cleaning command
-		LoadActionsDesc loadActions = {};
-		loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
-		loadActions.mClearColorValues[0].r = 1.0f;
-		loadActions.mClearColorValues[0].g = 1.0f;
-		loadActions.mClearColorValues[0].b = 0.0f;
-		loadActions.mClearColorValues[0].a = 0.0f;
-		loadActions.mLoadActionDepth = LOAD_ACTION_CLEAR;
-		loadActions.mClearDepth.depth = 0.0f;
-		loadActions.mClearDepth.stencil = 0;
-		cmdBindRenderTargets(cmd, 1, &pRenderTarget, pDepthBuffer, &loadActions, NULL, NULL, -1, -1);
+		RenderTargetBarrier barrier = { pRenderTarget, RESOURCE_STATE_RENDER_TARGET };
+		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, &barrier);
+		cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
 		cmdSetScissor(cmd, 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
-
-		const uint32_t sphereVbStride = sizeof(float) * 6;
-		const uint32_t skyboxVbStride = sizeof(float) * 4;
-
-		// draw skybox
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw skybox");
+		//// draw skybox
 		cmdBindPipeline(cmd, pSkyBoxDrawPipeline);
-		cmdBindDescriptorSet(cmd, 0, pDescriptorSetTexture);
+		cmdBindDescriptorSet(cmd, 0, pDescriptorSet);
 		cmdBindDescriptorSet(cmd, gFrameIndex * 2 + 0, pDescriptorSetUniforms);
-		cmdBindVertexBuffer(cmd, 1, &pSkyBoxVertexBuffer, &skyboxVbStride, NULL);
+
+		const uint32_t skyboxStride = sizeof(float) * 4;
+		cmdBindVertexBuffer(cmd, 1, &pSkyBoxVertexBuffer, &skyboxStride, NULL);
 		cmdDraw(cmd, 36, 0);
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 
-		////// draw planets
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Planets");
-		cmdBindPipeline(cmd, pSpherePipeline);
-		cmdBindDescriptorSet(cmd, gFrameIndex * 2 + 1, pDescriptorSetUniforms);
-		cmdBindVertexBuffer(cmd, 1, &pSphereVertexBuffer, &sphereVbStride, NULL);
-		cmdDrawInstanced(cmd, gNumberOfSpherePoints / 6, 0, gNumPlanets, 0);
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
-
-
-		loadActions = {};
-		loadActions.mLoadActionsColor[0] = LOAD_ACTION_LOAD;
-		cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw UI");
+		cmdBeginDebugMarker(cmd, 0, 1, 0, "Draw UI");
 
 		gVirtualJoystick.Draw(cmd, { 1.0f, 1.0f, 1.0f, 1.0f });
 
 		cmdDrawCpuProfile(cmd, float2(8, 15), &gFrameTimeDraw);
-#if !defined(__ANDROID__)
-		cmdDrawGpuProfile(cmd, float2(8, 40), gGpuProfileToken, &gFrameTimeDraw);
-#endif
 
-		cmdDrawProfilerUI();
+		gAppUI.DrawText(cmd, float2(8, 65), "Particle CPU Times", NULL);
+		for ( uint32_t i = 0; i < gThreadCount; ++i )
+		{
+			gAppUI.DrawText(
+				cmd, float2(8.f, 90.0f + i * 25.0f),
+				eastl::string().sprintf("- Thread %u  %f ms", i, getCpuProfileAvgTime("Threads", "Cpu draw", &pThreadData[i].mThreadID)).c_str(),
+				&gFrameTimeDraw);
+		}
+
+		for ( uint32_t i = 0; i < gThreadCount; ++i )
+		{
+			cmdDrawGpuProfile(cmd, float2(8.f, (130 + gThreadCount * 25.0f) + i * 50.0f), pGpuProfiletokens[i]);
+		}
 
 		gAppUI.Draw(cmd);
-		cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
+		cmdEndDebugMarker(cmd);
 
-		barriers[0] = { pRenderTarget, RESOURCE_STATE_PRESENT };
-		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
-
-		cmdEndGpuFrameProfile(cmd, gGpuProfileToken);
 		endCmd(cmd);
 
+		beginCmd(ppGraphCmds[frameIdx]);
+		for ( uint i = 0; i < gCoresCount; ++i )
+		{
+			gGraphWidth = pRenderTarget->mWidth / 6;
+			gGraphHeight = (pRenderTarget->mHeight - 30 - gCoresCount * 10) / gCoresCount;
+			pCpuGraph[i].mViewPort.mOffsetX = pRenderTarget->mWidth - 10.0f - gGraphWidth;
+			pCpuGraph[i].mViewPort.mWidth = (float)gGraphWidth;
+			pCpuGraph[i].mViewPort.mOffsetY = 36 + i * (gGraphHeight + 4.0f);
+			pCpuGraph[i].mViewPort.mHeight = (float)gGraphHeight;
+
+			cmdBindRenderTargets(ppGraphCmds[frameIdx], 1, &pRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
+			cmdSetViewport(
+				ppGraphCmds[frameIdx], pCpuGraph[i].mViewPort.mOffsetX, pCpuGraph[i].mViewPort.mOffsetY, pCpuGraph[i].mViewPort.mWidth,
+				pCpuGraph[i].mViewPort.mHeight, 0.0f, 1.0f);
+			cmdSetScissor(ppGraphCmds[frameIdx], 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
+
+			const uint32_t graphDataStride = sizeof(GraphVertex);                     // vec2(position) + vec4(color)
+
+			cmdBindPipeline(ppGraphCmds[frameIdx], pGraphTrianglePipeline);
+			cmdBindVertexBuffer(ppGraphCmds[frameIdx], 1, &pBackGroundVertexBuffer[frameIdx], &graphDataStride, NULL);
+			cmdDraw(ppGraphCmds[frameIdx], 4, 0);
+
+			cmdBindPipeline(ppGraphCmds[frameIdx], pGraphLineListPipeline);
+			cmdBindVertexBuffer(ppGraphCmds[frameIdx], 1, &pBackGroundVertexBuffer[frameIdx], &graphDataStride, NULL);
+			cmdDraw(ppGraphCmds[frameIdx], 38, 4);
+
+			cmdBindPipeline(ppGraphCmds[frameIdx], pGraphTrianglePipeline);
+			cmdBindVertexBuffer(ppGraphCmds[frameIdx], 1, &(pCpuGraph[i].mVertexBuffer[frameIdx]), &graphDataStride, NULL);
+			cmdDraw(ppGraphCmds[frameIdx], 2 * gSampleCount, 0);
+
+			cmdBindPipeline(ppGraphCmds[frameIdx], pGraphLinePipeline);
+			cmdBindVertexBuffer(ppGraphCmds[frameIdx], 1, &pCpuGraph[i].mVertexBuffer[frameIdx], &graphDataStride, NULL);
+			cmdDraw(ppGraphCmds[frameIdx], gSampleCount, 2 * gSampleCount);
+		}
+		cmdSetViewport(ppGraphCmds[frameIdx], 0.0f, 0.0f, static_cast<float>(mSettings.mWidth), static_cast<float>(mSettings.mHeight), 0.0f, 1.0f);
+		cmdSetScissor(ppGraphCmds[frameIdx], 0, 0, mSettings.mWidth, mSettings.mHeight);
+		cmdDrawProfilerUI();
+
+		cmdBindRenderTargets(ppGraphCmds[frameIdx], 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+
+		barrier = { pRenderTarget, RESOURCE_STATE_PRESENT };
+		cmdResourceBarrier(ppGraphCmds[frameIdx], 0, NULL, 0, NULL, 1, &barrier);
+		endCmd(ppGraphCmds[frameIdx]);
+		// wait all particle threads done
+		WaitThreadSystemIdle(pThreadSystem);
+		// Wait till graph buffers have been uploaded to the gpu
+		waitForToken(&graphUpdateToken);
+		/***************draw cpu graph*****************************/
+		/***************draw cpu graph*****************************/
+		// gather all command buffer, it is important to keep the screen clean command at the beginning
+		Cmd** allCmds = (Cmd**)alloca((gThreadCount + 2) * sizeof(Cmd*));
+		allCmds[0] = cmd;
+
+		for ( uint32_t i = 0; i < gThreadCount; ++i )
+		{
+			allCmds[i + 1] = pThreadData[i].ppCmds[frameIdx];
+		}
+		allCmds[gThreadCount + 1] = ppGraphCmds[frameIdx];
+		// submit all command buffer
+
 		QueueSubmitDesc submitDesc = {};
-		submitDesc.mCmdCount = 1;
+		submitDesc.mCmdCount = gThreadCount + 2;
 		submitDesc.mSignalSemaphoreCount = 1;
 		submitDesc.mWaitSemaphoreCount = 1;
-		submitDesc.ppCmds = &cmd;
+		submitDesc.ppCmds = allCmds;
 		submitDesc.ppSignalSemaphores = &pRenderCompleteSemaphore;
 		submitDesc.ppWaitSemaphores = &pImageAcquiredSemaphore;
 		submitDesc.pSignalFence = pRenderCompleteFence;
@@ -759,8 +1009,8 @@ public:
 		QueuePresentDesc presentDesc = {};
 		presentDesc.mIndex = gFrameIndex;
 		presentDesc.mWaitSemaphoreCount = 1;
-		presentDesc.pSwapChain = pSwapChain;
 		presentDesc.ppWaitSemaphores = &pRenderCompleteSemaphore;
+		presentDesc.pSwapChain = pSwapChain;
 		presentDesc.mSubmitDone = true;
 		queuePresent(pGraphicsQueue, &presentDesc);
 		flipProfiler();
@@ -768,7 +1018,7 @@ public:
 
 	const char* GetName()
 	{
-		return "01_Transformations";
+		return "03_MultiThread";
 	}
 
 	bool addSwapChain()
@@ -787,23 +1037,433 @@ public:
 		return pSwapChain != NULL;
 	}
 
-	bool addDepthBuffer()
+#if defined(__linux__)
+	enum CPUStates
 	{
-		// Add depth buffer
-		RenderTargetDesc depthRT = {};
-		depthRT.mArraySize = 1;
-		depthRT.mClearValue.depth = 0.0f;
-		depthRT.mClearValue.stencil = 0;
-		depthRT.mDepth = 1;
-		depthRT.mFormat = TinyImageFormat_D32_SFLOAT;
-		depthRT.mHeight = mSettings.mHeight;
-		depthRT.mSampleCount = SAMPLE_COUNT_1;
-		depthRT.mSampleQuality = 0;
-		depthRT.mWidth = mSettings.mWidth;
-		depthRT.mFlags = TEXTURE_CREATION_FLAG_ON_TILE;
-		addRenderTarget(pRenderer, &depthRT, &pDepthBuffer);
+		S_USER = 0, S_NICE, S_SYSTEM, S_IDLE, S_IOWAIT, S_IRQ, S_SOFTIRQ, S_STEAL, S_GUEST, S_GUEST_NICE,
 
-		return pDepthBuffer != NULL;
+		NUM_CPU_STATES
+	};
+	typedef struct CPUData
+	{
+		eastl::string cpu;
+		size_t          times[NUM_CPU_STATES];
+	} CPUData;
+
+	size_t GetIdleTime(const CPUData& e)
+	{
+		return e.times[S_IDLE] + e.times[S_IOWAIT];
+	}
+
+	size_t GetActiveTime(const CPUData& e)
+	{
+		return e.times[S_USER] + e.times[S_NICE] + e.times[S_SYSTEM] + e.times[S_IRQ] + e.times[S_SOFTIRQ] + e.times[S_STEAL] +
+			e.times[S_GUEST] + e.times[S_GUEST_NICE];
+	}
+#endif
+
+	void CalCpuUsage()
+	{
+#ifdef _WIN32
+#if defined(_DURANGO)
+#else
+		HRESULT hr = NULL;
+		ULONG   retVal;
+		UINT    i;
+
+		IWbemClassObject*     pclassObj;
+		IEnumWbemClassObject* pEnumerator;
+
+		hr = pService->ExecQuery(
+			bstr_t("WQL"),
+			bstr_t("SELECT TimeStamp_Sys100NS, PercentProcessorTime, Frequency_PerfTime FROM Win32_PerfRawData_PerfOS_Processor"),
+			WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, NULL, &pEnumerator);
+		for ( i = 0; i < gCoresCount; i++ )
+		{
+			//Waiting for inifinite blocks resources and app.
+			//Waiting for 15 ms (arbitrary) instead works much better
+			hr = pEnumerator->Next(15, 1, &pclassObj, &retVal);
+			if ( !retVal )
+			{
+				break;
+			}
+
+			VARIANT vtPropTime;
+			VARIANT vtPropClock;
+			VariantInit(&vtPropTime);
+			VariantInit(&vtPropClock);
+
+			hr = pclassObj->Get(L"TimeStamp_Sys100NS", 0, &vtPropTime, 0, 0);
+			UINT64 newTimeStamp = _wtoi64(vtPropTime.bstrVal);
+
+			hr = pclassObj->Get(L"PercentProcessorTime", 0, &vtPropClock, 0, 0);
+			UINT64 newPProcUsage = _wtoi64(vtPropClock.bstrVal);
+
+			pCoresLoadData[i] =
+				(float)(1.0 - (((double)newPProcUsage - (double)pOldPprocUsage[i]) / ((double)newTimeStamp - (double)pOldTimeStamp[i]))) *
+				100.0f;
+
+			if ( pCoresLoadData[i] < 0 )
+				pCoresLoadData[i] = 0.0;
+			else if ( pCoresLoadData[i] > 100.0 )
+				pCoresLoadData[i] = 100.0;
+
+			pOldPprocUsage[i] = newPProcUsage;
+			pOldTimeStamp[i] = newTimeStamp;
+
+			VariantClear(&vtPropTime);
+			VariantClear(&vtPropClock);
+
+			pclassObj->Release();
+		}
+
+		pEnumerator->Release();
+#endif    //#if defined(_DURANGO)
+#elif (__linux__)
+		eastl::vector<CPUData> entries;
+		entries.reserve(gCoresCount);
+		// Open cpu stat file
+
+		PathHandle statPath = fsCreatePath(fsGetSystemFileSystem(), "/proc/stat");
+		FileStream* fh = fsOpenFile(statPath, FM_READ_BINARY);
+
+		if ( fh )
+		{
+			// While eof not detected, keep parsing the stat file
+			while ( !fsStreamAtEnd(fh) )
+			{
+				entries.emplace_back(CPUData());
+				CPUData& entry = entries.back();
+				char     dummyCpuName[256];    // dummy cpu name, not used.
+				int bytesRead;
+				fsScanFromStream(
+					fh, &bytesRead, "%s %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu", &dummyCpuName[0], &entry.times[0], &entry.times[1],
+					&entry.times[2], &entry.times[3], &entry.times[4], &entry.times[5], &entry.times[6], &entry.times[7], &entry.times[8],
+					&entry.times[9]);
+			}
+			// Close the cpu stat file
+			fsCloseStream(fh);
+		}
+
+		for ( uint32_t i = 0; i < gCoresCount; i++ )
+		{
+			float ACTIVE_TIME = static_cast<float>(GetActiveTime(entries[i]));
+			float IDLE_TIME = static_cast<float>(GetIdleTime(entries[i]));
+
+			pCoresLoadData[i] = (ACTIVE_TIME - pOldPprocUsage[i]) / ((float)(IDLE_TIME + ACTIVE_TIME) - pOldTimeStamp[i]) * 100.0f;
+
+			pOldPprocUsage[i] = ACTIVE_TIME;
+			pOldTimeStamp[i] = IDLE_TIME + ACTIVE_TIME;
+		}
+#elif defined(NX64)
+		//
+#elif defined(__APPLE__)
+		processor_info_array_t cpuInfo;
+		mach_msg_type_number_t numCpuInfo;
+
+		natural_t     numCPUsU = 0U;
+		kern_return_t err = host_processor_info(mach_host_self(), PROCESSOR_CPU_LOAD_INFO, &numCPUsU, &cpuInfo, &numCpuInfo);
+
+		if ( err == KERN_SUCCESS )
+		{
+			[CPUUsageLock lock] ;
+
+			for ( uint32_t i = 0; i < gCoresCount; i++ )
+			{
+				float inUse, total;
+
+				if ( prevCpuInfo )
+				{
+					inUse =
+						((cpuInfo[(CPU_STATE_MAX * i) + CPU_STATE_USER] - prevCpuInfo[(CPU_STATE_MAX * i) + CPU_STATE_USER]) +
+						(cpuInfo[(CPU_STATE_MAX * i) + CPU_STATE_SYSTEM] - prevCpuInfo[(CPU_STATE_MAX * i) + CPU_STATE_SYSTEM]) +
+							(cpuInfo[(CPU_STATE_MAX * i) + CPU_STATE_NICE] - prevCpuInfo[(CPU_STATE_MAX * i) + CPU_STATE_NICE]));
+					total = inUse + (cpuInfo[(CPU_STATE_MAX * i) + CPU_STATE_IDLE] - prevCpuInfo[(CPU_STATE_MAX * i) + CPU_STATE_IDLE]);
+				}
+				else
+				{
+					inUse = cpuInfo[(CPU_STATE_MAX * i) + CPU_STATE_USER] + cpuInfo[(CPU_STATE_MAX * i) + CPU_STATE_SYSTEM] +
+						cpuInfo[(CPU_STATE_MAX * i) + CPU_STATE_NICE];
+					total = inUse + cpuInfo[(CPU_STATE_MAX * i) + CPU_STATE_IDLE];
+				}
+
+				pCoresLoadData[i] = (float(inUse) / float(total)) * 100;
+
+				if ( pCoresLoadData[i] < 0 )
+					pCoresLoadData[i] = 0.0;
+				else if ( pCoresLoadData[i] > 100.0 )
+					pCoresLoadData[i] = 100.0;
+			}
+
+			[CPUUsageLock unlock];
+
+			if ( prevCpuInfo )
+			{
+				size_t prevCpuInfoSize = sizeof(integer_t) * numPrevCpuInfo;
+				vm_deallocate(mach_task_self(), (vm_address_t)prevCpuInfo, prevCpuInfoSize);
+			}
+
+			prevCpuInfo = cpuInfo;
+			numPrevCpuInfo = numCpuInfo;
+		}
+
+#endif
+	}
+
+	int InitCpuUsage()
+	{
+		gCoresCount = 0;
+#ifdef _WIN32
+#if defined(_DURANGO)
+		gCoresCount = Thread::GetNumCPUCores();
+#else
+		IWbemClassObject*     pclassObj;
+		IEnumWbemClassObject* pEnumerator;
+		HRESULT               hr;
+		ULONG                 retVal;
+
+		pService = NULL;
+		pLocator = NULL;
+		pOldTimeStamp = NULL;
+		pOldPprocUsage = NULL;
+		pCoresLoadData = NULL;
+
+		CoInitializeEx(0, COINIT_MULTITHREADED);
+		CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_DEFAULT, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE, NULL);
+
+		hr = CoCreateInstance(CLSID_WbemLocator, 0, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (LPVOID*)&pLocator);
+		if ( FAILED(hr) )
+		{
+			return 0;
+		}
+		hr = pLocator->ConnectServer(_bstr_t(L"ROOT\\CIMV2"), NULL, NULL, 0, NULL, 0, 0, &pService);
+		if ( FAILED(hr) )
+		{
+			return 0;
+		}
+
+		CoSetProxyBlanket(
+			pService, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, NULL, RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE);
+
+		hr = pService->ExecQuery(
+			bstr_t("WQL"), bstr_t("SELECT * FROM Win32_Processor"), WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, NULL,
+			&pEnumerator);
+		hr = pEnumerator->Next(WBEM_INFINITE, 1, &pclassObj, &retVal);
+		if ( retVal )
+		{
+			VARIANT vtProp;
+			VariantInit(&vtProp);
+			hr = pclassObj->Get(L"NumberOfLogicalProcessors", 0, &vtProp, 0, 0);
+			gCoresCount = vtProp.uintVal;
+			VariantClear(&vtProp);
+		}
+
+		pclassObj->Release();
+		pEnumerator->Release();
+
+		if ( gCoresCount )
+		{
+			pOldTimeStamp = (uint64_t*)conf_malloc(sizeof(uint64_t) * gCoresCount);
+			pOldPprocUsage = (uint64_t*)conf_malloc(sizeof(uint64_t) * gCoresCount);
+		}
+#endif
+#elif defined(__linux__)
+		int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+		gCoresCount = numCPU;
+		if ( gCoresCount )
+		{
+			pOldTimeStamp = (uint64_t*)conf_malloc(sizeof(uint64_t) * gCoresCount);
+			pOldPprocUsage = (uint64_t*)conf_malloc(sizeof(uint64_t) * gCoresCount);
+		}
+#elif defined(__APPLE__)
+		processor_info_array_t cpuInfo;
+		mach_msg_type_number_t numCpuInfo;
+
+		natural_t     numCPUsU = 0U;
+		kern_return_t err = host_processor_info(mach_host_self(), PROCESSOR_CPU_LOAD_INFO, &numCPUsU, &cpuInfo, &numCpuInfo);
+
+		assert(err == KERN_SUCCESS);
+
+		gCoresCount = numCPUsU;
+
+		CPUUsageLock = [[NSLock alloc]init];
+#elif defined(ORBIS) || defined(NX64)
+		gCoresCount = Thread::GetNumCPUCores();
+#endif
+
+		pCpuData = (CpuGraphData*)conf_malloc(sizeof(CpuGraphData) * gCoresCount);
+		for ( uint i = 0; i < gCoresCount; ++i )
+		{
+			pCpuData[i].mSampleIdx = 0;
+			pCpuData[i].mScale = 1.0f;
+			for ( uint j = 0; j < gSampleCount; ++j )
+			{
+				pCpuData[i].mSample[j] = 0.0f;
+				pCpuData[i].mSampley[j] = 0.0f;
+			}
+		}
+
+		if ( gCoresCount )
+		{
+			pCoresLoadData = (float*)conf_malloc(sizeof(float) * gCoresCount);
+			float zeroFloat = 0.0;
+			memset(pCoresLoadData, *(int*)&zeroFloat, sizeof(float) * gCoresCount);
+		}
+
+		CalCpuUsage();
+		return 1;
+	}
+
+	void RemoveCpuUsage()
+	{
+		conf_free(pCpuData);
+#if (defined(_WIN32) && !defined(_DURANGO)) || defined(__linux__)
+		conf_free(pOldTimeStamp);
+		conf_free(pOldPprocUsage);
+#endif
+		conf_free(pCoresLoadData);
+	}
+
+	void CpuGraphBackGroundUpdate(uint32_t frameIdx, SyncToken* token)
+	{
+		BufferUpdateDesc backgroundVbUpdate = { pBackGroundVertexBuffer[frameIdx] };
+		beginUpdateResource(&backgroundVbUpdate);
+		GraphVertex* backGroundPoints = (GraphVertex*)backgroundVbUpdate.pMappedData;
+		memset(backGroundPoints, 0, pBackGroundVertexBuffer[frameIdx]->mSize);
+
+		// background data
+		backGroundPoints[0].mPosition = vec2(-1.0f, -1.0f);
+		backGroundPoints[0].mColor = vec4(0.0f, 0.0f, 0.0f, 0.3f);
+		backGroundPoints[1].mPosition = vec2(1.0f, -1.0f);
+		backGroundPoints[1].mColor = vec4(0.0f, 0.0f, 0.0f, 0.3f);
+		backGroundPoints[2].mPosition = vec2(-1.0f, 1.0f);
+		backGroundPoints[2].mColor = vec4(0.0f, 0.0f, 0.0f, 0.3f);
+		backGroundPoints[3].mPosition = vec2(1.0f, 1.0f);
+		backGroundPoints[3].mColor = vec4(0.0f, 0.0f, 0.0f, 0.3f);
+
+		const float woff = 2.0f / gGraphWidth;
+		const float hoff = 2.0f / gGraphHeight;
+
+		backGroundPoints[4].mPosition = vec2(-1.0f + woff, -1.0f + hoff);
+		backGroundPoints[4].mColor = vec4(0.0f, 0.3f, 0.5f, 0.25f);
+		backGroundPoints[5].mPosition = vec2(1.0f - woff, -1.0f + hoff);
+		backGroundPoints[5].mColor = vec4(0.0f, 0.3f, 0.5f, 0.25f);
+		backGroundPoints[6].mPosition = vec2(1.0f - woff, -1.0f + hoff);
+		backGroundPoints[6].mColor = vec4(0.0f, 0.3f, 0.5f, 0.25f);
+		backGroundPoints[7].mPosition = vec2(1.0f - woff, 1.0f - hoff);
+		backGroundPoints[7].mColor = vec4(0.0f, 0.3f, 0.5f, 0.25f);
+		backGroundPoints[8].mPosition = vec2(1.0f - woff, 1.0f - hoff);
+		backGroundPoints[8].mColor = vec4(0.0f, 0.3f, 0.5f, 0.25f);
+		backGroundPoints[9].mPosition = vec2(-1.0f + woff, 1.0f - hoff);
+		backGroundPoints[9].mColor = vec4(0.0f, 0.3f, 0.5f, 0.25f);
+		backGroundPoints[10].mPosition = vec2(-1.0f + woff, 1.0f - hoff);
+		backGroundPoints[10].mColor = vec4(0.0f, 0.3f, 0.5f, 0.25f);
+		backGroundPoints[11].mPosition = vec2(-1.0f + woff, -1.0f + hoff);
+		backGroundPoints[11].mColor = vec4(0.0f, 0.3f, 0.5f, 0.25f);
+
+		for ( int i = 1; i <= 6; ++i )
+		{
+			backGroundPoints[12 + i * 2].mPosition =
+				vec2(-1.0f + i * (2.0f / 6.0f) - 2.0f * ((pCpuData[0].mSampleIdx % (gSampleCount / 6)) / (float)gSampleCount), -1.0f);
+			backGroundPoints[12 + i * 2].mColor = vec4(0.0f, 0.1f, 0.2f, 0.25f);
+			backGroundPoints[13 + i * 2].mPosition =
+				vec2(-1.0f + i * (2.0f / 6.0f) - 2.0f * ((pCpuData[0].mSampleIdx % (gSampleCount / 6)) / (float)gSampleCount), 1.0f);
+			backGroundPoints[13 + i * 2].mColor = vec4(0.0f, 0.1f, 0.2f, 0.25f);
+		}
+		// start from 24
+
+		for ( int i = 1; i <= 9; ++i )
+		{
+			backGroundPoints[24 + i * 2].mPosition = vec2(-1.0f, -1.0f + i * (2.0f / 10.0f));
+			backGroundPoints[24 + i * 2].mColor = vec4(0.0f, 0.1f, 0.2f, 0.25f);
+			backGroundPoints[25 + i * 2].mPosition = vec2(1.0f, -1.0f + i * (2.0f / 10.0f));
+			backGroundPoints[25 + i * 2].mColor = vec4(0.0f, 0.1f, 0.2f, 0.25f);
+		}
+		//start from 42
+
+		backGroundPoints[42].mPosition = vec2(-1.0f, -1.0f);
+		backGroundPoints[42].mColor = vec4(0.85f, 0.9f, 0.0f, 0.25f);
+		backGroundPoints[43].mPosition = vec2(1.0f, -1.0f);
+		backGroundPoints[43].mColor = vec4(0.85f, 0.9f, 0.0f, 0.25f);
+		backGroundPoints[44].mPosition = vec2(-1.0f, 1.0f);
+		backGroundPoints[44].mColor = vec4(0.85f, 0.9f, 0.0f, 0.25f);
+		backGroundPoints[45].mPosition = vec2(1.0f, 1.0f);
+		backGroundPoints[45].mColor = vec4(0.85f, 0.9f, 0.0f, 0.25f);
+
+		backGroundPoints[42].mPosition = vec2(-1.0f, -1.0f);
+		backGroundPoints[42].mColor = vec4(0.85f, 0.0f, 0.0f, 0.25f);
+		backGroundPoints[43].mPosition = vec2(1.0f, -1.0f);
+		backGroundPoints[43].mColor = vec4(0.85f, 0.0f, 0.0f, 0.25f);
+		backGroundPoints[44].mPosition = vec2(-1.0f, 1.0f);
+		backGroundPoints[44].mColor = vec4(0.85f, 0.0f, 0.0f, 0.25f);
+		backGroundPoints[45].mPosition = vec2(1.0f, 1.0f);
+		backGroundPoints[45].mColor = vec4(0.85f, 0.0f, 0.0f, 0.25f);
+
+		endUpdateResource(&backgroundVbUpdate, token);
+	}
+
+	void CpuGraphcmdUpdateBuffer(uint32_t frameIdx, CpuGraphData* graphData, CpuGraph* graph, SyncToken* token)
+	{
+		BufferUpdateDesc vbUpdate = { graph->mVertexBuffer[frameIdx] };
+		beginUpdateResource(&vbUpdate);
+		GraphVertex* points = (GraphVertex*)vbUpdate.pMappedData;
+		memset(points, 0, graph->mVertexBuffer[frameIdx]->mSize);
+
+		int index = graphData->mSampleIdx;
+		// fill up tri vertex
+		for ( int i = 0; i < gSampleCount; ++i )
+		{
+			if ( --index < 0 )
+				index = gSampleCount - 1;
+			points[i * 2].mPosition = vec2((1.0f - i * (2.0f / gSampleCount)) * 0.999f - 0.02f, -0.97f);
+			points[i * 2].mColor = vec4(0.0f, 0.85f, 0.0f, 1.0f);
+			points[i * 2 + 1].mPosition = vec2(
+				(1.0f - i * (2.0f / gSampleCount)) * 0.999f - 0.02f,
+				(2.0f * ((graphData->mSample[index] + graphData->mSampley[index]) * graphData->mScale - 0.5f)) * 0.97f);
+			points[i * 2 + 1].mColor = vec4(0.0f, 0.85f, 0.0f, 1.0f);
+		}
+
+		//line vertex
+		index = graphData->mSampleIdx;
+		for ( int i = 0; i < gSampleCount; ++i )
+		{
+			if ( --index < 0 )
+				index = gSampleCount - 1;
+			points[i + 2 * gSampleCount].mPosition = vec2(
+				(1.0f - i * (2.0f / gSampleCount)) * 0.999f - 0.02f,
+				(2.0f * ((graphData->mSample[index] + graphData->mSampley[index]) * graphData->mScale - 0.5f)) * 0.97f);
+			points[i + 2 * gSampleCount].mColor = vec4(0.0f, 0.85f, 0.0f, 1.0f);
+		}
+
+		endUpdateResource(&vbUpdate, token);
+	}
+
+	// thread for recording particle draw
+	static void ParticleThreadDraw(void* pData, uintptr_t i)
+	{
+		ThreadData& data = ((ThreadData*)pData)[i];
+		if ( data.mThreadID == Thread::mainThreadID )
+			data.mThreadID = Thread::GetCurrentThreadID();
+		PROFILER_SET_CPU_SCOPE("Threads", "Cpu draw", 0xffffff);
+		Cmd*        cmd = data.ppCmds[data.mFrameIndex];
+		beginCmd(cmd);
+		cmdBeginGpuFrameProfile(cmd, pGpuProfiletokens[data.mThreadIndex]);
+
+		cmdBindRenderTargets(cmd, 1, &data.pRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
+		cmdSetViewport(cmd, 0.0f, 0.0f, (float)data.pRenderTarget->mWidth, (float)data.pRenderTarget->mHeight, 0.0f, 1.0f);
+		cmdSetScissor(cmd, 0, 0, data.pRenderTarget->mWidth, data.pRenderTarget->mHeight);
+
+		const uint32_t parDataStride = sizeof(uint32_t);
+		cmdBindPipeline(cmd, pPipeline);
+		cmdBindDescriptorSet(cmd, 1, pDescriptorSet);
+		cmdBindDescriptorSet(cmd, data.mFrameIndex * 2 + 1, pDescriptorSetUniforms);
+		cmdBindPushConstants(cmd, pRootSignature, "particleRootConstant", &gParticleData);
+		cmdBindVertexBuffer(cmd, 1, &pParticleVertexBuffer, &parDataStride, NULL);
+
+		cmdDrawInstanced(cmd, data.mDrawCount, data.mStartPoint, 1, 0);
+
+		cmdEndGpuFrameProfile(cmd, pGpuProfiletokens[data.mThreadIndex]);
+		endCmd(cmd);
 	}
 };
 

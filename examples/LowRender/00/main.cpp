@@ -1,4 +1,6 @@
-﻿#pragma comment(lib, "3rdPartyLib.lib")
+﻿// minimal
+
+#pragma comment(lib, "3rdPartyLib.lib")
 #pragma comment(lib, "Engine.lib")
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "Xinput9_1_0.lib")

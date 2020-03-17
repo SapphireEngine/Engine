@@ -1,4 +1,6 @@
-﻿#pragma comment(lib, "3rdPartyLib.lib")
+﻿// Transformations
+
+#pragma comment(lib, "3rdPartyLib.lib")
 #pragma comment(lib, "Engine.lib")
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "Xinput9_1_0.lib")
@@ -114,7 +116,7 @@ public:
 		PathHandle programDirectory = fsCopyProgramDirectoryPath();
 		if ( !fsPlatformUsesBundledResources() )
 		{
-			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "EngineData/LowRender/00");
+			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "EngineData/LowRender/01");
 			fsSetResourceDirectoryRootPath(resourceDirRoot);
 
 			fsSetRelativePathForResourceDirectory(RD_TEXTURES, "../../TestResources/Textures");
