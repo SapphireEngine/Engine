@@ -1,4 +1,6 @@
-﻿#pragma comment(lib, "3rdPartyLib.lib")
+﻿// FontRendering
+
+#pragma comment(lib, "3rdPartyLib.lib")
 #pragma comment(lib, "Engine.lib")
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "Xinput9_1_0.lib")
@@ -23,98 +25,210 @@
 
 using namespace se;
 
-#define MAX_PLANETS 20    // Does not affect test, just for allocating space in uniform block. Must match with shader.
-
-/// Demo structures
-struct PlanetInfoStruct
-{
-	uint  mParentIndex;
-	vec4  mColor;
-	float mYOrbitSpeed;    // Rotation speed around parent
-	float mZOrbitSpeed;
-	float mRotationSpeed;    // Rotation speed around self
-	mat4  mTranslationMat;
-	mat4  mScaleMat;
-	mat4  mSharedMat;    // Matrix to pass down to children
+/************************************************************************/
+/* SCENE VARIABLES
+*************************************************************************/
+struct Fonts
+{    // src: https://fontlibrary.org
+	int titilliumBold;
+	int comicRelief;
+	int crimsonSerif;
+	int monoSpace;
+	int monoSpaceBold;
 };
 
-struct UniformBlock
+struct ScreenText
 {
-	mat4 mProjectView;
-	mat4 mToWorldMat[MAX_PLANETS];
-	vec4 mColor[MAX_PLANETS];
+	eastl::string mText;
+	TextDrawDesc    mDrawDesc;
 
-	// Point Light Information
-	vec3 mLightPosition;
-	vec3 mLightColor;
+	// screen space position:
+	// [0, 0] = top left
+	// [1, 1] = bottom right
+	float2 mScreenPosition;
 };
+
+struct SceneData
+{
+	size_t                                       sceneTextArrayIndex = 0;
+	eastl::vector<eastl::vector<ScreenText>> sceneTextArray;
+
+	uint32_t theme = 1;              // enable dark theme (its better <3) | spacebar to change theme
+	bool     bFitToScreen = true;    // scales all the text down if any scene text is off screen
+};
+
+// todo: rename this enum
+enum PropertiesWithSkinColor
+{
+	PROP_TEXT,
+	PROP_HEADER
+};
+static const uint32_t gLightSkinTextColor = 0xff333333;
+static const uint32_t gLightSkinHeaderColor = 0xff000000;
+
+static const uint32_t gDarkSkinTextColor = 0xffb0b0b0;
+static const uint32_t gDarkSkinHeaderColor = 0xffffffff;
+
+uint32_t GetSkinColorOfProperty(PropertiesWithSkinColor EProp, bool bDarkSkin)
+{
+	switch ( EProp )
+	{
+	case PROP_TEXT: return bDarkSkin ? gDarkSkinTextColor : gLightSkinTextColor; break;
+	case PROP_HEADER: return bDarkSkin ? gDarkSkinHeaderColor : gLightSkinHeaderColor; break;
+	default: return gLightSkinHeaderColor; break;
+	}
+}
+uint32_t GetSkinColorOfProperty(PropertiesWithSkinColor EProp, uint32_t theme)
+{
+	return GetSkinColorOfProperty(EProp, (bool)theme);
+}
 
 const uint32_t gImageCount = 3;
-const int      gSphereResolution = 30;    // Increase for higher resolution spheres
-const float    gSphereDiameter = 0.5f;
-const uint     gNumPlanets = 11;        // Sun, Mercury -> Neptune, Pluto, Moon
-const uint     gTimeOffset = 600000;    // For visually better starting locations
-const float    gRotSelfScale = 0.0004f;
-const float    gRotOrbitYScale = 0.001f;
-const float    gRotOrbitZScale = 0.00001f;
+ProfileToken   gGpuProfileToken;
 
-Renderer* pRenderer = NULL;
+Renderer*    pRenderer = NULL;
+Queue*       pGraphicsQueue = NULL;
+CmdPool*     pCmdPool = NULL;
+Cmd**        ppCmds = NULL;
 
-Queue*   pGraphicsQueue = NULL;
-CmdPool* pCmdPool = NULL;
-Cmd**    ppCmds = NULL;
-
-SwapChain*    pSwapChain = NULL;
-RenderTarget* pDepthBuffer = NULL;
-Fence*        pRenderCompleteFences[gImageCount] = { NULL };
-Semaphore*    pImageAcquiredSemaphore = NULL;
-Semaphore*    pRenderCompleteSemaphores[gImageCount] = { NULL };
-
-Shader*   pSphereShader = NULL;
-Buffer*   pSphereVertexBuffer = NULL;
-Pipeline* pSpherePipeline = NULL;
-
-Shader*        pSkyBoxDrawShader = NULL;
-Buffer*        pSkyBoxVertexBuffer = NULL;
-Pipeline*      pSkyBoxDrawPipeline = NULL;
-RootSignature* pRootSignature = NULL;
-Sampler*       pSamplerSkyBox = NULL;
-Texture*       pSkyBoxTextures[6];
-DescriptorSet* pDescriptorSetTexture = { NULL };
-DescriptorSet* pDescriptorSetUniforms = { NULL };
-VirtualJoystickUI gVirtualJoystick;
-
-Buffer* pProjViewUniformBuffer[gImageCount] = { NULL };
-Buffer* pSkyboxUniformBuffer[gImageCount] = { NULL };
+SwapChain* pSwapChain = NULL;
+Fence*     pRenderCompleteFences[gImageCount] = { NULL };
+Semaphore* pImageAcquiredSemaphore = NULL;
+Semaphore* pRenderCompleteSemaphores[gImageCount] = { NULL };
 
 uint32_t gFrameIndex = 0;
-ProfileToken gGpuProfileToken = PROFILE_INVALID_TOKEN;
 
-int              gNumberOfSpherePoints;
-UniformBlock     gUniformData;
-UniformBlock     gUniformDataSky;
-PlanetInfoStruct gPlanetInfoData[gNumPlanets];
+SceneData  gSceneData;
+Fonts      gFonts;
 
-ICameraController* pCameraController = NULL;
+/************************************************************************/
+/* APP UI VARIABLES
+*************************************************************************/
+#if defined(TARGET_IOS) || defined(ANDROID)
+const int TextureAtlasDimension = 512;
+#elif defined(DURANGO)
+const int TextureAtlasDimension = 1024;
+#else    // PC / LINUX / MAC
+const int TextureAtlasDimension = 2048;
+#endif
+UIApp         gAppUI(TextureAtlasDimension);
+GuiComponent* pUIWindow = NULL;
+bool          gbShowSceneControlsUIWindow = true;    // toggle this w/ F1
 
-/// UI
-UIApp gAppUI;
+enum ColorTheme : uint32_t
+{
+	COLOR_THEME_LIGHT = 0,
+	COLOR_THEME_DARK,
 
-const char* pSkyBoxImageFileNames[] = { "Skybox_right1",  "Skybox_left2",  "Skybox_top3",
-										"Skybox_bottom4", "Skybox_front5", "Skybox_back6" };
+	NUM_COLOR_THEMES
+};
+static const char*      pThemeLabels[] = { "Light", "Dark",
 
-TextDrawDesc gFrameTimeDraw = TextDrawDesc(0, 0xff00ffff, 18);
+									  NULL };
+static const ColorTheme ColorThemes[] = { COLOR_THEME_LIGHT, COLOR_THEME_DARK,
 
+										  NUM_COLOR_THEMES };
+
+// state variable to keep track of drop down value change (we should ideally hook up event callbacks instead of this)
+static uint32_t gPreviousTheme = 0;
+static bool     gPreviousFitToScreen = false;
+
+/************************************************************************/
+/* TEXT & LAYOUT FUNCTIONS
+ *************************************************************************/
+ // calculates the length of the previous text, takes into account the spacing between texts,
+ // returns the position (normalized) for the next, new text
+ //
+ // use this for avoiding overlapping of text in the horizontal direction.
+ //
+float GetNextTextPosition(
+	const float normalizedXCoordOfPreviousText, const char* pTextPrevious, const TextDrawDesc& drawDescPrevious,
+	const IApp::Settings& mSettings)
+{
+	// TextA = @pTextPrevious
+	// TextB = CurrentText to be drawn
+	//
+	// <==========> ----- offsetFromPreviousText [0, 1] : this is the value we use to set the position for the CurrentText
+	// TextA <==> TextB
+	// <===>   ^  ^
+	//   ^     |  +------ normalizedXCoordOfCurrentText [0, 1]
+	//   |     |
+	//   |     +--------- spacingBetweenTexts [0, 1]
+	//   |
+	//   +--------------- previousTextSizeInPx [0, screenSize]
+	//
+	const float  spacingBetweenTexts = 0.01f;    // normalized to screen size(width)
+	const float2 previousTextSizeInPx = gAppUI.MeasureText(pTextPrevious, drawDescPrevious);
+	const float  offsetFromPreviousText = previousTextSizeInPx.getX() / mSettings.mWidth + spacingBetweenTexts;
+	return normalizedXCoordOfPreviousText + offsetFromPreviousText;
+};
+
+// gets the width of the longest string in pixels.
+// use this function for measuring different fonts
+//
+float GetLongestStringLengthInPx(const char* const* ppTexts, int numTexts, const TextDrawDesc* pDrawDescs)
+{
+	float longestTextSz = 0.0f;
+	for ( int i = 0; i < numTexts; ++i )
+	{
+		longestTextSz = max(longestTextSz, gAppUI.MeasureText(ppTexts[i], pDrawDescs[i]).getX());
+	}
+	return longestTextSz;
+}
+
+// gets the width of the longest string in pixels.
+// use this function for measuring text lines that uses the same TextDrawDesc
+//
+float GetLongestStringLengthInPx(const char* const* ppTexts, int numTexts, const TextDrawDesc& drawDesc)
+{
+	float longestTextSz = 0.0f;
+	for ( int i = 0; i < numTexts; ++i )
+	{
+		longestTextSz = max(longestTextSz, gAppUI.MeasureText(ppTexts[i], drawDesc).getX());
+	}
+	return longestTextSz;
+}
+
+// returns the screen coordinates (x,y) for drawing the given text in the middle of the screen.
+//
+inline float GetScreenCenteredPosition(const float normalizedTextLength)
+{
+	return (1.0f - normalizedTextLength) * 0.5f;
+}
+float2       GetCenteredTextPosition(const char* pText, const TextDrawDesc& drawDesc, const IApp::Settings& mSettings)
+{
+	const float2 normalizedTextSize = gAppUI.MeasureText(pText, drawDesc) / float2(mSettings.mWidth, mSettings.mHeight);
+	const float2 normalizedScreenCoords(
+		GetScreenCenteredPosition(normalizedTextSize.getX()), GetScreenCenteredPosition(normalizedTextSize.getY()));
+	return normalizedScreenCoords;
+}
+
+//static float gBiasX = 0.0f;
+//static float gBiasY = 0.0f;
+static float2 gBias(0.0f, 0.0f);
+
+/************************************************************************/
+/* APP IMPLEMENTATION
+*************************************************************************/
 class Sample : public IApp
 {
 public:
+	Sample()
+	{
+#ifndef METAL
+		//set window size
+		mSettings.mWidth = 1920;
+		mSettings.mHeight = 1080;
+#endif
+	}
+
 	bool Init()
 	{
 		// FILE PATHS
 		PathHandle programDirectory = fsCopyProgramDirectoryPath();
 		if ( !fsPlatformUsesBundledResources() )
 		{
-			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "EngineData/LowRender/00");
+			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "EngineData/LowRender/05");
 			fsSetResourceDirectoryRootPath(resourceDirRoot);
 
 			fsSetRelativePathForResourceDirectory(RD_TEXTURES, "../../TestResources/Textures");
@@ -126,8 +240,8 @@ public:
 		}
 
 		// window and renderer setup
-		RendererDesc settings = { 0 };
-		initRenderer(GetName(), &settings, &pRenderer);
+		RendererDesc rendererDesc = { 0 };
+		initRenderer(GetName(), &rendererDesc, &pRenderer);
 		//check for init success
 		if ( !pRenderer )
 			return false;
@@ -152,307 +266,51 @@ public:
 
 		initResourceLoaderInterface(pRenderer);
 
-		// Loads Skybox Textures
-		for ( int i = 0; i < 6; ++i )
-		{
-			PathHandle textureFilePath = fsCopyPathInResourceDirectory(RD_TEXTURES, pSkyBoxImageFileNames[i]);
-			TextureLoadDesc textureDesc = {};
-			textureDesc.pFilePath = textureFilePath;
-			textureDesc.ppTexture = &pSkyBoxTextures[i];
-			addResource(&textureDesc, NULL, LOAD_PRIORITY_NORMAL);
-		}
+		waitForAllResourceLoads();
 
-		if ( !gVirtualJoystick.Init(pRenderer, "circlepad", RD_TEXTURES) )
-		{
-			LOGF(LogLevel::eERROR, "Could not initialize Virtual Joystick.");
-			return false;
-		}
-
-		ShaderLoadDesc skyShader = {};
-		skyShader.mStages[0] = { "skybox.vert", NULL, 0, RD_SHADER_SOURCES };
-		skyShader.mStages[1] = { "skybox.frag", NULL, 0, RD_SHADER_SOURCES };
-		ShaderLoadDesc basicShader = {};
-		basicShader.mStages[0] = { "basic.vert", NULL, 0, RD_SHADER_SOURCES };
-		basicShader.mStages[1] = { "basic.frag", NULL, 0, RD_SHADER_SOURCES };
-
-		addShader(pRenderer, &skyShader, &pSkyBoxDrawShader);
-		addShader(pRenderer, &basicShader, &pSphereShader);
-
-		SamplerDesc samplerDesc = { FILTER_LINEAR,
-									FILTER_LINEAR,
-									MIPMAP_MODE_NEAREST,
-									ADDRESS_MODE_CLAMP_TO_EDGE,
-									ADDRESS_MODE_CLAMP_TO_EDGE,
-									ADDRESS_MODE_CLAMP_TO_EDGE };
-		addSampler(pRenderer, &samplerDesc, &pSamplerSkyBox);
-
-		Shader*           shaders[] = { pSphereShader, pSkyBoxDrawShader };
-		const char*       pStaticSamplers[] = { "uSampler0" };
-		RootSignatureDesc rootDesc = {};
-		rootDesc.mStaticSamplerCount = 1;
-		rootDesc.ppStaticSamplerNames = pStaticSamplers;
-		rootDesc.ppStaticSamplers = &pSamplerSkyBox;
-		rootDesc.mShaderCount = 2;
-		rootDesc.ppShaders = shaders;
-		addRootSignature(pRenderer, &rootDesc, &pRootSignature);
-
-		DescriptorSetDesc desc = { pRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
-		addDescriptorSet(pRenderer, &desc, &pDescriptorSetTexture);
-		desc = { pRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount * 2 };
-		addDescriptorSet(pRenderer, &desc, &pDescriptorSetUniforms);
-
-		// Generate sphere vertex buffer
-		float* pSpherePoints;
-		generateSpherePoints(&pSpherePoints, &gNumberOfSpherePoints, gSphereResolution, gSphereDiameter);
-
-		uint64_t       sphereDataSize = gNumberOfSpherePoints * sizeof(float);
-		BufferLoadDesc sphereVbDesc = {};
-		sphereVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
-		sphereVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-		sphereVbDesc.mDesc.mSize = sphereDataSize;
-		sphereVbDesc.pData = pSpherePoints;
-		sphereVbDesc.ppBuffer = &pSphereVertexBuffer;
-		addResource(&sphereVbDesc, NULL, LOAD_PRIORITY_NORMAL);
-
-		//Generate sky box vertex buffer
-		float skyBoxPoints[] = {
-			10.0f,  -10.0f, -10.0f, 6.0f,    // -z
-			-10.0f, -10.0f, -10.0f, 6.0f,   -10.0f, 10.0f,  -10.0f, 6.0f,   -10.0f, 10.0f,
-			-10.0f, 6.0f,   10.0f,  10.0f,  -10.0f, 6.0f,   10.0f,  -10.0f, -10.0f, 6.0f,
-
-			-10.0f, -10.0f, 10.0f,  2.0f,    //-x
-			-10.0f, -10.0f, -10.0f, 2.0f,   -10.0f, 10.0f,  -10.0f, 2.0f,   -10.0f, 10.0f,
-			-10.0f, 2.0f,   -10.0f, 10.0f,  10.0f,  2.0f,   -10.0f, -10.0f, 10.0f,  2.0f,
-
-			10.0f,  -10.0f, -10.0f, 1.0f,    //+x
-			10.0f,  -10.0f, 10.0f,  1.0f,   10.0f,  10.0f,  10.0f,  1.0f,   10.0f,  10.0f,
-			10.0f,  1.0f,   10.0f,  10.0f,  -10.0f, 1.0f,   10.0f,  -10.0f, -10.0f, 1.0f,
-
-			-10.0f, -10.0f, 10.0f,  5.0f,    // +z
-			-10.0f, 10.0f,  10.0f,  5.0f,   10.0f,  10.0f,  10.0f,  5.0f,   10.0f,  10.0f,
-			10.0f,  5.0f,   10.0f,  -10.0f, 10.0f,  5.0f,   -10.0f, -10.0f, 10.0f,  5.0f,
-
-			-10.0f, 10.0f,  -10.0f, 3.0f,    //+y
-			10.0f,  10.0f,  -10.0f, 3.0f,   10.0f,  10.0f,  10.0f,  3.0f,   10.0f,  10.0f,
-			10.0f,  3.0f,   -10.0f, 10.0f,  10.0f,  3.0f,   -10.0f, 10.0f,  -10.0f, 3.0f,
-
-			10.0f,  -10.0f, 10.0f,  4.0f,    //-y
-			10.0f,  -10.0f, -10.0f, 4.0f,   -10.0f, -10.0f, -10.0f, 4.0f,   -10.0f, -10.0f,
-			-10.0f, 4.0f,   -10.0f, -10.0f, 10.0f,  4.0f,   10.0f,  -10.0f, 10.0f,  4.0f,
-		};
-
-		uint64_t       skyBoxDataSize = 4 * 6 * 6 * sizeof(float);
-		BufferLoadDesc skyboxVbDesc = {};
-		skyboxVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
-		skyboxVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-		skyboxVbDesc.mDesc.mSize = skyBoxDataSize;
-		skyboxVbDesc.pData = skyBoxPoints;
-		skyboxVbDesc.ppBuffer = &pSkyBoxVertexBuffer;
-		addResource(&skyboxVbDesc, NULL, LOAD_PRIORITY_NORMAL);
-
-		BufferLoadDesc ubDesc = {};
-		ubDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		ubDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
-		ubDesc.mDesc.mSize = sizeof(UniformBlock);
-		ubDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
-		ubDesc.pData = NULL;
-		for ( uint32_t i = 0; i < gImageCount; ++i )
-		{
-			ubDesc.ppBuffer = &pProjViewUniformBuffer[i];
-			addResource(&ubDesc, NULL, LOAD_PRIORITY_NORMAL);
-			ubDesc.ppBuffer = &pSkyboxUniformBuffer[i];
-			addResource(&ubDesc, NULL, LOAD_PRIORITY_NORMAL);
-		}
-
-		// Setup planets (Rotation speeds are relative to Earth's, some values randomly given)
-
-		// Sun
-		gPlanetInfoData[0].mParentIndex = 0;
-		gPlanetInfoData[0].mYOrbitSpeed = 0;    // Earth years for one orbit
-		gPlanetInfoData[0].mZOrbitSpeed = 0;
-		gPlanetInfoData[0].mRotationSpeed = 24.0f;    // Earth days for one rotation
-		gPlanetInfoData[0].mTranslationMat = mat4::identity();
-		gPlanetInfoData[0].mScaleMat = mat4::scale(vec3(10.0f));
-		gPlanetInfoData[0].mColor = vec4(0.9f, 0.6f, 0.1f, 0.0f);
-
-		// Mercury
-		gPlanetInfoData[1].mParentIndex = 0;
-		gPlanetInfoData[1].mYOrbitSpeed = 0.5f;
-		gPlanetInfoData[1].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[1].mRotationSpeed = 58.7f;
-		gPlanetInfoData[1].mTranslationMat = mat4::translation(vec3(10.0f, 0, 0));
-		gPlanetInfoData[1].mScaleMat = mat4::scale(vec3(1.0f));
-		gPlanetInfoData[1].mColor = vec4(0.7f, 0.3f, 0.1f, 1.0f);
-
-		// Venus
-		gPlanetInfoData[2].mParentIndex = 0;
-		gPlanetInfoData[2].mYOrbitSpeed = 0.8f;
-		gPlanetInfoData[2].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[2].mRotationSpeed = 243.0f;
-		gPlanetInfoData[2].mTranslationMat = mat4::translation(vec3(20.0f, 0, 5));
-		gPlanetInfoData[2].mScaleMat = mat4::scale(vec3(2));
-		gPlanetInfoData[2].mColor = vec4(0.8f, 0.6f, 0.1f, 1.0f);
-
-		// Earth
-		gPlanetInfoData[3].mParentIndex = 0;
-		gPlanetInfoData[3].mYOrbitSpeed = 1.0f;
-		gPlanetInfoData[3].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[3].mRotationSpeed = 1.0f;
-		gPlanetInfoData[3].mTranslationMat = mat4::translation(vec3(30.0f, 0, 0));
-		gPlanetInfoData[3].mScaleMat = mat4::scale(vec3(4));
-		gPlanetInfoData[3].mColor = vec4(0.3f, 0.2f, 0.8f, 1.0f);
-
-		// Mars
-		gPlanetInfoData[4].mParentIndex = 0;
-		gPlanetInfoData[4].mYOrbitSpeed = 2.0f;
-		gPlanetInfoData[4].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[4].mRotationSpeed = 1.1f;
-		gPlanetInfoData[4].mTranslationMat = mat4::translation(vec3(40.0f, 0, 0));
-		gPlanetInfoData[4].mScaleMat = mat4::scale(vec3(3));
-		gPlanetInfoData[4].mColor = vec4(0.9f, 0.3f, 0.1f, 1.0f);
-
-		// Jupiter
-		gPlanetInfoData[5].mParentIndex = 0;
-		gPlanetInfoData[5].mYOrbitSpeed = 11.0f;
-		gPlanetInfoData[5].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[5].mRotationSpeed = 0.4f;
-		gPlanetInfoData[5].mTranslationMat = mat4::translation(vec3(50.0f, 0, 0));
-		gPlanetInfoData[5].mScaleMat = mat4::scale(vec3(8));
-		gPlanetInfoData[5].mColor = vec4(0.6f, 0.4f, 0.4f, 1.0f);
-
-		// Saturn
-		gPlanetInfoData[6].mParentIndex = 0;
-		gPlanetInfoData[6].mYOrbitSpeed = 29.4f;
-		gPlanetInfoData[6].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[6].mRotationSpeed = 0.5f;
-		gPlanetInfoData[6].mTranslationMat = mat4::translation(vec3(60.0f, 0, 0));
-		gPlanetInfoData[6].mScaleMat = mat4::scale(vec3(6));
-		gPlanetInfoData[6].mColor = vec4(0.7f, 0.7f, 0.5f, 1.0f);
-
-		// Uranus
-		gPlanetInfoData[7].mParentIndex = 0;
-		gPlanetInfoData[7].mYOrbitSpeed = 84.07f;
-		gPlanetInfoData[7].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[7].mRotationSpeed = 0.8f;
-		gPlanetInfoData[7].mTranslationMat = mat4::translation(vec3(70.0f, 0, 0));
-		gPlanetInfoData[7].mScaleMat = mat4::scale(vec3(7));
-		gPlanetInfoData[7].mColor = vec4(0.4f, 0.4f, 0.6f, 1.0f);
-
-		// Neptune
-		gPlanetInfoData[8].mParentIndex = 0;
-		gPlanetInfoData[8].mYOrbitSpeed = 164.81f;
-		gPlanetInfoData[8].mZOrbitSpeed = 0.0f;
-		gPlanetInfoData[8].mRotationSpeed = 0.9f;
-		gPlanetInfoData[8].mTranslationMat = mat4::translation(vec3(80.0f, 0, 0));
-		gPlanetInfoData[8].mScaleMat = mat4::scale(vec3(8));
-		gPlanetInfoData[8].mColor = vec4(0.5f, 0.2f, 0.9f, 1.0f);
-
-		// Pluto - Not a planet XDD
-		gPlanetInfoData[9].mParentIndex = 0;
-		gPlanetInfoData[9].mYOrbitSpeed = 247.7f;
-		gPlanetInfoData[9].mZOrbitSpeed = 1.0f;
-		gPlanetInfoData[9].mRotationSpeed = 7.0f;
-		gPlanetInfoData[9].mTranslationMat = mat4::translation(vec3(90.0f, 0, 0));
-		gPlanetInfoData[9].mScaleMat = mat4::scale(vec3(1.0f));
-		gPlanetInfoData[9].mColor = vec4(0.7f, 0.5f, 0.5f, 1.0f);
-
-		// Moon
-		gPlanetInfoData[10].mParentIndex = 3;
-		gPlanetInfoData[10].mYOrbitSpeed = 1.0f;
-		gPlanetInfoData[10].mZOrbitSpeed = 200.0f;
-		gPlanetInfoData[10].mRotationSpeed = 27.0f;
-		gPlanetInfoData[10].mTranslationMat = mat4::translation(vec3(5.0f, 0, 0));
-		gPlanetInfoData[10].mScaleMat = mat4::scale(vec3(1));
-		gPlanetInfoData[10].mColor = vec4(0.3f, 0.3f, 0.4f, 1.0f);
-
+		// initialize UI middleware
 		if ( !gAppUI.Init(pRenderer) )
-			return false;
+			return false;    // report?
 
-		gAppUI.LoadFont("TitilliumText/TitilliumText-Bold.otf", RD_BUILTIN_FONTS);
+		// load the fonts
+		const ResourceDirectory fontRoot = ResourceDirectory::RD_BUILTIN_FONTS;
+		gFonts.titilliumBold = gAppUI.LoadFont("TitilliumText/TitilliumText-Bold.otf", fontRoot);
+		gFonts.comicRelief = gAppUI.LoadFont("ComicRelief/ComicRelief.ttf", fontRoot);
+		gFonts.crimsonSerif = gAppUI.LoadFont("Crimson/Crimson-Roman.ttf", fontRoot);
+		gFonts.monoSpace = gAppUI.LoadFont("InconsolataLGC/Inconsolata-LGC.otf", fontRoot);
+		gFonts.monoSpaceBold = gAppUI.LoadFont("InconsolataLGC/Inconsolata-LGC-Bold.otf", fontRoot);
 
-		CameraMotionParameters cmp{ 160.0f, 600.0f, 200.0f };
-		vec3                   camPos{ 48.0f, 48.0f, 20.0f };
-		vec3                   lookAt{ vec3(0) };
+		// setup the UI window
+		const float dpiScl = getDpiScale().x;
+		vec2        UIWndSize = vec2{ 250, 300 } / dpiScl;
+		vec2        UIWndPosition = vec2{ mSettings.mWidth * 0.02f, mSettings.mHeight * 0.8f } / dpiScl;
+		GuiDesc     guiDesc(UIWndPosition, UIWndSize, TextDrawDesc());
+		pUIWindow = gAppUI.AddGuiComponent("Controls", &guiDesc);
 
-		pCameraController = createFpsCameraController(camPos, lookAt);
+		CheckboxWidget fitScreenCheckbox("Fit to Screen", &gSceneData.bFitToScreen);
 
-		pCameraController->setMotionParameters(cmp);
+		const size_t   NUM_THEMES = sizeof(pThemeLabels) / sizeof(const char*) - 1;    // -1 for the NULL element
+		DropdownWidget ThemeDropdown("Theme", &gSceneData.theme, pThemeLabels, (uint32_t*)ColorThemes, NUM_THEMES);
+
+		pUIWindow->AddWidget(ThemeDropdown);
+		pUIWindow->AddWidget(fitScreenCheckbox);
+
+		gPreviousTheme = gSceneData.theme;
 
 		if ( !initInputSystem(pWindow) )
 			return false;
 
-		// Initialize microprofiler and it's UI.
 		initProfiler();
 
-		// Gpu profiler can only be added after initProfile.
 		gGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "GpuProfiler");
 
 		// App Actions
-		InputActionDesc actionDesc = { InputBindings::BUTTON_DUMP, [](InputActionContext* ctx) { dumpProfileData(((IApp*)ctx->pUserData)->GetName()); return true; }, this };
-		addInputAction(&actionDesc);
-		actionDesc = { InputBindings::BUTTON_FULLSCREEN, [](InputActionContext* ctx) { toggleFullscreen(((IApp*)ctx->pUserData)->pWindow); return true; }, this };
+		InputActionDesc actionDesc = { InputBindings::BUTTON_FULLSCREEN, [](InputActionContext* ctx) { toggleFullscreen(((IApp*)ctx->pUserData)->pWindow); return true; }, this };
 		addInputAction(&actionDesc);
 		actionDesc = { InputBindings::BUTTON_EXIT, [](InputActionContext* ctx) { requestShutdown(); return true; } };
 		addInputAction(&actionDesc);
-		actionDesc =
-		{
-			InputBindings::BUTTON_ANY, [](InputActionContext* ctx)
-			{
-				bool capture = gAppUI.OnButton(ctx->mBinding, ctx->mBool, ctx->pPosition);
-				setEnableCaptureInput(capture && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);
-				return true;
-			}, this
-		};
+		actionDesc = { InputBindings::BUTTON_ANY, [](InputActionContext* ctx) { return gAppUI.OnButton(ctx->mBinding, ctx->mBool, ctx->pPosition); } };
 		addInputAction(&actionDesc);
-		typedef bool (*CameraInputHandler)(InputActionContext* ctx, uint32_t index);
-		static CameraInputHandler onCameraInput = [](InputActionContext* ctx, uint32_t index)
-		{
-			if ( !gAppUI.IsFocused() && *ctx->pCaptured )
-			{
-				gVirtualJoystick.OnMove(index, ctx->mPhase != INPUT_ACTION_PHASE_CANCELED, ctx->pPosition);
-				index ? pCameraController->onRotate(ctx->mFloat2) : pCameraController->onMove(ctx->mFloat2);
-			}
-			return true;
-		};
-		actionDesc = { InputBindings::FLOAT_RIGHTSTICK, [](InputActionContext* ctx) { return onCameraInput(ctx, 1); }, NULL, 20.0f, 200.0f, 0.5f };
-		addInputAction(&actionDesc);
-		actionDesc = { InputBindings::FLOAT_LEFTSTICK, [](InputActionContext* ctx) { return onCameraInput(ctx, 0); }, NULL, 20.0f, 200.0f, 1.0f };
-		addInputAction(&actionDesc);
-		actionDesc = { InputBindings::BUTTON_NORTH, [](InputActionContext* ctx) { pCameraController->resetView(); return true; } };
-		addInputAction(&actionDesc);
-
-		waitForAllResourceLoads();
-
-		// Need to free memory;
-		conf_free(pSpherePoints);
-
-		// Prepare descriptor sets
-		DescriptorData params[6] = {};
-		params[0].pName = "RightText";
-		params[0].ppTextures = &pSkyBoxTextures[0];
-		params[1].pName = "LeftText";
-		params[1].ppTextures = &pSkyBoxTextures[1];
-		params[2].pName = "TopText";
-		params[2].ppTextures = &pSkyBoxTextures[2];
-		params[3].pName = "BotText";
-		params[3].ppTextures = &pSkyBoxTextures[3];
-		params[4].pName = "FrontText";
-		params[4].ppTextures = &pSkyBoxTextures[4];
-		params[5].pName = "BackText";
-		params[5].ppTextures = &pSkyBoxTextures[5];
-		updateDescriptorSet(pRenderer, 0, pDescriptorSetTexture, 6, params);
-
-		for ( uint32_t i = 0; i < gImageCount; ++i )
-		{
-			DescriptorData params[1] = {};
-			params[0].pName = "uniformBlock";
-			params[0].ppBuffers = &pSkyboxUniformBuffer[i];
-			updateDescriptorSet(pRenderer, i * 2 + 0, pDescriptorSetUniforms, 1, params);
-
-			params[0].pName = "uniformBlock";
-			params[0].ppBuffers = &pProjViewUniformBuffer[i];
-			updateDescriptorSet(pRenderer, i * 2 + 1, pDescriptorSetUniforms, 1, params);
-		}
 
 		return true;
 	}
@@ -463,34 +321,9 @@ public:
 
 		exitInputSystem();
 
-		destroyCameraController(pCameraController);
-
-		gVirtualJoystick.Exit();
-
-		gAppUI.Exit();
-
-		// Exit profile
 		exitProfiler();
 
-		for ( uint32_t i = 0; i < gImageCount; ++i )
-		{
-			removeResource(pProjViewUniformBuffer[i]);
-			removeResource(pSkyboxUniformBuffer[i]);
-		}
-
-		removeDescriptorSet(pRenderer, pDescriptorSetTexture);
-		removeDescriptorSet(pRenderer, pDescriptorSetUniforms);
-
-		removeResource(pSphereVertexBuffer);
-		removeResource(pSkyBoxVertexBuffer);
-
-		for ( uint i = 0; i < 6; ++i )
-			removeResource(pSkyBoxTextures[i]);
-
-		removeSampler(pRenderer, pSamplerSkyBox);
-		removeShader(pRenderer, pSphereShader);
-		removeShader(pRenderer, pSkyBoxDrawShader);
-		removeRootSignature(pRenderer, pRootSignature);
+		gAppUI.Exit();
 
 		for ( uint32_t i = 0; i < gImageCount; ++i )
 		{
@@ -501,7 +334,6 @@ public:
 
 		removeCmd_n(pRenderer, gImageCount, ppCmds);
 		removeCmdPool(pRenderer, pCmdPool);
-
 		exitResourceLoaderInterface(pRenderer);
 		removeQueue(pRenderer, pGraphicsQueue);
 		removeRenderer(pRenderer);
@@ -509,74 +341,25 @@ public:
 
 	bool Load()
 	{
-		if ( !addSwapChain() )
+		SwapChainDesc swapChainDesc = {};
+		swapChainDesc.mWindowHandle = pWindow->handle;
+		swapChainDesc.mPresentQueueCount = 1;
+		swapChainDesc.ppPresentQueues = &pGraphicsQueue;
+		swapChainDesc.mWidth = mSettings.mWidth;
+		swapChainDesc.mHeight = mSettings.mHeight;
+		swapChainDesc.mImageCount = gImageCount;
+		swapChainDesc.mColorFormat = getRecommendedSwapchainFormat(true);
+		swapChainDesc.mEnableVsync = false;
+		::addSwapChain(pRenderer, &swapChainDesc, &pSwapChain);
+		if ( !pSwapChain )
 			return false;
 
-		if ( !addDepthBuffer() )
-			return false;
+		InitializeSceneText();
 
 		if ( !gAppUI.Load(pSwapChain->ppRenderTargets) )
 			return false;
 
-		if ( !gVirtualJoystick.Load(pSwapChain->ppRenderTargets[0]) )
-			return false;
-
 		loadProfilerUI(&gAppUI, mSettings.mWidth, mSettings.mHeight);
-
-		//layout and pipeline for sphere draw
-		VertexLayout vertexLayout = {};
-		vertexLayout.mAttribCount = 2;
-		vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-		vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
-		vertexLayout.mAttribs[0].mBinding = 0;
-		vertexLayout.mAttribs[0].mLocation = 0;
-		vertexLayout.mAttribs[0].mOffset = 0;
-		vertexLayout.mAttribs[1].mSemantic = SEMANTIC_NORMAL;
-		vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
-		vertexLayout.mAttribs[1].mBinding = 0;
-		vertexLayout.mAttribs[1].mLocation = 1;
-		vertexLayout.mAttribs[1].mOffset = 3 * sizeof(float);
-
-		RasterizerStateDesc rasterizerStateDesc = {};
-		rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
-
-		RasterizerStateDesc sphereRasterizerStateDesc = {};
-		sphereRasterizerStateDesc.mCullMode = CULL_MODE_FRONT;
-
-		DepthStateDesc depthStateDesc = {};
-		depthStateDesc.mDepthTest = true;
-		depthStateDesc.mDepthWrite = true;
-		depthStateDesc.mDepthFunc = CMP_GEQUAL;
-
-		PipelineDesc desc = {};
-		desc.mType = PIPELINE_TYPE_GRAPHICS;
-		GraphicsPipelineDesc& pipelineSettings = desc.mGraphicsDesc;
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
-		pipelineSettings.mRenderTargetCount = 1;
-		pipelineSettings.pDepthState = &depthStateDesc;
-		pipelineSettings.pColorFormats = &pSwapChain->ppRenderTargets[0]->mFormat;
-		pipelineSettings.mSampleCount = pSwapChain->ppRenderTargets[0]->mSampleCount;
-		pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mSampleQuality;
-		pipelineSettings.mDepthStencilFormat = pDepthBuffer->mFormat;
-		pipelineSettings.pRootSignature = pRootSignature;
-		pipelineSettings.pShaderProgram = pSphereShader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
-		pipelineSettings.pRasterizerState = &sphereRasterizerStateDesc;
-		addPipeline(pRenderer, &desc, &pSpherePipeline);
-
-		//layout and pipeline for skybox draw
-		vertexLayout = {};
-		vertexLayout.mAttribCount = 1;
-		vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-		vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
-		vertexLayout.mAttribs[0].mBinding = 0;
-		vertexLayout.mAttribs[0].mLocation = 0;
-		vertexLayout.mAttribs[0].mOffset = 0;
-
-		pipelineSettings.pDepthState = NULL;
-		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
-		pipelineSettings.pShaderProgram = pSkyBoxDrawShader;
-		addPipeline(pRenderer, &desc, &pSkyBoxDrawPipeline);
 
 		return true;
 	}
@@ -584,72 +367,31 @@ public:
 	void Unload()
 	{
 		waitQueueIdle(pGraphicsQueue);
-
 		unloadProfilerUI();
 		gAppUI.Unload();
-
-		gVirtualJoystick.Unload();
-
-		removePipeline(pRenderer, pSkyBoxDrawPipeline);
-		removePipeline(pRenderer, pSpherePipeline);
-
 		removeSwapChain(pRenderer, pSwapChain);
-		removeRenderTarget(pRenderer, pDepthBuffer);
+		gSceneData.sceneTextArray.set_capacity(0);
 	}
 
 	void Update(float deltaTime)
 	{
 		updateInputSystem(mSettings.mWidth, mSettings.mHeight);
 
-		pCameraController->update(deltaTime);
-		/************************************************************************/
-		// Scene Update
-		/************************************************************************/
-		static float currentTime = 0.0f;
-		currentTime += deltaTime * 1000.0f;
+		gAppUI.Update(deltaTime);
 
-		// update camera with time
-		mat4 viewMat = pCameraController->getViewMatrix();
-
-		const float aspectInverse = (float)mSettings.mHeight / (float)mSettings.mWidth;
-		const float horizontal_fov = PI / 2.0f;
-		mat4        projMat = mat4::perspective(horizontal_fov, aspectInverse, 1000.0f, 0.1f);
-		gUniformData.mProjectView = projMat * viewMat;
-
-		// point light parameters
-		gUniformData.mLightPosition = vec3(0, 0, 0);
-		gUniformData.mLightColor = vec3(0.9f, 0.9f, 0.7f);    // Pale Yellow
-
-		// update planet transformations
-		for ( unsigned int i = 0; i < gNumPlanets; i++ )
+		// detect dropdown value change
+		if ( gPreviousTheme != gSceneData.theme )
 		{
-			mat4 rotSelf, rotOrbitY, rotOrbitZ, trans, scale, parentMat;
-			rotSelf = rotOrbitY = rotOrbitZ = trans = scale = parentMat = mat4::identity();
-			if ( gPlanetInfoData[i].mRotationSpeed > 0.0f )
-				rotSelf = mat4::rotationY(gRotSelfScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mRotationSpeed);
-			if ( gPlanetInfoData[i].mYOrbitSpeed > 0.0f )
-				rotOrbitY = mat4::rotationY(gRotOrbitYScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mYOrbitSpeed);
-			if ( gPlanetInfoData[i].mZOrbitSpeed > 0.0f )
-				rotOrbitZ = mat4::rotationZ(gRotOrbitZScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mZOrbitSpeed);
-			if ( gPlanetInfoData[i].mParentIndex > 0 )
-				parentMat = gPlanetInfoData[gPlanetInfoData[i].mParentIndex].mSharedMat;
-
-			trans = gPlanetInfoData[i].mTranslationMat;
-			scale = gPlanetInfoData[i].mScaleMat;
-
-			gPlanetInfoData[i].mSharedMat = parentMat * rotOrbitY * trans;
-			gUniformData.mToWorldMat[i] = parentMat * rotOrbitY * rotOrbitZ * trans * rotSelf * scale;
-			gUniformData.mColor[i] = gPlanetInfoData[i].mColor;
+			gPreviousTheme = gSceneData.theme;
+			InitializeSceneText();
 		}
 
-		viewMat.setTranslation(vec3(0));
-		gUniformDataSky = gUniformData;
-		gUniformDataSky.mProjectView = projMat * viewMat;
-
-		/************************************************************************/
-		// Update GUI
-		/************************************************************************/
-		gAppUI.Update(deltaTime);
+		// detect fit to screen toggle change
+		if ( gPreviousFitToScreen != gSceneData.bFitToScreen )
+		{
+			gPreviousFitToScreen = gSceneData.bFitToScreen;
+			InitializeSceneText();
+		}
 	}
 
 	void Draw()
@@ -666,84 +408,65 @@ public:
 		if ( fenceStatus == FENCE_STATUS_INCOMPLETE )
 			waitForFences(pRenderer, 1, &pRenderCompleteFence);
 
-		// Update uniform buffers
-		BufferUpdateDesc viewProjCbv = { pProjViewUniformBuffer[gFrameIndex] };
-		beginUpdateResource(&viewProjCbv);
-		*(UniformBlock*)viewProjCbv.pMappedData = gUniformData;
-		endUpdateResource(&viewProjCbv, NULL);
-
-		BufferUpdateDesc skyboxViewProjCbv = { pSkyboxUniformBuffer[gFrameIndex] };
-		beginUpdateResource(&skyboxViewProjCbv);
-		*(UniformBlock*)skyboxViewProjCbv.pMappedData = gUniformDataSky;
-		endUpdateResource(&skyboxViewProjCbv, NULL);
-
-		Cmd* cmd = ppCmds[gFrameIndex];
-		beginCmd(cmd);
-
-		cmdBeginGpuFrameProfile(cmd, gGpuProfileToken);
-
-		RenderTargetBarrier barriers[] = {
-			{ pRenderTarget, RESOURCE_STATE_RENDER_TARGET },
-			{ pDepthBuffer, RESOURCE_STATE_DEPTH_WRITE },
-		};
-		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 2, barriers);
-
 		// simply record the screen cleaning command
 		LoadActionsDesc loadActions = {};
 		loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
 		loadActions.mClearColorValues[0].r = 1.0f;
 		loadActions.mClearColorValues[0].g = 1.0f;
-		loadActions.mClearColorValues[0].b = 0.0f;
-		loadActions.mClearColorValues[0].a = 0.0f;
-		loadActions.mLoadActionDepth = LOAD_ACTION_CLEAR;
-		loadActions.mClearDepth.depth = 0.0f;
-		loadActions.mClearDepth.stencil = 0;
-		cmdBindRenderTargets(cmd, 1, &pRenderTarget, pDepthBuffer, &loadActions, NULL, NULL, -1, -1);
+		loadActions.mClearColorValues[0].b = 1.0f;
+		loadActions.mClearColorValues[0].a = 1.0f;
+		const float darkBackgroundColor = 0.05f;
+		if ( gSceneData.theme )
+		{
+			loadActions.mClearColorValues[0].r = darkBackgroundColor;
+			loadActions.mClearColorValues[0].g = darkBackgroundColor;
+			loadActions.mClearColorValues[0].b = darkBackgroundColor;
+			loadActions.mClearColorValues[0].a = 1.0f;
+		}
+
+		Cmd* cmd = ppCmds[gFrameIndex];
+		beginCmd(cmd);
+		cmdBeginGpuFrameProfile(cmd, gGpuProfileToken);
+
+		RenderTargetBarrier barrier = { pRenderTarget, RESOURCE_STATE_RENDER_TARGET };
+		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, &barrier);
+		cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
 		cmdSetScissor(cmd, 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
 
-		const uint32_t sphereVbStride = sizeof(float) * 6;
-		const uint32_t skyboxVbStride = sizeof(float) * 4;
+		// draw text (uses AppUI)
+		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Render Text");
 
-		// draw skybox
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw skybox");
-		cmdBindPipeline(cmd, pSkyBoxDrawPipeline);
-		cmdBindDescriptorSet(cmd, 0, pDescriptorSetTexture);
-		cmdBindDescriptorSet(cmd, gFrameIndex * 2 + 0, pDescriptorSetUniforms);
-		cmdBindVertexBuffer(cmd, 1, &pSkyBoxVertexBuffer, &skyboxVbStride, NULL);
-		cmdDraw(cmd, 36, 0);
+		if ( !gSceneData.sceneTextArray.empty() )
+		{
+			const eastl::vector<ScreenText>& texts = gSceneData.sceneTextArray[gSceneData.sceneTextArrayIndex];
+			for ( int i = 0; i < texts.size(); ++i )
+			{
+				const float2 pxPosition = texts[i].mScreenPosition * float2(mSettings.mWidth, mSettings.mHeight);
+				gAppUI.DrawText(cmd, pxPosition, texts[i].mText.c_str(), &texts[i].mDrawDesc);
+			}
+		}
+
 		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 
-		////// draw planets
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Planets");
-		cmdBindPipeline(cmd, pSpherePipeline);
-		cmdBindDescriptorSet(cmd, gFrameIndex * 2 + 1, pDescriptorSetUniforms);
-		cmdBindVertexBuffer(cmd, 1, &pSphereVertexBuffer, &sphereVbStride, NULL);
-		cmdDrawInstanced(cmd, gNumberOfSpherePoints / 6, 0, gNumPlanets, 0);
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
-
-
-		loadActions = {};
-		loadActions.mLoadActionsColor[0] = LOAD_ACTION_LOAD;
-		cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw UI");
-
-		gVirtualJoystick.Draw(cmd, { 1.0f, 1.0f, 1.0f, 1.0f });
-
-		cmdDrawCpuProfile(cmd, float2(8, 15), &gFrameTimeDraw);
+		// draw profiler timings text (uses debugText)
+		TextDrawDesc uiTextDesc;    // default
+		uiTextDesc.mFontColor = gSceneData.theme ? 0xff21D8DE : 0xff444444;
+		uiTextDesc.mFontSize = 18;
+		cmdDrawCpuProfile(cmd, float2(8.0f, 15.0f), &uiTextDesc);
 #if !defined(__ANDROID__)
-		cmdDrawGpuProfile(cmd, float2(8, 40), gGpuProfileToken, &gFrameTimeDraw);
+		cmdDrawGpuProfile(cmd, float2(8, 40), gGpuProfileToken);
 #endif
 
+		if ( gbShowSceneControlsUIWindow )
+			gAppUI.Gui(pUIWindow);
+
 		cmdDrawProfilerUI();
-
 		gAppUI.Draw(cmd);
+
 		cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
-
-		barriers[0] = { pRenderTarget, RESOURCE_STATE_PRESENT };
-		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
-
+		barrier = { pRenderTarget, RESOURCE_STATE_PRESENT };
+		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, &barrier);
 		cmdEndGpuFrameProfile(cmd, gGpuProfileToken);
 		endCmd(cmd);
 
@@ -759,8 +482,8 @@ public:
 		QueuePresentDesc presentDesc = {};
 		presentDesc.mIndex = gFrameIndex;
 		presentDesc.mWaitSemaphoreCount = 1;
-		presentDesc.pSwapChain = pSwapChain;
 		presentDesc.ppWaitSemaphores = &pRenderCompleteSemaphore;
+		presentDesc.pSwapChain = pSwapChain;
 		presentDesc.mSubmitDone = true;
 		queuePresent(pGraphicsQueue, &presentDesc);
 		flipProfiler();
@@ -768,42 +491,417 @@ public:
 
 	const char* GetName()
 	{
-		return "01_Transformations";
+		return "05_FontRendering";
 	}
 
-	bool addSwapChain()
+	void InitializeSceneText()
 	{
-		SwapChainDesc swapChainDesc = {};
-		swapChainDesc.mWindowHandle = pWindow->handle;
-		swapChainDesc.mPresentQueueCount = 1;
-		swapChainDesc.ppPresentQueues = &pGraphicsQueue;
-		swapChainDesc.mWidth = mSettings.mWidth;
-		swapChainDesc.mHeight = mSettings.mHeight;
-		swapChainDesc.mImageCount = gImageCount;
-		swapChainDesc.mColorFormat = getRecommendedSwapchainFormat(true);
-		swapChainDesc.mEnableVsync = false;
-		::addSwapChain(pRenderer, &swapChainDesc, &pSwapChain);
+		gSceneData.sceneTextArray.clear();
+		eastl::vector<ScreenText> sceneTexts;
+		TextDrawDesc                drawDescriptor;
+		const char*                 txt = "";
 
-		return pSwapChain != NULL;
+		const float SCREEN_WIDTH = (float)mSettings.mWidth;
+		const float SCREEN_HEIGHT = (float)mSettings.mHeight;
+
+		//float2 dpiScaling = getDpiScale();
+
+		// [0]: screen space distance from top of the window to the title
+		// [1]: screen space distance between areas of title and ROW 1
+		// [2]: screen space distance between areas of title and ROW 2
+		// ...
+		const float screenSizeDistanceFromPreviousRow[] = { 0.050f, 0.070f, 0.105f, 0.085f, 0.085f };
+
+		// ROW 0 ===================================================================
+		// TITLE: FONTSTASH FONT RENDERING
+		//
+		drawDescriptor.mFontColor = GetSkinColorOfProperty(PROP_HEADER, gSceneData.theme);    // color : (ABGR)
+		drawDescriptor.mFontID = gFonts.monoSpaceBold;
+		drawDescriptor.mFontSize = 50.0f;
+		txt = "Fontstash Font Rendering";
+		const float2 centeredCoords = GetCenteredTextPosition(txt, drawDescriptor, mSettings);
+		sceneTexts.push_back({ txt, drawDescriptor, { centeredCoords.getX(), screenSizeDistanceFromPreviousRow[0] } });
+		// ROW 0 ===================================================================
+
+		// some pre-calculations here to center the text for any resolution:
+		//
+		// CALCULATING WIDTH:
+		// for ROW 1 we show 3 columns of text. We want to center the 2nd column
+		// add offset 1st and 3rd column.
+		//
+		// a few things to remember here:
+		//
+		// - since font spacing has different length for each line of text, we use
+		//   the last one with spacing=4 to calculate the position for the entire column.
+		//
+		// - we use the MeasureText() to get the size of the text to be drawn with a given
+		//   font in pixels, and use that to calculated a normalized position := [0.0f, 1.0f]
+		//   where (0.0f, 0.0f) is top left corner, and (1.0f, 1.0f) is bottom right corner of
+		//   the screen.
+		//
+		// here's how we calculate the normalized positions of each text block (spacing, blur, color):
+		//
+		// blur    = screen center
+		// spacing = blur - (longestSpacingFontTextNormalizedLength + normalizedLengthBetweenEachColumn)
+		// color   = blur + blurTextNormalizedLength + normalizedLengthBetweenEachColumn
+		//
+		// CALCULATING HEIGHT:
+		// add the total row height of the previous row to the previous rows first element's position
+		// as we go
+		//
+
+		// CALCULATING HEIGHT:
+		const float2 TITLE_SIZE_PX = gAppUI.MeasureText(txt, drawDescriptor);
+		const float  blurPositionY =
+			screenSizeDistanceFromPreviousRow[0] + TITLE_SIZE_PX.getY() / SCREEN_HEIGHT + screenSizeDistanceFromPreviousRow[1];
+
+		// CALCULATING WIDTH:
+		const float normalizedLengthBetweenEachColumn = 0.050f;
+
+		drawDescriptor.mFontSpacing = 4.0f;    // set these upfront for input for MeasureText() function
+		drawDescriptor.mFontSize = 20.0f;
+		drawDescriptor.mFontID = gFonts.monoSpace;
+		txt = "Font Spacing = 4.0f";
+		const float longestSpacingFontTextNormalizedLength = gAppUI.MeasureText(txt, drawDescriptor).getX() / SCREEN_WIDTH;
+
+		drawDescriptor.mFontSpacing = 0.0f;    // set these upfront for input for MeasureText() function
+		drawDescriptor.mFontBlur = 0.0f;
+		txt = "Blur = 0.0f";
+		const float blurTextNormalizedLength = gAppUI.MeasureText(txt, drawDescriptor).getX() / SCREEN_WIDTH;
+
+		const float blurPosition = GetCenteredTextPosition(txt, drawDescriptor, mSettings).getX();
+		const float spacingPosition = blurPosition - (longestSpacingFontTextNormalizedLength + normalizedLengthBetweenEachColumn);
+		const float colorPosition = blurPosition + blurTextNormalizedLength + normalizedLengthBetweenEachColumn;
+
+		// ROW 1 ===================================================================
+		// FONT PROPERTIES: SPACING, BLUR AND COLOR
+		//
+		union FontPropertyValue
+		{
+			float f;
+			int   i;
+		};
+		drawDescriptor.mFontID = gFonts.monoSpace;
+		drawDescriptor.mFontSize = 20.0f;
+
+		const int         numSubColumns = 3;    // we display 3 font properties: spacing, blur and color
+		const int         numSubRows = 4;       // we display 4 values for each of the font properties
+		const int         numElements = numSubRows * numSubColumns;
+		FontPropertyValue fontPropertyValues[numElements];
+		fontPropertyValues[0].i = 0;
+		fontPropertyValues[1].i = 1;
+		fontPropertyValues[2].i = 2;
+		fontPropertyValues[3].i = 4;
+
+		fontPropertyValues[4].i = 0;
+		fontPropertyValues[5].i = 1;
+		fontPropertyValues[6].i = 2;
+		fontPropertyValues[7].i = 4;
+
+		// note:
+			// cannot initialize the union's int variable like this
+			// need to explicitly assign the int variable outisde the
+			// initializer list. initilize to 0.0f for now.
+			//
+			// 0.0f,    // ((int)0xff0000dd),
+			// 0.0f,    // ((int)0xff00dd00),
+			// 0.0f,    // ((int)0xffdd5050),
+			// 0.0f,    // ((int)0xff888888)
+		fontPropertyValues[8].i = 0xff0000dd;
+		fontPropertyValues[9].i = 0xff00dd00;
+		fontPropertyValues[10].i = 0xffdd5050;
+		fontPropertyValues[11].i = 0xff888888;
+
+		const char*  pSubRowTexts[numElements] = { "Font Spacing = 0.0f",
+												  "Font Spacing = 1.0f",
+												  "Font Spacing = 2.0f",
+												  "Font Spacing = 4.0f",
+
+												  "Blur = 0.0f",
+												  "Blur = 1.0f",
+												  "Blur = 2.0f",
+												  "Blur = 4.0f",
+
+												  "Font Color: Red   | 0xff0000dd",
+												  "Font Color: Green | 0xff00dd00",
+												  "Font Color: Blue  | 0xffdd5050",
+												  "Font Color: Gray  | 0xff888888" };
+		const float* pFontPropertyXPositions[numSubColumns] = { &spacingPosition, &blurPosition, &colorPosition };
+
+		float rowHeightPerElem = 0.0f;
+		for ( int subColumn = 0; subColumn < numSubColumns; ++subColumn )
+		{
+			float subRowPositionY = blurPositionY;
+
+			// reset properties when we iterate on a sub column
+			drawDescriptor.mFontSpacing = 0.0f;
+			drawDescriptor.mFontBlur = 0.0f;
+			drawDescriptor.mFontColor = GetSkinColorOfProperty(PROP_TEXT, gSceneData.theme);
+
+			for ( int subRow = 0; subRow < numSubRows; ++subRow )
+			{
+				const int text_index = subRow + numSubRows * subColumn;
+
+				// set font properties and text data, and save it in scene data
+				switch ( subColumn )
+				{
+				case 0: drawDescriptor.mFontSpacing = fontPropertyValues[text_index].f; break;
+				case 1: drawDescriptor.mFontBlur = fontPropertyValues[text_index].f; break;
+				case 2: drawDescriptor.mFontColor = (unsigned)fontPropertyValues[text_index].i; break;
+				}
+				txt = pSubRowTexts[text_index];
+				sceneTexts.push_back({ txt, drawDescriptor, { *(pFontPropertyXPositions[subColumn]), subRowPositionY } });
+
+				if ( text_index == 0 )    // measure the height of sub-row once
+				{
+					rowHeightPerElem = gAppUI.MeasureText(txt, drawDescriptor).getY() / SCREEN_HEIGHT;
+				}
+
+				// iterate Y position, move on to the next row
+				subRowPositionY += rowHeightPerElem;    // + offset?
+			}
+		}
+		// ROW 1 ===================================================================
+
+		// ROW 2 ===================================================================
+		// ALPHABET WITH DIFFERENT FONTS
+		//
+		const int   numFonts = 4;
+		const float alphabetFontSize = 30.0f;
+		const char* alphabetText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789";
+		const char* fontNames[numFonts] = { "TitilliumText-Bold", "Crimson-Serif", "Comic Relief", "Inconsolata-Mono" };
+		const int   fontIDs[numFonts] = { gFonts.titilliumBold, gFonts.crimsonSerif, gFonts.comicRelief, gFonts.monoSpace };
+		float2      textLengthsForEachFont[numFonts] = {};
+		float       textHeightsForEachFont[numFonts] = {};
+
+		// set font properties for each different font
+		TextDrawDesc drawDescs[numFonts] = {};
+		for ( int i = 0; i < numFonts; ++i )
+		{
+			drawDescs[i].mFontSize = alphabetFontSize;
+			drawDescs[i].mFontID = fontIDs[i];
+			drawDescs[i].mFontColor = GetSkinColorOfProperty(PROP_HEADER, gSceneData.theme);
+			drawDescs[i].mFontSpacing = 0.0f;
+		}
+
+		// CALCULATING WIDTH:
+		// calculate longest text line, given the fonts
+		for ( int i = 0; i < numFonts; ++i )
+		{
+			const float2 alphabetMeasure = gAppUI.MeasureText(alphabetText, drawDescs[i]);
+			textLengthsForEachFont[i] =
+				float2(gAppUI.MeasureText(fontNames[i], drawDescs[i]).getX() / SCREEN_WIDTH, alphabetMeasure.getX() / SCREEN_WIDTH);
+			textHeightsForEachFont[i] = alphabetMeasure.getY();
+		}
+
+		// calculate the position to center the alphabet on screen using the longest text line
+		float       alphabetLineLengths[numFonts] = {};
+		const float normalizedLengthBetweenAlphabetAndLabel = 0.025f;
+		for ( int i = 0; i < numFonts; ++i )
+			alphabetLineLengths[i] =
+			textLengthsForEachFont[i].getX() + normalizedLengthBetweenAlphabetAndLabel + textLengthsForEachFont[i].getY();
+
+		float maxalphabetLineLength = 0.0f;    // normalized
+		float totalOfAlphabetHeights = 0.0f;
+		for ( int i = 0; i < numFonts; ++i )
+		{
+			maxalphabetLineLength = max(maxalphabetLineLength, alphabetLineLengths[i]);
+			totalOfAlphabetHeights += textHeightsForEachFont[i];
+		}
+
+		const float centeredAlphabetTextNormalizedPositionX = GetScreenCenteredPosition(maxalphabetLineLength);
+
+		// CALCULATING HEIGHT:
+		// use previous row's first elements position + height of the entire previous row + margin offset
+		const float centeredAlphabetTextNormalizedPositionY =
+			blurPositionY + (gAppUI.MeasureText(fontNames[0], drawDescs[0]).getY() / SCREEN_HEIGHT) * numSubRows +
+			screenSizeDistanceFromPreviousRow[2];
+
+		// set row positions and label-alphabet offsets
+		float2      labelPos = float2(centeredAlphabetTextNormalizedPositionX, centeredAlphabetTextNormalizedPositionY);
+		const float longestFontNameInPixels = GetLongestStringLengthInPx(fontNames, numFonts, drawDescs);
+		const float fontLabelToAlphabetTextDistance = 0.01f;    // [0, 1]
+		const float labelPositionNormalizedOffset = longestFontNameInPixels / mSettings.mWidth + fontLabelToAlphabetTextDistance;
+
+		float2 alphabetPos = labelPos + float2(labelPositionNormalizedOffset, 0.0f);
+
+		float alphabetHeights[numFonts] = {};
+		float largestAlphabetHeight = 0.0f;
+		for ( int i = 0; i < numFonts; ++i )
+		{
+			alphabetHeights[i] = gAppUI.MeasureText(alphabetText, drawDescs[i]).getY() / SCREEN_HEIGHT;
+			largestAlphabetHeight = max(largestAlphabetHeight, alphabetHeights[i]);
+		}
+
+		for ( int i = 0; i < numFonts; ++i )
+		{
+			// font label
+			drawDescriptor.mFontID = fontIDs[i];
+			txt = fontNames[i];
+			sceneTexts.push_back({ txt, drawDescs[i], labelPos });
+
+			// alphabet
+			txt = alphabetText;
+			sceneTexts.push_back({ txt, drawDescs[i], alphabetPos });
+
+			// offset for the next font
+			labelPos = labelPos + float2(0.0f, largestAlphabetHeight + 0.01f);
+			alphabetPos = alphabetPos + float2(0.0f, largestAlphabetHeight + 0.01f);
+		}
+		// ROW 2 ===================================================================
+
+		// ROW 3 ===================================================================
+		// WALL OF TEXT (UTF-8)
+		//
+		drawDescriptor.mFontColor = GetSkinColorOfProperty(PROP_TEXT, gSceneData.theme);
+		const int                numParagraphLines = 11;
+		static const char* const string1[numParagraphLines] = 
+		{
+			"Your name is Gus Graves, and you're a firefighter in the small town of Timber Valley, where the largest employer is "
+			"the",
+			"mysterious research division of the MGL Corporation, a powerful and notoriously secretive player in the military-industrial",
+			"complex. It's sunset on Halloween, and just as you're getting ready for a stream of trick-or-treaters at home, "
+			"your",
+			"chief calls you into the station. There's a massive blaze at the MGL building on the edge of town. You jump off the "
+			"fire",
+			"engine as it rolls up to the inferno and gasp not only at the incredible size of the fire but at the strange beams of light",
+			"brilliantly flashing through holes in the building's crumbling walls. As you approach the structure for a closer look,",
+			"the wall and floor of the building collapse to expose a vast underground chamber where all kinds of debris are being pulled",
+			"into a blinding light at the center of a giant metallic ring. The ground begins to fall beneath your feet, and you try to",
+			"scurry up the steepening slope to escape, but it's too late. You're pulled into the device alongside some mangled",
+			"equipment and the bodies of lab technicians who didn't survive the accident. You see your fire engine gravitating "
+			"toward",
+			"you as you accelerate into a tunnel of light."
+		};
+
+		const float paragraphPositionY =
+			centeredAlphabetTextNormalizedPositionY + totalOfAlphabetHeights / SCREEN_HEIGHT + screenSizeDistanceFromPreviousRow[3];
+
+		drawDescriptor.mFontSize = 30.5f;
+		drawDescriptor.mFontID = gFonts.crimsonSerif;
+		const float longestLineLengthInPixels = GetLongestStringLengthInPx(string1, numParagraphLines, drawDescriptor);
+		const float longestNormalizedLength = longestLineLengthInPixels / mSettings.mWidth;
+		const float centeredParagraphPosition = GetScreenCenteredPosition(longestNormalizedLength);
+		float       normalizedYPosition = paragraphPositionY;
+		for ( int i = 0; i < numParagraphLines; i++ )
+		{
+			sceneTexts.push_back({ string1[i], drawDescriptor, float2(centeredParagraphPosition, normalizedYPosition) });
+			normalizedYPosition += gAppUI.MeasureText(string1[i], drawDescriptor).getY() / SCREEN_HEIGHT;
+		}
+		float paragraphLineHeight = gAppUI.MeasureText(string1[0], drawDescriptor).getY() / SCREEN_HEIGHT;
+		// ROW 3 ===================================================================
+
+		// ROW 4 ===================================================================
+		// C PROGRAM - HELLO WORLD
+		//
+		drawDescriptor.mFontColor = GetSkinColorOfProperty(PROP_TEXT, gSceneData.theme);
+		static const char* const string2[] = { "#include<stdio.h>", "int main(){", "    printf(\"Hello World!\\n\");", "    return 0;",
+											   "}" };
+		const int                numCodeLines = sizeof(string2) / sizeof(const char*);
+
+		const float codePositionY = paragraphPositionY + paragraphLineHeight * numParagraphLines + screenSizeDistanceFromPreviousRow[4];
+
+		drawDescriptor.mFontSize = 30.5f;
+		drawDescriptor.mFontID = gFonts.monoSpace;
+		normalizedYPosition = codePositionY;
+		const float centeredCodePosition = GetScreenCenteredPosition(gAppUI.MeasureText(string2[2], drawDescriptor).getX() / SCREEN_WIDTH);
+
+		for ( int i = 0; i < numCodeLines; i++ )
+		{
+			sceneTexts.push_back({ string2[i], drawDescriptor, float2(centeredCodePosition, normalizedYPosition) });
+			normalizedYPosition += gAppUI.MeasureText(string2[i], drawDescriptor).getY() / SCREEN_HEIGHT;
+		}
+		// ROW 4 ===================================================================
+
+		// save the UI data to scene data
+		gSceneData.sceneTextArray.push_back(sceneTexts);
+		sceneTexts.clear();
+
+		// calculate the required scaling factor to fit the text to screen
+		if ( gSceneData.bFitToScreen )
+		{
+			FitToScreen((int)SCREEN_WIDTH, (int)SCREEN_HEIGHT);
+		}
 	}
 
-	bool addDepthBuffer()
+	void FitToScreen(int SCREEN_WIDTH, int SCREEN_HEIGHT)
 	{
-		// Add depth buffer
-		RenderTargetDesc depthRT = {};
-		depthRT.mArraySize = 1;
-		depthRT.mClearValue.depth = 0.0f;
-		depthRT.mClearValue.stencil = 0;
-		depthRT.mDepth = 1;
-		depthRT.mFormat = TinyImageFormat_D32_SFLOAT;
-		depthRT.mHeight = mSettings.mHeight;
-		depthRT.mSampleCount = SAMPLE_COUNT_1;
-		depthRT.mSampleQuality = 0;
-		depthRT.mWidth = mSettings.mWidth;
-		depthRT.mFlags = TEXTURE_CREATION_FLAG_ON_TILE;
-		addRenderTarget(pRenderer, &depthRT, &pDepthBuffer);
+		// detect if we need scaling, i.e., if there's offscreen text.
+		bool bOffScreenLeft = false;
+		bool bOffScreenRight = false;
+		bool bOffScreenTop = false;
+		bool bOffScreenBottom = false;
 
-		return pDepthBuffer != NULL;
+		// we currently have only one set of text, hence we'll not use the loop
+		// and directly work on the 1st element.
+		// this code section needs to be extended for fitting text to screen
+		// for different sets of text.
+		//
+		//for(int textSet = 0; textSet < gSceneData.sceneTextArray.size(); ++ textSet)
+		eastl::vector<ScreenText>& AllSceneText = gSceneData.sceneTextArray.back();
+
+		float offScreenExtentLeft = 0.0f;
+		float offScreenExtentRight = 0.0f;
+		float offScreenExtentTop = 0.0f;
+		float offScreenExtentBottom = 0.0f;
+		for ( const ScreenText& screenText : AllSceneText )
+		{
+			const float2 textMeasure =
+				gAppUI.MeasureText(screenText.mText.c_str(), screenText.mDrawDesc) / float2(SCREEN_WIDTH, SCREEN_HEIGHT);
+			const float  textExtentLeft = screenText.mScreenPosition.getX();
+			const float  textExtentRight = textExtentLeft + textMeasure.getX();
+			const float  textExtentTop = screenText.mScreenPosition.getY();
+			const float  textExtentBottom = textExtentTop + textMeasure.getY();
+
+			bOffScreenLeft |= textExtentLeft < 0.0f;
+			bOffScreenRight |= textExtentRight > 1.0f;
+			bOffScreenTop |= textExtentTop < 0.0f;
+			bOffScreenBottom |= textExtentBottom > 1.0f;
+
+			offScreenExtentLeft = min(offScreenExtentLeft, textExtentLeft);
+			offScreenExtentRight = max(offScreenExtentRight, textExtentRight - 1.0f);
+			offScreenExtentTop = min(offScreenExtentTop, textExtentTop);
+			offScreenExtentBottom = max(offScreenExtentBottom, textExtentBottom - 1.0f);
+		}
+
+		const bool bOffscreenText = bOffScreenLeft || bOffScreenRight || bOffScreenTop || bOffScreenBottom;
+		if ( bOffscreenText )
+		{
+			// calculate the scaling factor
+			//
+			// based on how much text goes offscreen (offScreenExtentRight/Left), calculate the
+			// new scale for width. Without the scaling, if we have offscreen text, we know how much.
+			// -> If the screen width is 1.0f, and we have offScreenExtentRight and offScreenExtentLeft,
+			//    it means we're currently covering a width of (1.0f + offScreenExtentRight + offScreenExtentLeft)
+			//    Let's call the length of the current content L0 := (1.0f + offScreenExtentRight + offScreenExtentLeft)
+			// -> We want the content to cover all of the screen, i.e. the new length of content should be L1 = L0 * scalingFactor
+			//    We know L1, its the length of the entire screen, hence L1 := 1.0f;
+			//
+			// We do the same calculation for Y offset, and pick the minimum of the two scaling factors.
+			//
+			const float contentMarginFromLeftAndRight = 0.02f;
+			const float scalingFactorX = bOffScreenLeft || bOffScreenRight
+				? 1.0f / (1.0f + offScreenExtentRight + (-offScreenExtentLeft) + contentMarginFromLeftAndRight)
+				: 1.0f;
+
+			const float contentMarginFromTopAndBottom = 0.02f;
+			const float scalingFactorY = bOffScreenTop || bOffScreenBottom
+				? 1.0f / (1.0f + offScreenExtentBottom + (-offScreenExtentTop) + contentMarginFromTopAndBottom)
+				: 1.0f;
+
+			float scalingFactor = min(scalingFactorX, scalingFactorY);
+
+			// only center the screen, do not offset from top after fitting
+			float2 bias = float2((1.0f - scalingFactor) * 0.5f, 0.0f);
+
+			// adjust screen text to fit to screen
+			for ( ScreenText& screenText : AllSceneText )
+			{
+				screenText.mScreenPosition = screenText.mScreenPosition * scalingFactor + bias;
+				screenText.mDrawDesc.mFontSize = screenText.mDrawDesc.mFontSize * scalingFactor;
+				screenText.mDrawDesc.mFontSpacing = screenText.mDrawDesc.mFontSpacing * scalingFactor;
+			}
+		}
 	}
 };
 
