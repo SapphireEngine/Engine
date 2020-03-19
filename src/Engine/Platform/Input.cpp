@@ -269,7 +269,7 @@ struct InputSystemImpl : public gainput::InputListener
 
 		// create input manager
 		pInputManager = conf_new(gainput::InputManager);
-		ASSERT(pInputManager);
+		SE_ASSERT(pInputManager);
 
 		// create all necessary devices
 		mMouseDeviceID = pInputManager->CreateDevice<gainput::InputDeviceMouse>();
@@ -326,7 +326,7 @@ struct InputSystemImpl : public gainput::InputListener
 
 	void Exit()
 	{
-		ASSERT(pInputManager);
+		SE_ASSERT(pInputManager);
 
 		for ( uint32_t i = 0; i < (uint32_t)mControlPool.size(); ++i )
 			conf_free(mControlPool[i]);
@@ -340,7 +340,7 @@ struct InputSystemImpl : public gainput::InputListener
 
 	void Update(uint32_t width, uint32_t height)
 	{
-		ASSERT(pInputManager);
+		SE_ASSERT(pInputManager);
 
 		for ( FloatControl* pControl : mFloatDeltaControlCancelQueue )
 		{
@@ -409,7 +409,7 @@ struct InputSystemImpl : public gainput::InputListener
 		//that way current frame data will be delta after resetting mouse position
 		if ( mInputCaptured )
 		{
-			ASSERT(pWindow);
+			SE_ASSERT(pWindow);
 
 			float x = 0;
 			float y = 0;
@@ -433,11 +433,11 @@ struct InputSystemImpl : public gainput::InputListener
 
 	InputAction* AddInputAction(const InputActionDesc* pDesc)
 	{
-		ASSERT(pDesc);
+		SE_ASSERT(pDesc);
 
 		mActions.emplace_back(InputAction{});
 		InputAction* pAction = &mActions.back();
-		ASSERT(pAction);
+		SE_ASSERT(pAction);
 
 		pAction->mDesc = *pDesc;
 
@@ -445,7 +445,7 @@ struct InputSystemImpl : public gainput::InputListener
 		if ( pGainputView && InputBindings::GESTURE_BINDINGS_BEGIN <= pDesc->mBinding && InputBindings::GESTURE_BINDINGS_END >= pDesc->mBinding )
 		{
 			const InputBindings::GestureDesc* pGesture = pDesc->pGesture;
-			ASSERT(pGesture);
+			SE_ASSERT(pGesture);
 
 			GainputView* view = (__bridge GainputView*)pGainputView;
 			uint32_t gestureId = (uint32_t)mGestureControls.size();
@@ -463,7 +463,7 @@ struct InputSystemImpl : public gainput::InputListener
 
 		if ( pDesc->mBinding == InputBindings::TEXT )
 		{
-			ASSERT(pDesc->pFunction);
+			SE_ASSERT(pDesc->pFunction);
 			mTextInputControls.emplace_back(pAction);
 			return pAction;
 		}
@@ -474,7 +474,7 @@ struct InputSystemImpl : public gainput::InputListener
 		if ( InputBindings::BUTTON_ANY == control )
 		{
 			IControl* pControl = AllocateControl<IControl>();
-			ASSERT(pControl);
+			SE_ASSERT(pControl);
 
 			pControl->mType = CONTROL_BUTTON;
 			pControl->pAction = pAction;
@@ -494,7 +494,7 @@ struct InputSystemImpl : public gainput::InputListener
 		else if ( InputBindings::BUTTON_FULLSCREEN == control )
 		{
 			ComboControl* pControl = AllocateControl<ComboControl>();
-			ASSERT(pControl);
+			SE_ASSERT(pControl);
 
 			pControl->mType = CONTROL_COMBO;
 			pControl->pAction = pAction;
@@ -506,7 +506,7 @@ struct InputSystemImpl : public gainput::InputListener
 		else if ( InputBindings::BUTTON_DUMP == control )
 		{
 			ComboControl* pGamePadControl = AllocateControl<ComboControl>();
-			ASSERT(pGamePadControl);
+			SE_ASSERT(pGamePadControl);
 
 			pGamePadControl->mType = CONTROL_COMBO;
 			pGamePadControl->pAction = pAction;
@@ -516,7 +516,7 @@ struct InputSystemImpl : public gainput::InputListener
 			mControls[gamepadDeviceId][pGamePadControl->mPressButton].emplace_back(pGamePadControl);
 
 			ComboControl* pControl = AllocateControl<ComboControl>();
-			ASSERT(pControl);
+			SE_ASSERT(pControl);
 			pControl->mType = CONTROL_BUTTON;
 			pControl->pAction = pAction;
 			decltype(mKeyMap)::const_iterator keyIt = mKeyMap.find(control);
@@ -526,7 +526,7 @@ struct InputSystemImpl : public gainput::InputListener
 		else if ( InputBindings::BUTTON_BINDINGS_BEGIN <= control && InputBindings::BUTTON_BINDINGS_END >= control )
 		{
 			IControl* pControl = AllocateControl<IControl>();
-			ASSERT(pControl);
+			SE_ASSERT(pControl);
 
 			pControl->mType = CONTROL_BUTTON;
 			pControl->pAction = pAction;
@@ -552,7 +552,7 @@ struct InputSystemImpl : public gainput::InputListener
 			if ( InputBindings::FLOAT_DPAD == control )
 			{
 				CompositeControl* pControl = AllocateControl<CompositeControl>();
-				ASSERT(pControl);
+				SE_ASSERT(pControl);
 
 				pControl->mType = CONTROL_COMPOSITE;
 				pControl->pAction = pAction;
@@ -568,11 +568,11 @@ struct InputSystemImpl : public gainput::InputListener
 			{
 				uint32_t axisCount = 0;
 				decltype(mGamepadAxisMap)::const_iterator gamepadIt = mGamepadAxisMap.find(control);
-				ASSERT(gamepadIt != mGamepadAxisMap.end());
+				SE_ASSERT(gamepadIt != mGamepadAxisMap.end());
 				if ( gamepadIt != mGamepadAxisMap.end() )
 				{
 					AxisControl* pControl = AllocateControl<AxisControl>();
-					ASSERT(pControl);
+					SE_ASSERT(pControl);
 
 					*pControl = gamepadIt->second;
 					pControl->pAction = pAction;
@@ -585,7 +585,7 @@ struct InputSystemImpl : public gainput::InputListener
 				if ( (InputBindings::FLOAT_LEFTSTICK == control || InputBindings::FLOAT_RIGHTSTICK == control) && (pDesc->mOutsideRadius && pDesc->mScale) )
 				{
 					VirtualJoystickControl* pControl = AllocateControl<VirtualJoystickControl>();
-					ASSERT(pControl);
+					SE_ASSERT(pControl);
 
 					pControl->mType = CONTROL_VIRTUAL_JOYSTICK;
 					pControl->pAction = pAction;
@@ -606,7 +606,7 @@ struct InputSystemImpl : public gainput::InputListener
 				if ( keyIt != mGamepadCompositeMap.end() )
 				{
 					CompositeControl* pControl = AllocateControl<CompositeControl>();
-					ASSERT(pControl);
+					SE_ASSERT(pControl);
 
 					*pControl = keyIt->second;
 					pControl->pAction = pAction;
@@ -618,7 +618,7 @@ struct InputSystemImpl : public gainput::InputListener
 				if ( floatIt != mGamepadFloatMap.end() )
 				{
 					FloatControl* pControl = AllocateControl<FloatControl>();
-					ASSERT(pControl);
+					SE_ASSERT(pControl);
 
 					*pControl = floatIt->second;
 					pControl->pAction = pAction;
@@ -637,7 +637,7 @@ struct InputSystemImpl : public gainput::InputListener
 
 	void RemoveInputAction(InputAction* pAction)
 	{
-		ASSERT(pAction);
+		SE_ASSERT(pAction);
 
 		decltype(mGestureControls)::const_iterator it = eastl::find(mGestureControls.begin(), mGestureControls.end(), pAction);
 		if ( it != mGestureControls.end() )
@@ -705,7 +705,7 @@ struct InputSystemImpl : public gainput::InputListener
 
 	bool SetEnableCaptureInput(bool enable)
 	{
-		ASSERT(pWindow);
+		SE_ASSERT(pWindow);
 
 #if defined(_WIN32)
 		static int32_t lastCursorPosX = 0;
@@ -988,7 +988,7 @@ struct InputSystemImpl : public gainput::InputListener
 					{
 						if ( !oldValue && newValue )
 						{
-							ASSERT(deviceButton == gainput::MouseButtonWheelUp || deviceButton == gainput::MouseButtonWheelDown);
+							SE_ASSERT(deviceButton == gainput::MouseButtonWheelUp || deviceButton == gainput::MouseButtonWheelDown);
 
 							FloatControl* pControl = (FloatControl*)control;
 							ctx.mFloat2[1] = deviceButton == gainput::MouseButtonWheelUp ? 1.0f : -1.0f;
@@ -1316,42 +1316,42 @@ bool initInputSystem(WindowsDesc* window)
 
 void exitInputSystem()
 {
-	ASSERT(pInputSystem);
+	SE_ASSERT(pInputSystem);
 	pInputSystem->Exit();
 	conf_delete(pInputSystem);
 }
 
 void updateInputSystem(uint32_t width, uint32_t height)
 {
-	ASSERT(pInputSystem);
+	SE_ASSERT(pInputSystem);
 
 	pInputSystem->Update(width, height);
 }
 
 InputAction* addInputAction(const InputActionDesc* pDesc)
 {
-	ASSERT(pInputSystem);
+	SE_ASSERT(pInputSystem);
 
 	return pInputSystem->AddInputAction(pDesc);
 }
 
 void removeInputAction(InputAction* pAction)
 {
-	ASSERT(pInputSystem);
+	SE_ASSERT(pInputSystem);
 
 	pInputSystem->RemoveInputAction(pAction);
 }
 
 bool setEnableCaptureInput(bool enable)
 {
-	ASSERT(pInputSystem);
+	SE_ASSERT(pInputSystem);
 
 	return pInputSystem->SetEnableCaptureInput(enable);
 }
 
 void setVirtualKeyboard(uint32_t type)
 {
-	ASSERT(pInputSystem);
+	SE_ASSERT(pInputSystem);
 
 	pInputSystem->SetVirtualKeyboard(type);
 }

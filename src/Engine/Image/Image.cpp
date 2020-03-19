@@ -11,7 +11,7 @@
 #define STBI_MALLOC conf_malloc
 #define STBI_REALLOC conf_realloc
 #define STBI_FREE conf_free
-#define STBI_ASSERT ASSERT
+#define STBI_ASSERT SE_ASSERT
 #if defined(__ANDROID__)
 #define STBI_NO_SIMD
 #endif
@@ -21,7 +21,7 @@
 #define STBIW_MALLOC conf_malloc
 #define STBIW_REALLOC conf_realloc
 #define STBIW_FREE conf_free
-#define STBIW_ASSERT ASSERT
+#define STBIW_ASSERT SE_ASSERT
 #include <Nothings/stb_image_write.h>
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include <Nothings/stb_image_resize.h>
@@ -185,7 +185,7 @@ void iDecodeDXT5Block(unsigned char* dest, int w, int h, int xOff, int yOff, uns
 	}
 }
 
-void iDecodeCompressedImage(unsigned char* dest, unsigned char* src, const int width, const int height, const TinyImageFormat format, uint srcRowPadding, uint dstRowStride)
+void iDecodeCompressedImage(unsigned char* dest, unsigned char* src, const int width, const int height, const TinyImageFormat format, uint32_t srcRowPadding, uint32_t dstRowStride)
 {
 	int sx = (width < 4) ? width : 4;
 	int sy = (height < 4) ? height : 4;
@@ -341,18 +341,18 @@ void Image::Clear()
 	mRowAlignment = 1;
 }
 
-unsigned char* Image::GetPixels(unsigned char* pDstData, const uint mipMapLevel, const uint dummy)
+unsigned char* Image::GetPixels(unsigned char* pDstData, const uint32_t mipMapLevel, const uint32_t dummy)
 {
 	UNREF_PARAM(dummy);
 	return (mipMapLevel < mMipMapCount) ? pDstData + GetMipMappedSize(0, mipMapLevel) : NULL;
 }
 
-unsigned char* Image::GetPixels(const uint mipMapLevel) const
+unsigned char* Image::GetPixels(const uint32_t mipMapLevel) const
 {
 	return (mipMapLevel < mMipMapCount) ? pData + GetMipMappedSize(0, mipMapLevel) : NULL;
 }
 
-unsigned char* Image::GetPixels(const uint mipMapLevel, const uint arraySlice) const
+unsigned char* Image::GetPixels(const uint32_t mipMapLevel, const uint32_t arraySlice) const
 {
 	if ( mipMapLevel >= mMipMapCount || arraySlice >= mArrayCount * (IsCube() ? 6 : 1) )
 		return NULL;
@@ -398,7 +398,7 @@ uint32_t Image::GetHeight(const int mipMapLevel) const
 	return (a == 0) ? 1 : a;
 }
 
-uint Image::GetDepth(const int mipMapLevel) const
+uint32_t Image::GetDepth(const int mipMapLevel) const
 {
 	uint32_t a = mDepth >> mipMapLevel;
 	return (a == 0) ? 1 : a;
@@ -419,7 +419,7 @@ uint32_t Image::GetMipMapCountFromDimensions() const
 	return i;
 }
 
-uint Image::GetArraySliceSize(const uint mipMapLevel, TinyImageFormat srcFormat) const
+uint32_t Image::GetArraySliceSize(const uint32_t mipMapLevel, TinyImageFormat srcFormat) const
 {
 	uint32_t w = GetWidth(mipMapLevel);
 	uint32_t d = GetDepth(mipMapLevel);
@@ -436,7 +436,7 @@ uint Image::GetArraySliceSize(const uint mipMapLevel, TinyImageFormat srcFormat)
 	return bytesPerRow * rowCount * ((d + bz - 1) / bz);
 }
 
-uint Image::GetNumberOfPixels(const uint firstMipMapLevel, uint nMipMapLevels) const
+uint32_t Image::GetNumberOfPixels(const uint32_t firstMipMapLevel, uint32_t nMipMapLevels) const
 {
 	int w = GetWidth(firstMipMapLevel);
 	int h = GetHeight(firstMipMapLevel);
@@ -513,7 +513,7 @@ bool Image::Normalize()
 	return true;
 }
 
-bool Image::Uncompress(uint newRowAlignment, uint newSubtextureAlignment)
+bool Image::Uncompress(uint32_t newRowAlignment, uint32_t newSubtextureAlignment)
 {
 	// only dxtc at the moment
 	uint64_t const tifname = (TinyImageFormat_Code(mFormat) & TinyImageFormat_NAMESPACE_REQUIRED_BITS);
@@ -533,13 +533,13 @@ bool Image::Uncompress(uint newRowAlignment, uint newSubtextureAlignment)
 	case 3: destFormat = TinyImageFormat_R8G8B8_UNORM; break;
 	case 4: destFormat = TinyImageFormat_R8G8B8A8_UNORM; break;
 	default:
-		ASSERT(false);
+		SE_ASSERT(false);
 		destFormat = TinyImageFormat_R8_UNORM;
 		break;
 	}
 
-	uint srcRowAlignment = GetRowAlignment();
-	uint srcSubtextureAlignment = GetSubtextureAlignment();
+	uint32_t srcRowAlignment = GetRowAlignment();
+	uint32_t srcSubtextureAlignment = GetSubtextureAlignment();
 	mRowAlignment = newRowAlignment;
 	mSubtextureAlignment = max(newSubtextureAlignment, newRowAlignment);
 
@@ -556,8 +556,8 @@ bool Image::Uncompress(uint newRowAlignment, uint newSubtextureAlignment)
 		int dstSliceSize = GetArraySliceSize(level, destFormat);
 		int srcSliceSize = GetArraySliceSize(level, mFormat);
 
-		uint srcRowPadding = getBytesPerRow(w, mFormat, srcRowAlignment) - getBytesPerRow(w, mFormat, 1);
-		uint dstRowStride = GetBytesPerRow(level);
+		uint32_t srcRowPadding = getBytesPerRow(w, mFormat, srcRowAlignment) - getBytesPerRow(w, mFormat, 1);
+		uint32_t dstRowStride = GetBytesPerRow(level);
 
 		for ( int slice = 0; slice < d; slice++ )
 		{
@@ -592,7 +592,7 @@ bool Image::Unpack()
 			break;
 		case 4: destFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
 			break;
-		default: ASSERT(false);
+		default: SE_ASSERT(false);
 			destFormat = TinyImageFormat_R32_SFLOAT;
 			break;
 		}
@@ -610,7 +610,7 @@ bool Image::Unpack()
 			break;
 		case 4: destFormat = TinyImageFormat_R8G8B8A8_SNORM;
 			break;
-		default: ASSERT(false);
+		default: SE_ASSERT(false);
 			destFormat = TinyImageFormat_R8_SNORM;
 			break;
 		}
@@ -628,7 +628,7 @@ bool Image::Unpack()
 			break;
 		case 4: destFormat = TinyImageFormat_R8G8B8A8_SRGB;
 			break;
-		default: ASSERT(false);
+		default: SE_ASSERT(false);
 			destFormat = TinyImageFormat_R8_SRGB;
 			break;
 		}
@@ -645,7 +645,7 @@ bool Image::Unpack()
 			break;
 		case 4: destFormat = TinyImageFormat_R8G8B8A8_UNORM;
 			break;
-		default: ASSERT(false);
+		default: SE_ASSERT(false);
 			destFormat = TinyImageFormat_R8_UNORM;
 			break;
 		}
@@ -654,7 +654,7 @@ bool Image::Unpack()
 	return Convert(destFormat);
 }
 
-uint32_t Image::GetMipMappedSize(const uint firstMipMapLevel, uint32_t nMipMapLevels, TinyImageFormat srcFormat) const
+uint32_t Image::GetMipMappedSize(const uint32_t firstMipMapLevel, uint32_t nMipMapLevels, TinyImageFormat srcFormat) const
 {
 	uint32_t w = GetWidth(firstMipMapLevel);
 	uint32_t h = GetHeight(firstMipMapLevel);
@@ -674,16 +674,16 @@ uint32_t Image::GetMipMappedSize(const uint firstMipMapLevel, uint32_t nMipMapLe
 	if ( tifname == TinyImageFormat_NAMESPACE_PVRTC )
 	{
 		// AFAIK pvr isn't supported for arrays
-		ASSERT(s == 1);
+		SE_ASSERT(s == 1);
 		uint32_t totalSize = 0;
 		uint32_t sizeX = w;
 		uint32_t sizeY = h;
 		uint32_t sizeD = d;
 		int level = nMipMapLevels;
 
-		uint minWidth = 8;
-		uint minHeight = 8;
-		uint minDepth = 1;
+		uint32_t minWidth = 8;
+		uint32_t minHeight = 8;
+		uint32_t minDepth = 1;
 		int bpp = 4;
 
 		if ( srcFormat == TinyImageFormat_PVRTC1_2BPP_UNORM || srcFormat == TinyImageFormat_PVRTC1_2BPP_SRGB )
@@ -696,9 +696,9 @@ uint32_t Image::GetMipMappedSize(const uint firstMipMapLevel, uint32_t nMipMapLe
 		while ( level > 0 )
 		{
 			// If pixel format is compressed, the dimensions need to be padded.
-			uint paddedWidth = sizeX + ((-1 * sizeX) % minWidth);
-			uint paddedHeight = sizeY + ((-1 * sizeY) % minHeight);
-			uint paddedDepth = sizeD + ((-1 * sizeD) % minDepth);
+			uint32_t paddedWidth = sizeX + ((-1 * sizeX) % minWidth);
+			uint32_t paddedHeight = sizeY + ((-1 * sizeY) % minHeight);
+			uint32_t paddedDepth = sizeD + ((-1 * sizeD) % minDepth);
 
 			int mipSize = paddedWidth * paddedHeight * paddedDepth * bpp / 8;
 
@@ -935,7 +935,7 @@ ImageLoadingResult iLoadDDSFromStream(Image* pImage,
 		return IMAGE_LOADING_RESULT_ALLOCATION_FAILED;
 	}
 
-	for ( uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++ )
+	for ( uint32_t mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++ )
 	{
 		size_t blocksPerRow = (w + TinyImageFormat_WidthOfBlock(fmt) - 1) / TinyImageFormat_WidthOfBlock(fmt);
 		size_t sourceBytesPerRow = TinyImageFormat_BitSizeOfBlock(fmt) / 8 * blocksPerRow;
@@ -953,10 +953,10 @@ ImageLoadingResult iLoadDDSFromStream(Image* pImage,
 
 		const unsigned char* src = (const unsigned char*)TinyDDS_ImageRawData(ctx, mipMapLevel);
 
-		for ( uint slice = 0; slice < s; slice += 1 )
+		for ( uint32_t slice = 0; slice < s; slice += 1 )
 		{
 			unsigned char* dst = pImage->GetPixels(mipMapLevel, slice);
-			for ( uint row = 0; row < rowCount * depthCount; row += 1 )
+			for ( uint32_t row = 0; row < rowCount * depthCount; row += 1 )
 			{
 				const unsigned char* srcRow = src + (slice * rowCount + row) * sourceBytesPerRow;
 				unsigned char* dstRow = dst + row * destinationBytesPerRow;
@@ -1031,7 +1031,7 @@ ImageLoadingResult iLoadPVRFromStream(Image* pImage, FileStream* pStream, memory
 		break;
 	default:    // NOT SUPPORTED
 		LOGF(LogLevel::eERROR, "Load PVR failed: pixel type not supported. ");
-		ASSERT(0);
+		SE_ASSERT(0);
 		return IMAGE_LOADING_RESULT_DECODING_FAILED;
 	}
 
@@ -1116,10 +1116,10 @@ ImageLoadingResult iLoadKTXFromStream(Image* pImage, FileStream* pStream, memory
 		return IMAGE_LOADING_RESULT_ALLOCATION_FAILED;
 	}
 
-	for ( uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++ )
+	for ( uint32_t mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++ )
 	{
-		uint blocksPerRow = (w + TinyImageFormat_WidthOfBlock(fmt) - 1) / TinyImageFormat_WidthOfBlock(fmt);
-		uint rowCount = pImage->GetRowCount(mipMapLevel);
+		uint32_t blocksPerRow = (w + TinyImageFormat_WidthOfBlock(fmt) - 1) / TinyImageFormat_WidthOfBlock(fmt);
+		uint32_t rowCount = pImage->GetRowCount(mipMapLevel);
 		uint8_t const* src = (uint8_t const*)TinyKtx_ImageRawData(ctx, mipMapLevel);
 
 		uint32_t srcStride = TinyKtx_UnpackedRowStride(ctx, mipMapLevel);
@@ -1127,7 +1127,7 @@ ImageLoadingResult iLoadKTXFromStream(Image* pImage, FileStream* pStream, memory
 			srcStride = (TinyImageFormat_BitSizeOfBlock(fmt) / 8) * blocksPerRow;
 
 		uint32_t const dstStride = pImage->GetBytesPerRow(mipMapLevel);
-		ASSERT(srcStride <= dstStride);
+		SE_ASSERT(srcStride <= dstStride);
 
 		for ( uint32_t ww = 0u; ww < s; ++ww )
 		{
@@ -1185,8 +1185,8 @@ ImageLoadingResult iLoadBASISFromStream(Image* pImage, FileStream* pStream, memo
 		return IMAGE_LOADING_RESULT_DECODING_FAILED;
 	}
 
-	ASSERT(fileinfo.m_total_images == fileinfo.m_image_mipmap_levels.size());
-	ASSERT(fileinfo.m_total_images == decoder.get_total_images(basisData, (uint32_t)memSize));
+	SE_ASSERT(fileinfo.m_total_images == fileinfo.m_image_mipmap_levels.size());
+	SE_ASSERT(fileinfo.m_total_images == decoder.get_total_images(basisData, (uint32_t)memSize));
 
 	basist::basisu_image_info imageinfo;
 	decoder.get_image_info(basisData, (uint32_t)memSize, imageinfo, 0);
@@ -1266,8 +1266,8 @@ ImageLoadingResult iLoadBASISFromStream(Image* pImage, FileStream* pStream, memo
 	{
 		for ( uint32_t level_index = 0; level_index < fileinfo.m_image_mipmap_levels[image_index]; level_index++ )
 		{
-			uint rowPitchInBlocks = pImage->GetBytesPerRow(level_index) / (TinyImageFormat_BitSizeOfBlock(pImage->GetFormat()) / 8);
-			ASSERT(pImage->GetBytesPerRow(level_index) % (TinyImageFormat_BitSizeOfBlock(pImage->GetFormat()) / 8) == 0);
+			uint32_t rowPitchInBlocks = pImage->GetBytesPerRow(level_index) / (TinyImageFormat_BitSizeOfBlock(pImage->GetFormat()) / 8);
+			SE_ASSERT(pImage->GetBytesPerRow(level_index) % (TinyImageFormat_BitSizeOfBlock(pImage->GetFormat()) / 8) == 0);
 
 			basist::basisu_image_level_info level_info;
 
@@ -1320,11 +1320,11 @@ ImageLoadingResult iLoadSVTFromStream(Image* pImage, FileStream* pStream, memory
 	if ( pStream == NULL || fsGetStreamFileSize(pStream) == 0 )
 		return IMAGE_LOADING_RESULT_DECODING_FAILED;
 
-	uint width = fsReadFromStreamUInt32(pStream);
-	uint height = fsReadFromStreamUInt32(pStream);
-	uint mipMapCount = fsReadFromStreamUInt32(pStream);
-	/* uint pageSize = */ fsReadFromStreamUInt32(pStream);
-	uint numberOfComponents = fsReadFromStreamUInt32(pStream);
+	uint32_t width = fsReadFromStreamUInt32(pStream);
+	uint32_t height = fsReadFromStreamUInt32(pStream);
+	uint32_t mipMapCount = fsReadFromStreamUInt32(pStream);
+	/* uint32_t pageSize = */ fsReadFromStreamUInt32(pStream);
+	uint32_t numberOfComponents = fsReadFromStreamUInt32(pStream);
 
 	if ( numberOfComponents == 4 )
 		pImage->RedefineDimensions(TinyImageFormat_R8G8B8A8_UNORM, width, height, 1, mipMapCount, 1);
@@ -1389,7 +1389,7 @@ void Image::AddImageLoader(const char* pExtension, ImageLoaderFunction pFunc)
 }
 
 ImageLoadingResult Image::LoadFromStream(
-	FileStream* pStream, char const* extension, memoryAllocationFunc pAllocator, void* pUserData, uint rowAlignment, uint subtextureAlignment)
+	FileStream* pStream, char const* extension, memoryAllocationFunc pAllocator, void* pUserData, uint32_t rowAlignment, uint32_t subtextureAlignment)
 {
 	mRowAlignment = rowAlignment;
 	mSubtextureAlignment = subtextureAlignment;
@@ -1412,7 +1412,7 @@ ImageLoadingResult Image::LoadFromStream(
 	return result;
 }
 
-ImageLoadingResult Image::LoadFromFile(const Path* filePath, memoryAllocationFunc pAllocator, void* pUserData, uint rowAlignment, uint subtextureAlignment)
+ImageLoadingResult Image::LoadFromFile(const Path* filePath, memoryAllocationFunc pAllocator, void* pUserData, uint32_t rowAlignment, uint32_t subtextureAlignment)
 {
 	// clear current image
 	Clear();
@@ -1571,11 +1571,11 @@ bool Image::GenerateMipMaps(const uint32_t mipMaps)
 	if ( !mOwnsMemory )
 		return false;
 
-	uint actualMipMaps = min(mipMaps, GetMipMapCountFromDimensions());
+	uint32_t actualMipMaps = min(mipMaps, GetMipMapCountFromDimensions());
 
 	if ( mMipMapCount != actualMipMaps )
 	{
-		uint size = GetMipMappedSize(0, actualMipMaps);
+		uint32_t size = GetMipMappedSize(0, actualMipMaps);
 		if ( mArrayCount > 1 )
 		{
 			ubyte* newPixels = (ubyte*)conf_malloc(sizeof(ubyte) * size * mArrayCount);
@@ -1584,7 +1584,7 @@ bool Image::GenerateMipMaps(const uint32_t mipMaps)
 			int firstMipSize = GetMipMappedSize(0, 1);
 			int oldSize = GetMipMappedSize(0, mMipMapCount);
 
-			for ( uint i = 0; i < mArrayCount; i++ )
+			for ( uint32_t i = 0; i < mArrayCount; i++ )
 			{
 				memcpy(newPixels + i * size, pData + i * oldSize, firstMipSize);
 			}
@@ -1603,22 +1603,22 @@ bool Image::GenerateMipMaps(const uint32_t mipMaps)
 
 	int n = IsCube() ? 6 : 1;
 
-	for ( uint arraySlice = 0; arraySlice < mArrayCount; arraySlice++ )
+	for ( uint32_t arraySlice = 0; arraySlice < mArrayCount; arraySlice++ )
 	{
-		for ( uint level = 1; level < mMipMapCount; level++ )
+		for ( uint32_t level = 1; level < mMipMapCount; level++ )
 		{
 			// TODO: downscale 3D textures using an appropriate filter.
 
-			uint srcWidth = GetWidth(level - 1);
-			uint srcHeight = GetHeight(level - 1);
-			uint dstWidth = GetWidth(level - 1);
-			uint dstHeight = GetHeight(level - 1);
+			uint32_t srcWidth = GetWidth(level - 1);
+			uint32_t srcHeight = GetHeight(level - 1);
+			uint32_t dstWidth = GetWidth(level - 1);
+			uint32_t dstHeight = GetHeight(level - 1);
 
-			uint srcSize = GetMipMappedSize(level - 1, 1) / n;
-			uint dstSize = GetMipMappedSize(level, 1) / n;
+			uint32_t srcSize = GetMipMappedSize(level - 1, 1) / n;
+			uint32_t dstSize = GetMipMappedSize(level, 1) / n;
 
-			uint srcStride = GetBytesPerRow(level - 1);
-			uint dstStride = GetBytesPerRow(level);
+			uint32_t srcStride = GetBytesPerRow(level - 1);
+			uint32_t dstStride = GetBytesPerRow(level);
 
 			for ( int i = 0; i < n; i++ )
 			{
@@ -1673,7 +1673,7 @@ bool Image::GenerateMipMaps(const uint32_t mipMaps)
 
 // -- IMAGE SAVING --
 
-bool Image::iSaveDDS(const Path* filePath)
+bool Image::ISaveDDS(const Path* filePath)
 {
 	TinyDDS_WriteCallbacks callback{
 			&tinyktxddsCallbackError,
@@ -1685,7 +1685,7 @@ bool Image::iSaveDDS(const Path* filePath)
 	TinyDDS_Format fmt = TinyImageFormat_ToTinyDDSFormat(mFormat);
 #ifndef IMAGE_DISABLE_KTX
 	if ( fmt == TDDS_UNDEFINED )
-		return convertAndSaveImage(*this, &Image::iSaveKTX, filePath);
+		return convertAndSaveImage(*this, &Image::ISaveKTX, filePath);
 #endif
 
 	FileStream* fh = fsOpenFile(filePath, FM_WRITE_BINARY);
@@ -1700,7 +1700,7 @@ bool Image::iSaveDDS(const Path* filePath)
 
 	for ( unsigned int i = 0; i < mMipMapCount; ++i )
 	{
-		mipmapsizes[i] = (uint32_t)Image_GetMipMappedSize(mWidth, mHeight, mDepth, mMipMapCount, mFormat);
+		mipmapsizes[i] = (uint32_t)ImageGetMipMappedSize(mWidth, mHeight, mDepth, mMipMapCount, mFormat);
 		mipmaps[i] = GetPixels(i);
 	}
 
@@ -1722,7 +1722,7 @@ bool Image::iSaveDDS(const Path* filePath)
 }
 
 #ifndef IMAGE_DISABLE_KTX
-bool Image::iSaveKTX(const Path* filePath)
+bool Image::ISaveKTX(const Path* filePath)
 {
 	TinyKtx_WriteCallbacks callback{
 			&tinyktxddsCallbackError,
@@ -1739,7 +1739,7 @@ bool Image::iSaveKTX(const Path* filePath)
 
 	TinyKtx_Format fmt = TinyImageFormat_ToTinyKtxFormat(mFormat);
 	if ( fmt == TKTX_UNDEFINED )
-		return convertAndSaveImage(*this, &Image::iSaveKTX, filePath);
+		return convertAndSaveImage(*this, &Image::ISaveKTX, filePath);
 
 	FileStream* fh = fsOpenFile(filePath, FM_WRITE_BINARY);
 
@@ -1753,7 +1753,7 @@ bool Image::iSaveKTX(const Path* filePath)
 
 	for ( unsigned int i = 0; i < mMipMapCount; ++i )
 	{
-		mipmapsizes[i] = (uint32_t)Image_GetMipMappedSize(mWidth, mHeight, mDepth, mMipMapCount, mFormat);
+		mipmapsizes[i] = (uint32_t)ImageGetMipMappedSize(mWidth, mHeight, mDepth, mMipMapCount, mFormat);
 		mipmaps[i] = GetPixels(i);
 	}
 
@@ -1789,7 +1789,7 @@ bool convertAndSaveImage(const Image& image, bool (Image::*saverFunction)(const 
 }
 
 #ifndef IMAGE_DISABLE_STB
-bool Image::iSaveTGA(const Path* filePath)
+bool Image::ISaveTGA(const Path* filePath)
 {
 	// TODO: should use stbi_write_x_to_func methods rather than relying on the path being a disk path.
 	if ( getBytesPerRow(mWidth, mFormat, mRowAlignment) != getBytesPerRow(mWidth, mFormat, 1) )
@@ -1808,14 +1808,14 @@ bool Image::iSaveTGA(const Path* filePath)
 	default:
 		{
 			// uncompress/convert and try again
-			return convertAndSaveImage(*this, &Image::iSaveTGA, filePath);
+			return convertAndSaveImage(*this, &Image::ISaveTGA, filePath);
 		}
 	}
 
 	//return false; //Unreachable
 }
 
-bool Image::iSaveBMP(const Path* filePath)
+bool Image::ISaveBMP(const Path* filePath)
 {
 	// TODO: should use stbi_write_x_to_func methods rather than relying on the path being a disk path.
 
@@ -1835,13 +1835,13 @@ bool Image::iSaveBMP(const Path* filePath)
 	default:
 		{
 			// uncompress/convert and try again
-			return convertAndSaveImage(*this, &Image::iSaveBMP, filePath);
+			return convertAndSaveImage(*this, &Image::ISaveBMP, filePath);
 		}
 	}
 	return true;
 }
 
-bool Image::iSavePNG(const Path* filePath)
+bool Image::ISavePNG(const Path* filePath)
 {
 	// TODO: should use stbi_write_x_to_func methods rather than relying on the path being a disk path.
 	const char *fileName = fsGetPathAsNativeString(filePath);
@@ -1854,14 +1854,14 @@ bool Image::iSavePNG(const Path* filePath)
 	default:
 		{
 			// uncompress/convert and try again
-			return convertAndSaveImage(*this, &Image::iSavePNG, filePath);
+			return convertAndSaveImage(*this, &Image::ISavePNG, filePath);
 		}
 	}
 
 	return true;
 }
 
-bool Image::iSaveHDR(const Path* filePath)
+bool Image::ISaveHDR(const Path* filePath)
 {
 	// TODO: should use stbi_write_x_to_func methods rather than relying on the path being a disk path.
 
@@ -1881,14 +1881,14 @@ bool Image::iSaveHDR(const Path* filePath)
 	default:
 		{
 			// uncompress/convert and try again
-			return convertAndSaveImage(*this, &Image::iSaveHDR, filePath);
+			return convertAndSaveImage(*this, &Image::ISaveHDR, filePath);
 		}
 	}
 
 	return true;
 }
 
-bool Image::iSaveJPG(const Path* filePath)
+bool Image::ISaveJPG(const Path* filePath)
 {
 	// TODO: should use stbi_write_x_to_func methods rather than relying on the path being a disk path.
 
@@ -1908,7 +1908,7 @@ bool Image::iSaveJPG(const Path* filePath)
 	default:
 		{
 			// uncompress/convert and try again
-			return convertAndSaveImage(*this, &Image::iSaveJPG, filePath);
+			return convertAndSaveImage(*this, &Image::ISaveJPG, filePath);
 		}
 	}
 
@@ -1916,7 +1916,7 @@ bool Image::iSaveJPG(const Path* filePath)
 }
 #endif
 
-bool Image::iSaveSVT(const Path* filePath, uint pageSize)
+bool Image::ISaveSVT(const Path* filePath, uint32_t pageSize)
 {
 	if ( mFormat != TinyImageFormat::TinyImageFormat_R8G8B8A8_UNORM )
 	{
@@ -1927,7 +1927,7 @@ bool Image::iSaveSVT(const Path* filePath, uint pageSize)
 
 	if ( mMipMapCount == 1 )
 	{
-		if ( !GenerateMipMaps((uint)log2f((float)min(mWidth, mHeight))) )
+		if ( !GenerateMipMaps((uint32_t)log2f((float)min(mWidth, mHeight))) )
 			return false;
 	}
 
@@ -1937,68 +1937,68 @@ bool Image::iSaveSVT(const Path* filePath, uint pageSize)
 		return false;
 
 	//TODO: SVT should support any components somepoint
-	const uint numberOfComponents = 4;
+	const uint32_t numberOfComponents = 4;
 
 	//Header
 
-	fsWriteToStream(fh, &mWidth, sizeof(uint));
-	fsWriteToStream(fh, &mHeight, sizeof(uint));
+	fsWriteToStream(fh, &mWidth, sizeof(uint32_t));
+	fsWriteToStream(fh, &mHeight, sizeof(uint32_t));
 
 	//mip count
-	fsWriteToStream(fh, &mMipMapCount, sizeof(uint));
+	fsWriteToStream(fh, &mMipMapCount, sizeof(uint32_t));
 
 	//Page size
-	fsWriteToStream(fh, &pageSize, sizeof(uint));
+	fsWriteToStream(fh, &pageSize, sizeof(uint32_t));
 
 	//number of components
-	fsWriteToStream(fh, &numberOfComponents, sizeof(uint));
+	fsWriteToStream(fh, &numberOfComponents, sizeof(uint32_t));
 
-	uint mipPageCount = mMipMapCount - (uint)log2f((float)pageSize);
+	uint32_t mipPageCount = mMipMapCount - (uint32_t)log2f((float)pageSize);
 
 	// Allocate Pages
 	unsigned char** mipLevelPixels = (unsigned char**)conf_calloc(mMipMapCount, sizeof(unsigned char*));
 	unsigned char*** pagePixels = (unsigned char***)conf_calloc(mipPageCount + 1, sizeof(unsigned char**));
 
-	uint* mipSizes = (uint*)conf_calloc(mMipMapCount, sizeof(uint));
+	uint32_t* mipSizes = (uint32_t*)conf_calloc(mMipMapCount, sizeof(uint32_t));
 
-	for ( uint i = 0; i < mMipMapCount; ++i )
+	for ( uint32_t i = 0; i < mMipMapCount; ++i )
 	{
-		uint mipSize = (mWidth >> i) * (mHeight >> i) * numberOfComponents;
+		uint32_t mipSize = (mWidth >> i) * (mHeight >> i) * numberOfComponents;
 		mipSizes[i] = mipSize;
 		mipLevelPixels[i] = (unsigned char*)conf_calloc(mipSize, sizeof(unsigned char));
 		memcpy(mipLevelPixels[i], GetPixels(i), mipSize * sizeof(unsigned char));
 	}
 
 	// Store Mip data
-	for ( uint i = 0; i < mipPageCount; ++i )
+	for ( uint32_t i = 0; i < mipPageCount; ++i )
 	{
-		uint xOffset = mWidth >> i;
-		uint yOffset = mHeight >> i;
+		uint32_t xOffset = mWidth >> i;
+		uint32_t yOffset = mHeight >> i;
 
 		// width and height in tiles
-		uint tileWidth = xOffset / pageSize;
-		uint tileHeight = yOffset / pageSize;
+		uint32_t tileWidth = xOffset / pageSize;
+		uint32_t tileHeight = yOffset / pageSize;
 
-		uint xMipOffset = 0;
-		uint yMipOffset = 0;
-		uint pageIndex = 0;
+		uint32_t xMipOffset = 0;
+		uint32_t yMipOffset = 0;
+		uint32_t pageIndex = 0;
 
-		uint rowLength = xOffset * numberOfComponents;
+		uint32_t rowLength = xOffset * numberOfComponents;
 
 		pagePixels[i] = (unsigned char**)conf_calloc(tileWidth * tileHeight, sizeof(unsigned char*));
 
-		for ( uint j = 0; j < tileHeight; ++j )
+		for ( uint32_t j = 0; j < tileHeight; ++j )
 		{
-			for ( uint k = 0; k < tileWidth; ++k )
+			for ( uint32_t k = 0; k < tileWidth; ++k )
 			{
 				pagePixels[i][pageIndex] = (unsigned char*)conf_calloc(pageSize * pageSize, sizeof(unsigned char) * numberOfComponents);
 
-				for ( uint y = 0; y < pageSize; ++y )
+				for ( uint32_t y = 0; y < pageSize; ++y )
 				{
-					for ( uint x = 0; x < pageSize; ++x )
+					for ( uint32_t x = 0; x < pageSize; ++x )
 					{
-						uint mipPageIndex = (y * pageSize + x) * numberOfComponents;
-						uint mipIndex = rowLength * (y + yMipOffset) + (numberOfComponents) * (x + xMipOffset);
+						uint32_t mipPageIndex = (y * pageSize + x) * numberOfComponents;
+						uint32_t mipIndex = rowLength * (y + yMipOffset) + (numberOfComponents) * (x + xMipOffset);
 
 						pagePixels[i][pageIndex][mipPageIndex + 0] = mipLevelPixels[i][mipIndex + 0];
 						pagePixels[i][pageIndex][mipPageIndex + 1] = mipLevelPixels[i][mipIndex + 1];
@@ -2016,39 +2016,39 @@ bool Image::iSaveSVT(const Path* filePath, uint pageSize)
 		}
 	}
 
-	uint mipTailPageSize = 0;
+	uint32_t mipTailPageSize = 0;
 
 	pagePixels[mipPageCount] = (unsigned char**)conf_calloc(1, sizeof(unsigned char*));
 
 	// Calculate mip tail size
-	for ( uint i = mipPageCount; i < mMipMapCount - 1; ++i )
+	for ( uint32_t i = mipPageCount; i < mMipMapCount - 1; ++i )
 	{
-		uint mipSize = mipSizes[i];
+		uint32_t mipSize = mipSizes[i];
 		mipTailPageSize += mipSize;
 	}
 
 	pagePixels[mipPageCount][0] = (unsigned char*)conf_calloc(mipTailPageSize, sizeof(unsigned char));
 
 	// Store mip tail data
-	uint mipTailPageWrites = 0;
-	for ( uint i = mipPageCount; i < mMipMapCount - 1; ++i )
+	uint32_t mipTailPageWrites = 0;
+	for ( uint32_t i = mipPageCount; i < mMipMapCount - 1; ++i )
 	{
-		uint mipSize = mipSizes[i];
+		uint32_t mipSize = mipSizes[i];
 
-		for ( uint j = 0; j < mipSize; ++j )
+		for ( uint32_t j = 0; j < mipSize; ++j )
 		{
 			pagePixels[mipPageCount][0][mipTailPageWrites++] = mipLevelPixels[i][j];
 		}
 	}
 
 	// Write mip data
-	for ( uint i = 0; i < mipPageCount; ++i )
+	for ( uint32_t i = 0; i < mipPageCount; ++i )
 	{
 		// width and height in tiles
-		uint mipWidth = (mWidth >> i) / pageSize;
-		uint mipHeight = (mHeight >> i) / pageSize;
+		uint32_t mipWidth = (mWidth >> i) / pageSize;
+		uint32_t mipHeight = (mHeight >> i) / pageSize;
 
-		for ( uint j = 0; j < mipWidth * mipHeight; ++j )
+		for ( uint32_t j = 0; j < mipWidth * mipHeight; ++j )
 		{
 			fsWriteToStream(fh, pagePixels[i][j], pageSize * pageSize * numberOfComponents * sizeof(char));
 		}
@@ -2060,16 +2060,16 @@ bool Image::iSaveSVT(const Path* filePath, uint pageSize)
 	// free memory
 	conf_free(mipSizes);
 
-	for ( uint i = 0; i < mipPageCount; ++i )
+	for ( uint32_t i = 0; i < mipPageCount; ++i )
 	{
 		// width and height in tiles
-		uint mipWidth = (mWidth >> i) / pageSize;
-		uint mipHeight = (mHeight >> i) / pageSize;
-		uint pageIndex = 0;
+		uint32_t mipWidth = (mWidth >> i) / pageSize;
+		uint32_t mipHeight = (mHeight >> i) / pageSize;
+		uint32_t pageIndex = 0;
 
-		for ( uint j = 0; j < mipHeight; ++j )
+		for ( uint32_t j = 0; j < mipHeight; ++j )
 		{
-			for ( uint k = 0; k < mipWidth; ++k )
+			for ( uint32_t k = 0; k < mipWidth; ++k )
 			{
 				conf_free(pagePixels[i][pageIndex]);
 				pageIndex += 1;
@@ -2082,7 +2082,7 @@ bool Image::iSaveSVT(const Path* filePath, uint pageSize)
 	conf_free(pagePixels[mipPageCount]);
 	conf_free(pagePixels);
 
-	for ( uint i = 0; i < mMipMapCount; ++i )
+	for ( uint32_t i = 0; i < mMipMapCount; ++i )
 	{
 		conf_free(mipLevelPixels[i]);
 	}
@@ -2103,15 +2103,15 @@ struct ImageSaverDefinition
 static ImageSaverDefinition gImageSavers[] =
 {
 #ifndef IMAGE_DISABLE_STB
-	{ ".bmp", &Image::iSaveBMP },
-	{ ".hdr", &Image::iSaveHDR },
-	{ ".png", &Image::iSavePNG },
-	{ ".tga", &Image::iSaveTGA },
-	{ ".jpg", &Image::iSaveJPG },
+	{ ".bmp", &Image::ISaveBMP },
+	{ ".hdr", &Image::ISaveHDR },
+	{ ".png", &Image::ISavePNG },
+	{ ".tga", &Image::ISaveTGA },
+	{ ".jpg", &Image::ISaveJPG },
 #endif
-	{ ".dds", &Image::iSaveDDS },
+	{ ".dds", &Image::ISaveDDS },
 #ifndef IMAGE_DISABLE_KTX
-	{ ".ktx", &Image::iSaveKTX }
+	{ ".ktx", &Image::ISaveKTX }
 #endif
 };
 

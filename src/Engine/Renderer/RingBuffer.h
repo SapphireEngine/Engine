@@ -87,7 +87,7 @@ static inline GPURingBufferOffset getGPURingBufferOffset(GPURingBuffer* pRingBuf
 
 	if ( alignedSize > pRingBuffer->mMaxBufferSize )
 	{
-		ASSERT(false && "Ring Buffer too small for memory requirement");
+		SE_ASSERT(false && "Ring Buffer too small for memory requirement");
 		return { NULL, 0 };
 	}
 

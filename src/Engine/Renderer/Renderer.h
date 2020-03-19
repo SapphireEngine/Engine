@@ -1055,7 +1055,7 @@ typedef struct VirtualTexture
 	Buffer*  mAlivePage;
 	/// Page's Index which should be removed
 	Buffer*  mRemovePage;
-	/// a { uint alive; uint remove; } count of pages which are alive or should be removed
+	/// a { uint32_t alive; uint32_t remove; } count of pages which are alive or should be removed
 	Buffer*  mPageCounts;
 	/// Original Pixel image data
 	void*    mVirtualImageData;
@@ -2492,7 +2492,7 @@ TinyImageFormat FORGE_CALLCONV getRecommendedSwapchainFormat(bool hintHDR);
 //indirect Draw functions
 void FORGE_CALLCONV addIndirectCommandSignature(Renderer* pRenderer, const CommandSignatureDesc* p_desc, CommandSignature** ppCommandSignature);
 void FORGE_CALLCONV removeIndirectCommandSignature(Renderer* pRenderer, CommandSignature* pCommandSignature);
-void FORGE_CALLCONV cmdExecuteIndirect(Cmd* pCmd, CommandSignature* pCommandSignature, uint maxCommandCount, Buffer* pIndirectBuffer, uint64_t bufferOffset, Buffer* pCounterBuffer, uint64_t counterBufferOffset);
+void FORGE_CALLCONV cmdExecuteIndirect(Cmd* pCmd, CommandSignature* pCommandSignature, uint32_t maxCommandCount, Buffer* pIndirectBuffer, uint64_t bufferOffset, Buffer* pCounterBuffer, uint64_t counterBufferOffset);
 /************************************************************************/
 // GPU Query Interface
 /************************************************************************/

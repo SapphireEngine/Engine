@@ -489,7 +489,7 @@ void _Impl_FontStash::fonsImplementationRenderText(
 
 	uint32_t                               pipelineIndex = ctx->mText3D ? 1 : 0;
 	Pipeline*                              pPipeline = ctx->pPipelines[pipelineIndex];
-	ASSERT(pPipeline);
+	SE_ASSERT(pPipeline);
 
 	cmdBindPipeline(pCmd, pPipeline);
 

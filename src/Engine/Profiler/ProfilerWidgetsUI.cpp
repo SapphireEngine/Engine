@@ -416,7 +416,7 @@ vec2 profileUtilCalcWindowSize(int32_t width, int32_t height)
 // Callback functions.
 void profileCallbkDumpFramesToFile()
 {
-    ASSERT(pAppUIRef);
+    SE_ASSERT(pAppUIRef);
     dumpProfileData(pAppUIRef->pImpl->pRenderer->pName, profileUtilDumpFramesFromFileEnum(gDumpFramesToFile));
 }
 
@@ -463,7 +463,7 @@ void profileDrawDetailedModeGrid(float startHeightPixels, float startWidthPixels
 void profileGetDetailedModeFrameTimeBetweenTicks(int64_t nTicks, int64_t nTicksEnd, int32_t nLogIndex, uint32_t* nFrameBegin, uint32_t* nFrameEnd)
 {
     Profile& S = *ProfileGet();
-    ASSERT(nLogIndex < 0 || S.Pool[nLogIndex]);
+    SE_ASSERT(nLogIndex < 0 || S.Pool[nLogIndex]);
 
     bool bGpu = S.Pool[nLogIndex]->nGpu != 0;
     uint32_t nPut = tfrg_atomic32_load_relaxed(&S.Pool[nLogIndex]->nPut);
@@ -552,7 +552,7 @@ void profileUpdateDetailedModeData(Profile& S)
 
                 if ( P_LOG_ENTER == nType )
                 {
-                    ASSERT(nStackPos < PROFILE_STACK_MAX);
+                    SE_ASSERT(nStackPos < PROFILE_STACK_MAX);
                     nStack[nStackPos++] = k;
                 }
                 else if ( P_LOG_LEAVE == nType )
@@ -1050,7 +1050,7 @@ void exitProfilerUI()
 void drawGpuProfileRecursive(Cmd* pCmd, const GpuProfiler* pGpuProfiler, const TextDrawDesc* pDrawDesc, float2& origin, const uint32_t index)
 {
     GpuTimer* pRoot = &pGpuProfiler->pGpuTimerPool[index];
-    ASSERT(pRoot);
+    SE_ASSERT(pRoot);
     uint32_t nTimerIndex = ProfileGetTimerIndex(pRoot->mMicroProfileToken);
     Profile& S = *ProfileGet();
     if ( !S.Aggregate[nTimerIndex].nCount )
@@ -1083,7 +1083,7 @@ void cmdDrawGpuProfile(Cmd* pCmd, const float2& screenCoordsInPx, ProfileToken n
     {
         return;
     }
-    ASSERT(pAppUIRef); // Must be initialized through loadProfilerUI
+    SE_ASSERT(pAppUIRef); // Must be initialized through loadProfilerUI
     const TextDrawDesc* pDesc = pDrawDesc ? pDrawDesc : &gDefaultTextDrawDesc;
     float2                    pos = screenCoordsInPx;
     pAppUIRef->pImpl->pFontStash->drawText(
@@ -1100,7 +1100,7 @@ void cmdDrawCpuProfile(Cmd* pCmd, const float2& screenCoordsInPx, const TextDraw
     if ( !pAppUIRef )
         return;
 
-    ASSERT(pAppUIRef); // Must be initialized through loadProfilerUI
+    SE_ASSERT(pAppUIRef); // Must be initialized through loadProfilerUI
     const TextDrawDesc* pDesc = pDrawDesc ? pDrawDesc : &gDefaultTextDrawDesc;
     pAppUIRef->DrawText(pCmd, screenCoordsInPx, eastl::string().sprintf("CPU %f ms", getCpuAvgFrameTime()).c_str(), pDesc);
 }
@@ -1296,7 +1296,7 @@ void cmdDrawProfilerUI()
         return;
     PROFILER_SET_CPU_SCOPE("MicroProfilerUI", "WidgetsUI", 0x737373);
 
-    ASSERT(pAppUIRef); // Must be initialized through loadProfilerUI
+    SE_ASSERT(pAppUIRef); // Must be initialized through loadProfilerUI
     pMenuGuiComponent->mAlpha = 1.0f - gGuiTransparency;
     pAppUIRef->Gui(pMenuGuiComponent);
     Profile& S = *ProfileGet();

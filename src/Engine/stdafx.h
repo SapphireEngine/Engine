@@ -36,6 +36,14 @@ SE_PRAGMA_WARNING_DISABLE_MSVC(4324)
 #include "Platform/Base/PlatformHeader.h"
 #include "zip/zip.h"
 
+#include <tinyimageformat/tinyimageformat_base.h>
+#include <tinyimageformat/tinyimageformat_query.h>
+
+#ifndef IMAGE_DISABLE_GOOGLE_BASIS
+//Google basis Transcoder
+#include <basis_universal/transcoder/basisu_transcoder.h>
+#endif
+
 //-----------------------------------------------------------------------------
 // Other Engine Header
 

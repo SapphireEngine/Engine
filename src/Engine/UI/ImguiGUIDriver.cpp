@@ -262,7 +262,7 @@ void removeGUIDriver(GUIDriver* pDriver)
 	conf_delete(pDriver);
 }
 
-static float4 ToFloat4Color(uint color)
+static float4 ToFloat4Color(uint32_t color)
 {
 	float4 col;    // Translate colours back by bit shifting
 	col.x = (float)((color & 0xFF000000) >> 24);
@@ -271,10 +271,10 @@ static float4 ToFloat4Color(uint color)
 	col.w = (float)(color & 0x000000FF);
 	return col;
 }
-static uint ToUintColor(float4 color)
+static uint32_t ToUintColor(float4 color)
 {
-	uint c = (((uint)color.x << 24) & 0xFF000000) | (((uint)color.y << 16) & 0x00FF0000) | (((uint)color.z << 8) & 0x0000FF00) |
-		(((uint)color.w) & 0x000000FF);
+	uint32_t c = (((uint32_t)color.x << 24) & 0xFF000000) | (((uint32_t)color.y << 16) & 0x00FF0000) | (((uint32_t)color.z << 8) & 0x0000FF00) |
+		(((uint32_t)color.w) & 0x000000FF);
 	return c;
 }
 
@@ -505,7 +505,7 @@ void ProgressBarWidget::Draw()
 
 void ColorSliderWidget::Draw()
 {
-	uint&  colorPick = *(uint*)pData;
+	uint32_t&  colorPick = *(uint32_t*)pData;
 	float4 combo_color = ToFloat4Color(colorPick) / 255.0f;
 
 	float col[4] = { combo_color.x, combo_color.y, combo_color.z, combo_color.w };
@@ -535,7 +535,7 @@ void PlotLinesWidget::Draw()
 
 void ColorPickerWidget::Draw()
 {
-	uint&  colorPick = *(uint*)pData;
+	uint32_t&  colorPick = *(uint32_t*)pData;
 	float4 combo_color = ToFloat4Color(colorPick) / 255.0f;
 
 	float col[4] = { combo_color.x, combo_color.y, combo_color.z, combo_color.w };

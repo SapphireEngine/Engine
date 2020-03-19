@@ -1,4 +1,12 @@
-﻿#pragma comment(lib, "3rdPartyLib.lib")
+﻿/*
+написать свои классы а не менять имеющиеся.
+- при этом важно чтобы классы можно было менять через typedef (для проверок)
+- классы минимально возможные
+*/
+
+#include "stdafx.h"
+
+#pragma comment(lib, "3rdPartyLib.lib")
 #pragma comment(lib, "Engine.lib")
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "Xinput9_1_0.lib")
@@ -6,7 +14,16 @@
 #pragma comment(lib, "vulkan-1.lib")
 #pragma comment(lib, "WinPixEventRuntime.lib")
 
-#include "stdafx.h"
+#if 0
+
+int main(int argc, char **argv)
+{
+
+}
+
+
+#else
+
 #include "Platform/Main.h"
 #include "Platform/App.h"
 #include "Renderer/CameraController.h"
@@ -28,7 +45,7 @@ using namespace se;
 /// Demo structures
 struct PlanetInfoStruct
 {
-	uint  mParentIndex;
+	uint32_t  mParentIndex;
 	vec4  mColor;
 	float mYOrbitSpeed;    // Rotation speed around parent
 	float mZOrbitSpeed;
@@ -52,8 +69,8 @@ struct UniformBlock
 const uint32_t gImageCount = 3;
 const int      gSphereResolution = 30;    // Increase for higher resolution spheres
 const float    gSphereDiameter = 0.5f;
-const uint     gNumPlanets = 11;        // Sun, Mercury -> Neptune, Pluto, Moon
-const uint     gTimeOffset = 600000;    // For visually better starting locations
+const uint32_t     gNumPlanets = 11;        // Sun, Mercury -> Neptune, Pluto, Moon
+const uint32_t     gTimeOffset = 600000;    // For visually better starting locations
 const float    gRotSelfScale = 0.0004f;
 const float    gRotOrbitYScale = 0.001f;
 const float    gRotOrbitZScale = 0.00001f;
@@ -484,7 +501,7 @@ public:
 		removeResource(pSphereVertexBuffer);
 		removeResource(pSkyBoxVertexBuffer);
 
-		for ( uint i = 0; i < 6; ++i )
+		for ( uint32_t i = 0; i < 6; ++i )
 			removeResource(pSkyBoxTextures[i]);
 
 		removeSampler(pRenderer, pSamplerSkyBox);
@@ -818,3 +835,4 @@ int main(int argc, char **argv)
 	return WindowsMain(argc, argv, &app); 
 }
 //-----------------------------------------------------------------------------
+#endif

@@ -280,7 +280,7 @@ static void add_descriptor_heap(ID3D12Device* pDevice, const D3D12_DESCRIPTOR_HE
 	pHeap->mDesc = Desc;
 
 	HRESULT hres = pDevice->CreateDescriptorHeap(&Desc, IID_ARGS(&pHeap->pCurrentHeap));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	pHeap->mStartHandle.mCpu = pHeap->pCurrentHeap->GetCPUDescriptorHandleForHeapStart();
 	pHeap->mStartHandle.mGpu = pHeap->pCurrentHeap->GetGPUDescriptorHandleForHeapStart();
@@ -364,7 +364,7 @@ static DescriptorHeap::DescriptorHandle consume_descriptor_handles(DescriptorHea
 
 void return_cpu_descriptor_handles(DescriptorHeap* pHeap, D3D12_CPU_DESCRIPTOR_HANDLE handle, uint32_t count)
 {
-	ASSERT((pHeap->mDesc.Flags & D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE) == 0);
+	SE_ASSERT((pHeap->mDesc.Flags & D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE) == 0);
 	for ( uint32_t i = 0; i < count; ++i )
 		pHeap->mFreeList.push_back({
 		{ handle.ptr * pHeap->mDescriptorSize * i },
@@ -402,15 +402,15 @@ uint32_t util_calculate_node_mask(Renderer* pRenderer, uint32_t i)
 /************************************************************************/
 constexpr D3D12_DEPTH_STENCIL_DESC util_to_depth_desc(const DepthStateDesc* pDesc)
 {
-	ASSERT(pDesc->mDepthFunc < CompareMode::MAX_COMPARE_MODES);
-	ASSERT(pDesc->mStencilFrontFunc < CompareMode::MAX_COMPARE_MODES);
-	ASSERT(pDesc->mStencilFrontFail < StencilOp::MAX_STENCIL_OPS);
-	ASSERT(pDesc->mDepthFrontFail < StencilOp::MAX_STENCIL_OPS);
-	ASSERT(pDesc->mStencilFrontPass < StencilOp::MAX_STENCIL_OPS);
-	ASSERT(pDesc->mStencilBackFunc < CompareMode::MAX_COMPARE_MODES);
-	ASSERT(pDesc->mStencilBackFail < StencilOp::MAX_STENCIL_OPS);
-	ASSERT(pDesc->mDepthBackFail < StencilOp::MAX_STENCIL_OPS);
-	ASSERT(pDesc->mStencilBackPass < StencilOp::MAX_STENCIL_OPS);
+	SE_ASSERT(pDesc->mDepthFunc < CompareMode::MAX_COMPARE_MODES);
+	SE_ASSERT(pDesc->mStencilFrontFunc < CompareMode::MAX_COMPARE_MODES);
+	SE_ASSERT(pDesc->mStencilFrontFail < StencilOp::MAX_STENCIL_OPS);
+	SE_ASSERT(pDesc->mDepthFrontFail < StencilOp::MAX_STENCIL_OPS);
+	SE_ASSERT(pDesc->mStencilFrontPass < StencilOp::MAX_STENCIL_OPS);
+	SE_ASSERT(pDesc->mStencilBackFunc < CompareMode::MAX_COMPARE_MODES);
+	SE_ASSERT(pDesc->mStencilBackFail < StencilOp::MAX_STENCIL_OPS);
+	SE_ASSERT(pDesc->mDepthBackFail < StencilOp::MAX_STENCIL_OPS);
+	SE_ASSERT(pDesc->mStencilBackPass < StencilOp::MAX_STENCIL_OPS);
 
 	D3D12_DEPTH_STENCIL_DESC ret = {};
 	ret.DepthEnable = (BOOL)pDesc->mDepthTest;
@@ -440,12 +440,12 @@ constexpr D3D12_BLEND_DESC util_to_blend_desc(const BlendStateDesc* pDesc)
 	{
 		if ( pDesc->mRenderTargetMask & (1 << i) )
 		{
-			ASSERT(pDesc->mSrcFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
-			ASSERT(pDesc->mDstFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
-			ASSERT(pDesc->mSrcAlphaFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
-			ASSERT(pDesc->mDstAlphaFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
-			ASSERT(pDesc->mBlendModes[blendDescIndex] < BlendMode::MAX_BLEND_MODES);
-			ASSERT(pDesc->mBlendAlphaModes[blendDescIndex] < BlendMode::MAX_BLEND_MODES);
+			SE_ASSERT(pDesc->mSrcFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
+			SE_ASSERT(pDesc->mDstFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
+			SE_ASSERT(pDesc->mSrcAlphaFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
+			SE_ASSERT(pDesc->mDstAlphaFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
+			SE_ASSERT(pDesc->mBlendModes[blendDescIndex] < BlendMode::MAX_BLEND_MODES);
+			SE_ASSERT(pDesc->mBlendAlphaModes[blendDescIndex] < BlendMode::MAX_BLEND_MODES);
 		}
 
 		if ( pDesc->mIndependentBlend )
@@ -488,9 +488,9 @@ constexpr D3D12_BLEND_DESC util_to_blend_desc(const BlendStateDesc* pDesc)
 
 constexpr D3D12_RASTERIZER_DESC util_to_rasterizer_desc(const RasterizerStateDesc* pDesc)
 {
-	ASSERT(pDesc->mFillMode < FillMode::MAX_FILL_MODES);
-	ASSERT(pDesc->mCullMode < CullMode::MAX_CULL_MODES);
-	ASSERT(pDesc->mFrontFace == FRONT_FACE_CCW || pDesc->mFrontFace == FRONT_FACE_CW);
+	SE_ASSERT(pDesc->mFillMode < FillMode::MAX_FILL_MODES);
+	SE_ASSERT(pDesc->mCullMode < CullMode::MAX_CULL_MODES);
+	SE_ASSERT(pDesc->mFrontFace == FRONT_FACE_CCW || pDesc->mFrontFace == FRONT_FACE_CW);
 
 	D3D12_RASTERIZER_DESC ret = {};
 	ret.FillMode = gDx12FillModeTranslator[pDesc->mFillMode];
@@ -748,7 +748,7 @@ static void add_dsv(
 			}
 		}
 		break;
-	case D3D12_RESOURCE_DIMENSION_TEXTURE3D: ASSERT(false && "Cannot create 3D Depth Stencil"); break;
+	case D3D12_RESOURCE_DIMENSION_TEXTURE3D: SE_ASSERT(false && "Cannot create 3D Depth Stencil"); break;
 	default: break;
 	}
 
@@ -1241,7 +1241,7 @@ D3D12_SHADER_VISIBILITY util_to_dx_shader_visibility(ShaderStage stages)
 		return D3D12_SHADER_VISIBILITY_ALL;
 	}
 #endif
-	ASSERT(stageCount > 0);
+	SE_ASSERT(stageCount > 0);
 	return stageCount > 1 ? D3D12_SHADER_VISIBILITY_ALL : res;
 }
 
@@ -1259,7 +1259,7 @@ D3D12_DESCRIPTOR_RANGE_TYPE util_to_dx_descriptor_range(DescriptorType type)
 #ifdef ENABLE_RAYTRACING
 	case DESCRIPTOR_TYPE_RAY_TRACING: return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 #endif
-	default: ASSERT("Invalid DescriptorInfo Type"); return (D3D12_DESCRIPTOR_RANGE_TYPE)-1;
+	default: SE_ASSERT("Invalid DescriptorInfo Type"); return (D3D12_DESCRIPTOR_RANGE_TYPE)-1;
 	}
 }
 
@@ -1311,7 +1311,7 @@ D3D12_QUERY_HEAP_TYPE util_to_dx_query_heap_type(QueryType type)
 	case QUERY_TYPE_TIMESTAMP: return D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
 	case QUERY_TYPE_PIPELINE_STATISTICS: return D3D12_QUERY_HEAP_TYPE_PIPELINE_STATISTICS;
 	case QUERY_TYPE_OCCLUSION: return D3D12_QUERY_HEAP_TYPE_OCCLUSION;
-	default: ASSERT(false && "Invalid query heap type"); return D3D12_QUERY_HEAP_TYPE(-1);
+	default: SE_ASSERT(false && "Invalid query heap type"); return D3D12_QUERY_HEAP_TYPE(-1);
 	}
 }
 
@@ -1322,7 +1322,7 @@ D3D12_QUERY_TYPE util_to_dx_query_type(QueryType type)
 	case QUERY_TYPE_TIMESTAMP: return D3D12_QUERY_TYPE_TIMESTAMP;
 	case QUERY_TYPE_PIPELINE_STATISTICS: return D3D12_QUERY_TYPE_PIPELINE_STATISTICS;
 	case QUERY_TYPE_OCCLUSION: return D3D12_QUERY_TYPE_OCCLUSION;
-	default: ASSERT(false && "Invalid query heap type"); return D3D12_QUERY_TYPE(-1);
+	default: SE_ASSERT(false && "Invalid query heap type"); return D3D12_QUERY_TYPE(-1);
 	}
 }
 
@@ -1366,7 +1366,7 @@ static void AddDevice(Renderer* pRenderer)
 #ifdef _DURANGO
 	// Create the DX12 API device object.
 	HRESULT hres = create_device(NULL, &pRenderer->pDxDevice);
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 #if defined(_DEBUG) || defined(PROFILE)
 	//Sets the callback functions to invoke when the GPU hangs
@@ -1376,16 +1376,16 @@ static void AddDevice(Renderer* pRenderer)
 	// First, retrieve the underlying DXGI device from the D3D device.
 	IDXGIDevice1* dxgiDevice;
 	hres = pRenderer->pDxDevice->QueryInterface(IID_ARGS(&dxgiDevice));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	// Identify the physical adapter (GPU or card) this device is running on.
 	IDXGIAdapter* dxgiAdapter;
 	hres = dxgiDevice->GetAdapter(&dxgiAdapter);
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	// And obtain the factory object that created it.
 	hres = dxgiAdapter->GetParent(IID_ARGS(&pRenderer->pDXGIFactory));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	typedef struct GpuDesc
 	{
@@ -1410,7 +1410,7 @@ static void AddDevice(Renderer* pRenderer)
 	flags = DXGI_CREATE_FACTORY_DEBUG;
 #endif
 	HRESULT hres = CreateDXGIFactory2(flags, IID_ARGS(&pRenderer->pDXGIFactory));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	typedef struct GpuDesc
 	{
@@ -1495,7 +1495,7 @@ static void AddDevice(Renderer* pRenderer)
 		adapter->Release();
 	}
 
-	ASSERT(gpuCount > 0);
+	SE_ASSERT(gpuCount > 0);
 
 	typedef bool (*DeviceBetterFn)(GpuDesc* gpuDesc, uint32_t testIndex, uint32_t refIndex);
 	DeviceBetterFn isDeviceBetter = [](GpuDesc* gpuDesc, uint32_t testIndex, uint32_t refIndex) -> bool
@@ -1608,7 +1608,7 @@ static void AddDevice(Renderer* pRenderer)
 #endif
 	// Get the latest and greatest feature level gpu
 	gpuDesc[gpuIndex].pGpu->QueryInterface(IID_ARGS(&pRenderer->pDxActiveGPU));
-	ASSERT(pRenderer->pDxActiveGPU != NULL);
+	SE_ASSERT(pRenderer->pDxActiveGPU != NULL);
 	pRenderer->pActiveGpuSettings = (GPUSettings*)conf_malloc(sizeof(GPUSettings));
 	*pRenderer->pActiveGpuSettings = gpuSettings[gpuIndex];
 
@@ -1644,7 +1644,7 @@ static void AddDevice(Renderer* pRenderer)
 
 #ifndef _DURANGO
 	hres = D3D12CreateDevice(pRenderer->pDxActiveGPU, gpuDesc[gpuIndex].mMaxSupportedFeatureLevel, IID_ARGS(&pRenderer->pDxDevice));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 	// #TODO - Let user specify these through RendererSettings
 	//ID3D12InfoQueue* pd3dInfoQueue = NULL;
 	//HRESULT hr = pRenderer->pDxDevice->QueryInterface(IID_ARGS(&pd3dInfoQueue));
@@ -1685,12 +1685,12 @@ static void RemoveDevice(Renderer* pRenderer)
 /************************************************************************/
 void initRenderer(const char* appName, const RendererDesc* pDesc, Renderer** ppRenderer)
 {
-	ASSERT(appName);
-	ASSERT(pDesc);
-	ASSERT(ppRenderer);
+	SE_ASSERT(appName);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppRenderer);
 
 	Renderer* pRenderer = (Renderer*)conf_calloc(1, sizeof(Renderer));
-	ASSERT(pRenderer);
+	SE_ASSERT(pRenderer);
 
 	pRenderer->mGpuMode = pDesc->mGpuMode;
 	pRenderer->mShaderTarget = pDesc->mShaderTarget;
@@ -1716,7 +1716,7 @@ void initRenderer(const char* appName, const RendererDesc* pDesc, Renderer** ppR
 		{
 			//have the condition in the assert as well so its cleared when the assert message box appears
 
-			ASSERT(pRenderer->pActiveGpuSettings->mGpuVendorPreset.mPresetLevel >= GPU_PRESET_LOW);
+			SE_ASSERT(pRenderer->pActiveGpuSettings->mGpuVendorPreset.mPresetLevel >= GPU_PRESET_LOW);
 
 			SAFE_FREE(pRenderer->pName);
 
@@ -1843,7 +1843,7 @@ void initRenderer(const char* appName, const RendererDesc* pDesc, Renderer** ppR
 		};
 		desc.pAllocationCallbacks = &allocationCallbacks;
 		HRESULT hres = D3D12MA::CreateAllocator(&desc, &pRenderer->pResourceAllocator);
-		ASSERT(SUCCEEDED(hres));
+		SE_ASSERT(SUCCEEDED(hres));
 	}
 	/************************************************************************/
 	/************************************************************************/
@@ -1886,7 +1886,7 @@ void initRenderer(const char* appName, const RendererDesc* pDesc, Renderer** ppR
 
 void removeRenderer(Renderer* pRenderer)
 {
-	ASSERT(pRenderer);
+	SE_ASSERT(pRenderer);
 
 	for ( uint32_t i = 0; i < pRenderer->mBuiltinShaderDefinesCount; ++i )
 		pRenderer->pBuiltinShaderDefines[i].~ShaderMacro();
@@ -1934,17 +1934,17 @@ void removeRenderer(Renderer* pRenderer)
 /************************************************************************/
 void addFence(Renderer* pRenderer, Fence** ppFence)
 {
-	//ASSERT that renderer is valid
-	ASSERT(pRenderer);
-	ASSERT(ppFence);
+	//SE_ASSERT that renderer is valid
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(ppFence);
 
-	//create a Fence and ASSERT that it is valid
+	//create a Fence and SE_ASSERT that it is valid
 	Fence* pFence = (Fence*)conf_calloc(1, sizeof(Fence));
-	ASSERT(pFence);
+	SE_ASSERT(pFence);
 
 	HRESULT hres = pRenderer->pDxDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_ARGS(&pFence->pDxFence));
 	pFence->mFenceValue = 1;
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	pFence->pDxWaitIdleFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
@@ -1953,10 +1953,10 @@ void addFence(Renderer* pRenderer, Fence** ppFence)
 
 void removeFence(Renderer* pRenderer, Fence* pFence)
 {
-	//ASSERT that renderer is valid
-	ASSERT(pRenderer);
-	//ASSERT that given fence to remove is valid
-	ASSERT(pFence);
+	//SE_ASSERT that renderer is valid
+	SE_ASSERT(pRenderer);
+	//SE_ASSERT that given fence to remove is valid
+	SE_ASSERT(pFence);
 
 	SAFE_RELEASE(pFence->pDxFence);
 	CloseHandle(pFence->pDxWaitIdleFenceEvent);
@@ -1971,25 +1971,25 @@ void addSemaphore(Renderer* pRenderer, Semaphore** ppSemaphore)
 
 void removeSemaphore(Renderer* pRenderer, Semaphore* pSemaphore)
 {
-	//ASSERT that renderer and given semaphore are valid
-	ASSERT(pRenderer);
-	ASSERT(pSemaphore);
+	//SE_ASSERT that renderer and given semaphore are valid
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pSemaphore);
 
 	removeFence(pRenderer, (Fence*)pSemaphore);
 }
 
 void addQueue(Renderer* pRenderer, QueueDesc* pDesc, Queue** ppQueue)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppQueue);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppQueue);
 
 	Queue* pQueue = (Queue*)conf_calloc(1, sizeof(Queue));
-	ASSERT(pQueue);
+	SE_ASSERT(pQueue);
 
 	if ( pDesc->mNodeIndex )
 	{
-		ASSERT(pRenderer->mGpuMode == GPU_MODE_LINKED && "Node Masking can only be used with Linked Multi GPU");
+		SE_ASSERT(pRenderer->mGpuMode == GPU_MODE_LINKED && "Node Masking can only be used with Linked Multi GPU");
 	}
 
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
@@ -2001,10 +2001,10 @@ void addQueue(Renderer* pRenderer, QueueDesc* pDesc, Queue** ppQueue)
 
 #if defined(_DURANGO)
 	HRESULT hr = create_command_queue(pRenderer, queueDesc, __uuidof(pQueue->pDxQueue), (void**)&(pQueue->pDxQueue));
-	ASSERT(SUCCEEDED(hr));
+	SE_ASSERT(SUCCEEDED(hr));
 #else
 	HRESULT hr = pRenderer->pDxDevice->CreateCommandQueue(&queueDesc, __uuidof(pQueue->pDxQueue), (void**)&(pQueue->pDxQueue));
-	ASSERT(SUCCEEDED(hr));
+	SE_ASSERT(SUCCEEDED(hr));
 #endif
 
 	eastl::string queueType;
@@ -2034,7 +2034,7 @@ void addQueue(Renderer* pRenderer, QueueDesc* pDesc, Queue** ppQueue)
 
 void removeQueue(Renderer* pRenderer, Queue* pQueue)
 {
-	ASSERT(pQueue);
+	SE_ASSERT(pQueue);
 
 	// Make sure we finished all GPU works before we remove the queue
 	waitQueueIdle(pQueue);
@@ -2048,14 +2048,14 @@ void removeQueue(Renderer* pRenderer, Queue* pQueue)
 
 void addCmdPool(Renderer* pRenderer, const CmdPoolDesc* pDesc, CmdPool** ppCmdPool)
 {
-	//ASSERT that renderer is valid
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppCmdPool);
+	//SE_ASSERT that renderer is valid
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppCmdPool);
 
 	//create one new CmdPool and add to renderer
 	CmdPool* pCmdPool = (CmdPool*)conf_calloc(1, sizeof(CmdPool));
-	ASSERT(pCmdPool);
+	SE_ASSERT(pCmdPool);
 
 	pCmdPool->pQueue = pDesc->pQueue;
 
@@ -2065,8 +2065,8 @@ void addCmdPool(Renderer* pRenderer, const CmdPoolDesc* pDesc, CmdPool** ppCmdPo
 void removeCmdPool(Renderer* pRenderer, CmdPool* pCmdPool)
 {
 	//check validity of given renderer and command pool
-	ASSERT(pRenderer);
-	ASSERT(pCmdPool);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pCmdPool);
 
 	SAFE_FREE(pCmdPool);
 }
@@ -2074,13 +2074,13 @@ void removeCmdPool(Renderer* pRenderer, CmdPool* pCmdPool)
 void addCmd(Renderer* pRenderer, const CmdDesc* pDesc, Cmd** ppCmd)
 {
 	//verify that given pool is valid
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppCmd);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppCmd);
 
 	// initialize to zero
 	Cmd* pCmd = (Cmd*)conf_calloc(1, sizeof(Cmd));
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	//set command pool of new command
 	pCmd->mNodeIndex = pDesc->pPool->pQueue->mNodeIndex;
@@ -2095,7 +2095,7 @@ void addCmd(Renderer* pRenderer, const CmdDesc* pDesc, Cmd** ppCmd)
 	HRESULT hres = S_OK;
 	hres = pRenderer->pDxDevice->CreateCommandAllocator(
 		gDx12CmdTypeTranslator[pCmd->mType], __uuidof(pCmd->pDxCmdAlloc), (void**)&(pCmd->pDxCmdAlloc));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 #ifdef _DURANGO
 	if ( QUEUE_TYPE_TRANSFER == pDesc->pPool->pQueue->mType )
@@ -2111,13 +2111,13 @@ void addCmd(Renderer* pRenderer, const CmdDesc* pDesc, Cmd** ppCmd)
 		hres = pRenderer->pDxDevice->CreateCommandList(
 			nodeMask, gDx12CmdTypeTranslator[pCmd->mType], pCmd->pDxCmdAlloc,
 			initialState, __uuidof(pCmd->pDxCmdList), (void**)&(pCmd->pDxCmdList));
-		ASSERT(SUCCEEDED(hres));
+		SE_ASSERT(SUCCEEDED(hres));
 	}
 
 	// Command lists are addd in the recording state, but there is nothing
 	// to record yet. The main loop expects it to be closed, so close it now.
 	hres = pCmd->pDxCmdList->Close();
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	*ppCmd = pCmd;
 }
@@ -2125,8 +2125,8 @@ void addCmd(Renderer* pRenderer, const CmdDesc* pDesc, Cmd** ppCmd)
 void removeCmd(Renderer* pRenderer, Cmd* pCmd)
 {
 	//verify that given command and pool are valid
-	ASSERT(pRenderer);
-	ASSERT(pCmd);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pCmd);
 
 #ifdef _DURANGO
 	dma_remove_cmd(pRenderer, pCmd);
@@ -2142,13 +2142,13 @@ void removeCmd(Renderer* pRenderer, Cmd* pCmd)
 void addCmd_n(Renderer* pRenderer, const CmdDesc* pDesc, uint32_t cmdCount, Cmd*** pppCmd)
 {
 	//verify that ***cmd is valid
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(cmdCount);
-	ASSERT(pppCmd);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(cmdCount);
+	SE_ASSERT(pppCmd);
 
 	Cmd** ppCmds = (Cmd**)conf_calloc(cmdCount, sizeof(Cmd*));
-	ASSERT(ppCmds);
+	SE_ASSERT(ppCmds);
 
 	//add n new cmds to given pool
 	for ( uint32_t i = 0; i < cmdCount; ++i )
@@ -2162,7 +2162,7 @@ void addCmd_n(Renderer* pRenderer, const CmdDesc* pDesc, uint32_t cmdCount, Cmd*
 void removeCmd_n(Renderer* pRenderer, uint32_t cmdCount, Cmd** ppCmds)
 {
 	//verify that given command list is valid
-	ASSERT(ppCmds);
+	SE_ASSERT(ppCmds);
 
 	//remove every given cmd in array
 	for ( uint32_t i = 0; i < cmdCount; ++i )
@@ -2176,7 +2176,7 @@ void removeCmd_n(Renderer* pRenderer, uint32_t cmdCount, Cmd** ppCmds)
 void toggleVSync(Renderer* pRenderer, SwapChain** ppSwapChain)
 {
 	UNREF_PARAM(pRenderer);
-	ASSERT(ppSwapChain);
+	SE_ASSERT(ppSwapChain);
 
 	SwapChain* pSwapChain = *ppSwapChain;
 	//set descriptor vsync boolean
@@ -2198,17 +2198,17 @@ void toggleVSync(Renderer* pRenderer, SwapChain** ppSwapChain)
 
 void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** ppSwapChain)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppSwapChain);
-	ASSERT(pDesc->mImageCount <= MAX_SWAPCHAIN_IMAGES);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppSwapChain);
+	SE_ASSERT(pDesc->mImageCount <= MAX_SWAPCHAIN_IMAGES);
 
 	SwapChain* pSwapChain = (SwapChain*)conf_calloc(1, sizeof(SwapChain) + pDesc->mImageCount * sizeof(RenderTarget*));
-	ASSERT(pSwapChain);
+	SE_ASSERT(pSwapChain);
 
 	pSwapChain->mDxSyncInterval = pDesc->mEnableVsync ? 1 : 0;
 	pSwapChain->ppRenderTargets = (RenderTarget**)(pSwapChain + 1);
-	ASSERT(pSwapChain->ppRenderTargets);
+	SE_ASSERT(pSwapChain->ppRenderTargets);
 
 	DXGI_SWAP_CHAIN_DESC1 desc = {};
 	desc.Width = pDesc->mWidth;
@@ -2250,27 +2250,27 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 
 #ifdef _DURANGO
 	HRESULT hres = create_swap_chain(pRenderer, pSwapChain, &desc, &swapchain);
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 #else
 	HWND hwnd = (HWND)pDesc->mWindowHandle.window;
 
 	HRESULT hres =
 		pRenderer->pDXGIFactory->CreateSwapChainForHwnd(pDesc->ppPresentQueues[0]->pDxQueue, hwnd, &desc, NULL, NULL, &swapchain);
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	hres = pRenderer->pDXGIFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 #endif
 
 	hres = swapchain->QueryInterface(__uuidof(pSwapChain->pDxSwapChain), (void**)&(pSwapChain->pDxSwapChain));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 	swapchain->Release();
 
 #ifndef _DURANGO
 	// Allowing multiple command queues to present for applications like Alternate Frame Rendering
 	if ( pRenderer->mGpuMode == GPU_MODE_LINKED && pDesc->mPresentQueueCount > 1 )
 	{
-		ASSERT(pDesc->mPresentQueueCount == pDesc->mImageCount);
+		SE_ASSERT(pDesc->mPresentQueueCount == pDesc->mImageCount);
 
 		IUnknown** ppQueues = (IUnknown**)alloca(pDesc->mPresentQueueCount * sizeof(IUnknown*));
 		UINT*      pCreationMasks = (UINT*)alloca(pDesc->mPresentQueueCount * sizeof(UINT));
@@ -2294,7 +2294,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	for ( uint32_t i = 0; i < pDesc->mImageCount; ++i )
 	{
 		hres = pSwapChain->pDxSwapChain->GetBuffer(i, IID_ARGS(&buffers[i]));
-		ASSERT(SUCCEEDED(hres) && buffers[i]);
+		SE_ASSERT(SUCCEEDED(hres) && buffers[i]);
 	}
 
 	RenderTargetDesc descColor = {};
@@ -2335,15 +2335,15 @@ void removeSwapChain(Renderer* pRenderer, SwapChain* pSwapChain)
 void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** ppBuffer)
 {
 	//verify renderer validity
-	ASSERT(pRenderer);
+	SE_ASSERT(pRenderer);
 	//verify adding at least 1 buffer
-	ASSERT(pDesc);
-	ASSERT(ppBuffer);
-	ASSERT(pDesc->mSize > 0);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppBuffer);
+	SE_ASSERT(pDesc->mSize > 0);
 
 	// initialize to zero
 	Buffer* pBuffer = (Buffer*)conf_calloc(1, sizeof(Buffer));
-	ASSERT(ppBuffer);
+	SE_ASSERT(ppBuffer);
 
 	//add to renderer
 
@@ -2429,13 +2429,13 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** ppBuffer)
 		heapProps.VisibleNodeMask = alloc_desc.VisibleNodeMask;
 		heapProps.CreationNodeMask = alloc_desc.CreationNodeMask;
 		hres = pRenderer->pDxDevice->CreateCommittedResource(&heapProps, alloc_desc.HeapFlags, &desc, res_states, NULL, IID_ARGS(&pBuffer->pDxResource));
-		ASSERT(SUCCEEDED(hres));
+		SE_ASSERT(SUCCEEDED(hres));
 	}
 	else
 	{
 		hres = pRenderer->pResourceAllocator->CreateResource(&alloc_desc, &desc, res_states, NULL,
 			&pBuffer->pDxAllocation, IID_ARGS(&pBuffer->pDxResource));
-		ASSERT(SUCCEEDED(hres));
+		SE_ASSERT(SUCCEEDED(hres));
 
 		// Set name
 		pBuffer->pDxAllocation->SetName(pDesc->pDebugName);
@@ -2564,8 +2564,8 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** ppBuffer)
 void removeBuffer(Renderer* pRenderer, Buffer* pBuffer)
 {
 	UNREF_PARAM(pRenderer);
-	ASSERT(pRenderer);
-	ASSERT(pBuffer);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pBuffer);
 
 	if ( pBuffer->mDxDescriptorHandles.ptr != D3D12_GPU_VIRTUAL_ADDRESS_NULL )
 	{
@@ -2586,7 +2586,7 @@ void removeBuffer(Renderer* pRenderer, Buffer* pBuffer)
 void mapBuffer(Renderer* pRenderer, Buffer* pBuffer, ReadRange* pRange)
 {
 	UNREF_PARAM(pRenderer);
-	ASSERT(pBuffer->mMemoryUsage != RESOURCE_MEMORY_USAGE_GPU_ONLY && "Trying to map non-cpu accessible resource");
+	SE_ASSERT(pBuffer->mMemoryUsage != RESOURCE_MEMORY_USAGE_GPU_ONLY && "Trying to map non-cpu accessible resource");
 
 	D3D12_RANGE range = { 0, pBuffer->mSize };
 	if ( pRange )
@@ -2596,13 +2596,13 @@ void mapBuffer(Renderer* pRenderer, Buffer* pBuffer, ReadRange* pRange)
 	}
 
 	HRESULT hr = pBuffer->pDxResource->Map(0, &range, &pBuffer->pCpuMappedAddress);
-	ASSERT(SUCCEEDED(hr) && pBuffer->pCpuMappedAddress);
+	SE_ASSERT(SUCCEEDED(hr) && pBuffer->pCpuMappedAddress);
 }
 
 void unmapBuffer(Renderer* pRenderer, Buffer* pBuffer)
 {
 	UNREF_PARAM(pRenderer);
-	ASSERT(pBuffer->mMemoryUsage != RESOURCE_MEMORY_USAGE_GPU_ONLY && "Trying to unmap non-cpu accessible resource");
+	SE_ASSERT(pBuffer->mMemoryUsage != RESOURCE_MEMORY_USAGE_GPU_ONLY && "Trying to unmap non-cpu accessible resource");
 
 	pBuffer->pDxResource->Unmap(0, NULL);
 	pBuffer->pCpuMappedAddress = NULL;
@@ -2610,18 +2610,18 @@ void unmapBuffer(Renderer* pRenderer, Buffer* pBuffer)
 
 void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTexture)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
 	if ( pDesc->mSampleCount > SAMPLE_COUNT_1 && pDesc->mMipLevels > 1 )
 	{
 		LOGF(LogLevel::eERROR, "Multi-Sampled textures cannot have mip maps");
-		ASSERT(false);
+		SE_ASSERT(false);
 		return;
 	}
 
 	//allocate new texture
 	Texture* pTexture = (Texture*)conf_calloc(1, sizeof(Texture));
-	ASSERT(pTexture);
+	SE_ASSERT(pTexture);
 
 	if ( pDesc->pNativeHandle )
 	{
@@ -2641,14 +2641,14 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 
 	DescriptorType      descriptors = pDesc->mDescriptors;
 
-	ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
+	SE_ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
 
 	if ( NULL == pTexture->pDxResource )
 	{
 		D3D12_RESOURCE_DIMENSION res_dim = D3D12_RESOURCE_DIMENSION_UNKNOWN;
 		if ( pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_2D )
 		{
-			ASSERT(pDesc->mDepth == 1);
+			SE_ASSERT(pDesc->mDepth == 1);
 			res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		}
 		else if ( pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_3D )
@@ -2764,7 +2764,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 			// Set name
 			pTexture->pDxAllocation->SetName(pDesc->pDebugName);
 		}
-		ASSERT(SUCCEEDED(hr));
+		SE_ASSERT(SUCCEEDED(hr));
 
 		pTexture->mCurrentState = pDesc->mStartState;
 	}
@@ -2811,7 +2811,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		{
 			if ( DESCRIPTOR_TYPE_TEXTURE_CUBE == (descriptors & DESCRIPTOR_TYPE_TEXTURE_CUBE) )
 			{
-				ASSERT(desc.DepthOrArraySize % 6 == 0);
+				SE_ASSERT(desc.DepthOrArraySize % 6 == 0);
 
 				if ( desc.DepthOrArraySize > 6 )
 				{
@@ -2913,7 +2913,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 
 	if ( descriptors & DESCRIPTOR_TYPE_TEXTURE )
 	{
-		ASSERT(srvDesc.ViewDimension != D3D12_SRV_DIMENSION_UNKNOWN);
+		SE_ASSERT(srvDesc.ViewDimension != D3D12_SRV_DIMENSION_UNKNOWN);
 
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = util_to_dx_srv_format(dxFormat);
@@ -2964,8 +2964,8 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 
 void removeTexture(Renderer* pRenderer, Texture* pTexture)
 {
-	ASSERT(pRenderer);
-	ASSERT(pTexture);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pTexture);
 
 	//delete texture descriptors
 	if ( pTexture->mDxDescriptorHandles.ptr != D3D12_GPU_VIRTUAL_ADDRESS_NULL )
@@ -2989,21 +2989,21 @@ void removeTexture(Renderer* pRenderer, Texture* pTexture)
 
 void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderTarget** ppRenderTarget)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppRenderTarget);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppRenderTarget);
 
 	const bool isDepth = TinyImageFormat_HasDepth(pDesc->mFormat);
-	ASSERT(!((isDepth) && (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_TEXTURE)) && "Cannot use depth stencil as UAV");
+	SE_ASSERT(!((isDepth) && (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_TEXTURE)) && "Cannot use depth stencil as UAV");
 
 	((RenderTargetDesc*)pDesc)->mMipLevels = max(1U, pDesc->mMipLevels);
 
 	RenderTarget* pRenderTarget = (RenderTarget*)conf_calloc(1, sizeof(RenderTarget));
-	ASSERT(pRenderTarget);
+	SE_ASSERT(pRenderTarget);
 
 	//add to gpu
 	DXGI_FORMAT dxFormat = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->mFormat);
-	ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
+	SE_ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
 
 	TextureDesc textureDesc = {};
 	textureDesc.mArraySize = pDesc->mArraySize;
@@ -3114,14 +3114,14 @@ void removeRenderTarget(Renderer* pRenderer, RenderTarget* pRenderTarget)
 
 void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** ppSampler)
 {
-	ASSERT(pRenderer);
-	ASSERT(pRenderer->pDxDevice);
-	ASSERT(ppSampler);
-	ASSERT(pDesc->mCompareFunc < MAX_COMPARE_MODES);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pRenderer->pDxDevice);
+	SE_ASSERT(ppSampler);
+	SE_ASSERT(pDesc->mCompareFunc < MAX_COMPARE_MODES);
 
 	// initialize to zero
 	Sampler* pSampler = (Sampler*)conf_calloc(1, sizeof(Sampler));
-	ASSERT(pSampler);
+	SE_ASSERT(pSampler);
 
 	D3D12_SAMPLER_DESC desc = {};
 	//add sampler to gpu
@@ -3148,8 +3148,8 @@ void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** ppSampl
 
 void removeSampler(Renderer* pRenderer, Sampler* pSampler)
 {
-	ASSERT(pRenderer);
-	ASSERT(pSampler);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pSampler);
 
 	//remove_sampler(pRenderer, &pSampler->mDxSamplerHandle);
 
@@ -3188,7 +3188,7 @@ void compileShader(
 #define d3d_call(x)      \
 	if (!SUCCEEDED((x))) \
 	{                    \
-		ASSERT(false);   \
+		SE_ASSERT(false);   \
 		return;          \
 	}
 
@@ -3243,7 +3243,7 @@ void compileShader(
 		case SHADER_STAGE_RAYTRACING:
 			{
 				target.sprintf("lib_%d_%d", major, minor);
-				ASSERT(shaderTarget >= shader_target_6_3);
+				SE_ASSERT(shaderTarget >= shader_target_6_3);
 				break;
 			}
 #else
@@ -3423,13 +3423,13 @@ void compileShader(
 		if ( FAILED(hres) )
 		{
 			char* msg = (char*)conf_calloc(error_msgs->GetBufferSize() + 1, sizeof(*msg));
-			ASSERT(msg);
+			SE_ASSERT(msg);
 			memcpy(msg, error_msgs->GetBufferPointer(), error_msgs->GetBufferSize());
 			eastl::string error = eastl::string(fsGetPathAsNativeString(filePath)) + " " + msg;
 			LOGF(LogLevel::eERROR, error.c_str());
 			SAFE_FREE(msg);
 		}
-		ASSERT(SUCCEEDED(hres));
+		SE_ASSERT(SUCCEEDED(hres));
 
 		char* pByteCode = (char*)allocator(compiled_code->GetBufferSize(), __FILE__, __LINE__, __FUNCTION__);
 		memcpy(pByteCode, compiled_code->GetBufferPointer(), compiled_code->GetBufferSize());
@@ -3442,9 +3442,9 @@ void compileShader(
 
 void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader** ppShaderProgram)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc && pDesc->mStages);
-	ASSERT(ppShaderProgram);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc && pDesc->mStages);
+	SE_ASSERT(ppShaderProgram);
 
 	size_t totalSize = sizeof(Shader);
 	totalSize += sizeof(PipelineReflection);
@@ -3477,7 +3477,7 @@ void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader*
 	}
 
 	Shader* pShaderProgram = (Shader*)conf_calloc(1, totalSize);
-	ASSERT(pShaderProgram);
+	SE_ASSERT(pShaderProgram);
 
 	pShaderProgram->pReflection = (PipelineReflection*)(pShaderProgram + 1);
 	pShaderProgram->pShaderBlobs = (ID3DBlob**)(pShaderProgram->pReflection + 1);
@@ -3575,8 +3575,8 @@ void removeShader(Renderer* pRenderer, Shader* pShaderProgram)
 /************************************************************************/
 void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatureDesc, RootSignature** ppRootSignature)
 {
-	ASSERT(pRenderer->pActiveGpuSettings->mMaxRootSignatureDWORDS > 0);
-	ASSERT(ppRootSignature);
+	SE_ASSERT(pRenderer->pActiveGpuSettings->mMaxRootSignatureDWORDS > 0);
+	SE_ASSERT(ppRootSignature);
 
 	eastl::vector<UpdateFrequencyLayoutInfo>               layouts(DESCRIPTOR_UPDATE_FREQ_COUNT);
 	eastl::vector<ShaderResource>                          shaderResources;
@@ -3662,7 +3662,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				}
 				else
 				{
-					ASSERT(pRes->type == it->type);
+					SE_ASSERT(pRes->type == it->type);
 					if ( pRes->type != it->type )
 					{
 						LOGF(LogLevel::eERROR,
@@ -3722,7 +3722,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	totalSize += sizeof(DescriptorIndexMap);
 
 	RootSignature* pRootSignature = (RootSignature*)conf_calloc(1, totalSize);
-	ASSERT(pRootSignature);
+	SE_ASSERT(pRootSignature);
 
 	if ( (uint32_t)shaderResources.size() )
 	{
@@ -3731,7 +3731,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 
 	pRootSignature->pDescriptors = (DescriptorInfo*)(pRootSignature + 1);
 	pRootSignature->pDescriptorNameToIndexMap = (DescriptorIndexMap*)(pRootSignature->pDescriptors + pRootSignature->mDescriptorCount);
-	ASSERT(pRootSignature->pDescriptorNameToIndexMap);
+	SE_ASSERT(pRootSignature->pDescriptorNameToIndexMap);
 	conf_placement_new<DescriptorIndexMap>(pRootSignature->pDescriptorNameToIndexMap);
 
 	pRootSignature->mPipelineType = pipelineType;
@@ -3821,7 +3821,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	if ( pRenderer->pActiveGpuSettings->mMaxRootSignatureDWORDS < calculate_root_signature_size(layouts.data(), (uint32_t)layouts.size()) )
 	{
 		LOGF(LogLevel::eWARNING, "Root Signature size greater than the specified max size");
-		ASSERT(false);
+		SE_ASSERT(false);
 	}
 
 	// D3D12 currently has two versions of root signatures (1_0, 1_1)
@@ -3880,7 +3880,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 		UpdateFrequencyLayoutInfo& layout = layouts[i];
 		if ( layout.mRootDescriptorParams.size() )
 		{
-			ASSERT(1 == layout.mRootDescriptorParams.size());
+			SE_ASSERT(1 == layout.mRootDescriptorParams.size());
 
 			uint32_t rootDescriptorIndex = 0;
 
@@ -4104,7 +4104,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	hres = pRenderer->pDxDevice->CreateRootSignature(
 		util_calculate_shared_node_mask(pRenderer), pRootSignature->pDxSerializedRootSignatureString->GetBufferPointer(),
 		pRootSignature->pDxSerializedRootSignatureString->GetBufferSize(), IID_ARGS(&pRootSignature->pDxRootSignature));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	SAFE_RELEASE(error_msgs);
 
@@ -4124,9 +4124,9 @@ void removeRootSignature(Renderer* pRenderer, RootSignature* pRootSignature)
 /************************************************************************/
 void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, DescriptorSet** ppDescriptorSet)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppDescriptorSet);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppDescriptorSet);
 
 	const RootSignature* pRootSignature = pDesc->pRootSignature;
 	const DescriptorUpdateFrequency updateFreq = pDesc->mUpdateFrequency;
@@ -4138,7 +4138,7 @@ void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, Descr
 	size_t totalSize = sizeof(DescriptorSet);
 	totalSize += rootDescCount ? (pDesc->mMaxSets * sizeof(D3D12_GPU_VIRTUAL_ADDRESS)) : 0;
 	DescriptorSet* pDescriptorSet = (DescriptorSet*)conf_calloc(1, totalSize);
-	ASSERT(pDescriptorSet);
+	SE_ASSERT(pDescriptorSet);
 
 	pDescriptorSet->pRootSignature = pRootSignature;
 	pDescriptorSet->mUpdateFrequency = updateFreq;
@@ -4182,7 +4182,7 @@ void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, Descr
 					if ( pDescInfo->mType != DESCRIPTOR_TYPE_RAY_TRACING )
 #endif
 					{
-						ASSERT(srcHandle.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN);
+						SE_ASSERT(srcHandle.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN);
 
 						for ( uint32_t s = 0; s < pDesc->mMaxSets; ++s )
 							for ( uint32_t j = 0; j < pDescInfo->mSize; ++j )
@@ -4210,7 +4210,7 @@ void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, Descr
 
 	if ( pDescriptorSet->mRootAddressCount )
 	{
-		ASSERT(1 == pDescriptorSet->mRootAddressCount);
+		SE_ASSERT(1 == pDescriptorSet->mRootAddressCount);
 		pDescriptorSet->pRootAddresses = (D3D12_GPU_VIRTUAL_ADDRESS*)(pDescriptorSet + 1);
 		pDescriptorSet->mRootDescriptorRootIndex = pRootSignature->mDxRootDescriptorRootIndices[updateFreq];
 	}
@@ -4220,8 +4220,8 @@ void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, Descr
 
 void removeDescriptorSet(Renderer* pRenderer, DescriptorSet* pDescriptorSet)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDescriptorSet);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDescriptorSet);
 	SAFE_FREE(pDescriptorSet);
 }
 
@@ -4240,9 +4240,9 @@ void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDe
 #define VALIDATE_DESCRIPTOR(descriptor,...)
 #endif
 
-	ASSERT(pRenderer);
-	ASSERT(pDescriptorSet);
-	ASSERT(index < pDescriptorSet->mMaxSets);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDescriptorSet);
+	SE_ASSERT(index < pDescriptorSet->mMaxSets);
 
 	const RootSignature* pRootSignature = pDescriptorSet->pRootSignature;
 	const DescriptorUpdateFrequency updateFreq = (DescriptorUpdateFrequency)pDescriptorSet->mUpdateFrequency;
@@ -4454,9 +4454,9 @@ bool reset_root_signature(Cmd* pCmd, PipelineType type, ID3D12RootSignature* pRo
 
 void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorSet)
 {
-	ASSERT(pCmd);
-	ASSERT(pDescriptorSet);
-	ASSERT(index < pDescriptorSet->mMaxSets);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pDescriptorSet);
+	SE_ASSERT(index < pDescriptorSet->mMaxSets);
 
 	const DescriptorUpdateFrequency updateFreq = (DescriptorUpdateFrequency)pDescriptorSet->mUpdateFrequency;
 
@@ -4507,17 +4507,17 @@ void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorS
 
 void cmdBindPushConstants(Cmd* pCmd, RootSignature* pRootSignature, const char* pName, const void* pConstants)
 {
-	ASSERT(pCmd);
-	ASSERT(pConstants);
-	ASSERT(pRootSignature);
-	ASSERT(pName);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pConstants);
+	SE_ASSERT(pRootSignature);
+	SE_ASSERT(pName);
 
 	// Set root signature if the current one differs from pRootSignature
 	reset_root_signature(pCmd, pRootSignature->mPipelineType, pRootSignature->pDxRootSignature);
 
 	const DescriptorInfo* pDesc = get_descriptor(pRootSignature, pName);
-	ASSERT(pDesc);
-	ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mType);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mType);
 
 	if ( pRootSignature->mPipelineType == PIPELINE_TYPE_GRAPHICS )
 		pCmd->pDxCmdList->SetGraphicsRoot32BitConstants(pRootSignature->mDxRootConstantRootIndices[pDesc->mIndexInParent], pDesc->mSize, pConstants, 0);
@@ -4527,17 +4527,17 @@ void cmdBindPushConstants(Cmd* pCmd, RootSignature* pRootSignature, const char* 
 
 void cmdBindPushConstantsByIndex(Cmd* pCmd, RootSignature* pRootSignature, uint32_t paramIndex, const void* pConstants)
 {
-	ASSERT(pCmd);
-	ASSERT(pConstants);
-	ASSERT(pRootSignature);
-	ASSERT(paramIndex >= 0 && paramIndex < pRootSignature->mDescriptorCount);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pConstants);
+	SE_ASSERT(pRootSignature);
+	SE_ASSERT(paramIndex >= 0 && paramIndex < pRootSignature->mDescriptorCount);
 
 	// Set root signature if the current one differs from pRootSignature
 	reset_root_signature(pCmd, pRootSignature->mPipelineType, pRootSignature->pDxRootSignature);
 
 	const DescriptorInfo* pDesc = pRootSignature->pDescriptors + paramIndex;
-	ASSERT(pDesc);
-	ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mType);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mType);
 
 	if ( pRootSignature->mPipelineType == PIPELINE_TYPE_GRAPHICS )
 		pCmd->pDxCmdList->SetGraphicsRoot32BitConstants(pRootSignature->mDxRootConstantRootIndices[pDesc->mIndexInParent], pDesc->mSize, pConstants, 0);
@@ -4549,15 +4549,15 @@ void cmdBindPushConstantsByIndex(Cmd* pCmd, RootSignature* pRootSignature, uint3
 /************************************************************************/
 void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipeline** ppPipeline)
 {
-	ASSERT(pRenderer);
-	ASSERT(ppPipeline);
-	ASSERT(pDesc);
-	ASSERT(pDesc->pShaderProgram);
-	ASSERT(pDesc->pRootSignature);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(ppPipeline);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(pDesc->pShaderProgram);
+	SE_ASSERT(pDesc->pRootSignature);
 
 	//allocate new pipeline
 	Pipeline* pPipeline = (Pipeline*)conf_calloc(1, sizeof(Pipeline));
-	ASSERT(pPipeline);
+	SE_ASSERT(pPipeline);
 
 	const Shader*       pShaderProgram = pDesc->pShaderProgram;
 	const VertexLayout* pVertexLayout = pDesc->pVertexLayout;
@@ -4623,7 +4623,7 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 		{
 			const VertexAttrib* attrib = &(pVertexLayout->mAttribs[attrib_index]);
 
-			ASSERT(SEMANTIC_UNDEFINED != attrib->mSemantic);
+			SE_ASSERT(SEMANTIC_UNDEFINED != attrib->mSemantic);
 
 			if ( attrib->mSemanticNameLength > 0 )
 			{
@@ -4651,7 +4651,7 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 				case SEMANTIC_TEXCOORD7:
 				case SEMANTIC_TEXCOORD8:
 				case SEMANTIC_TEXCOORD9: strcpy_s(semantic_names[attrib_index], "TEXCOORD"); break;
-				default: ASSERT(false); break;
+				default: SE_ASSERT(false); break;
 				}
 			}
 
@@ -4741,7 +4741,7 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 
 	HRESULT hres = pRenderer->pDxDevice->CreateGraphicsPipelineState(
 		&pipeline_state_desc, __uuidof(pPipeline->pDxPipelineState), (void**)&(pPipeline->pDxPipelineState));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	D3D_PRIMITIVE_TOPOLOGY topology = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
 	switch ( pDesc->mPrimitiveTopo )
@@ -4761,7 +4761,7 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 
 	default: break;
 	}
-	ASSERT(D3D_PRIMITIVE_TOPOLOGY_UNDEFINED != topology);
+	SE_ASSERT(D3D_PRIMITIVE_TOPOLOGY_UNDEFINED != topology);
 	pPipeline->mDxPrimitiveTopology = topology;
 
 	*ppPipeline = pPipeline;
@@ -4769,16 +4769,16 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 
 void addComputePipeline(Renderer* pRenderer, const ComputePipelineDesc* pDesc, Pipeline** ppPipeline)
 {
-	ASSERT(pRenderer);
-	ASSERT(ppPipeline);
-	ASSERT(pDesc);
-	ASSERT(pDesc->pShaderProgram);
-	ASSERT(pDesc->pRootSignature);
-	ASSERT(pDesc->pShaderProgram->pShaderBlobs[0]);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(ppPipeline);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(pDesc->pShaderProgram);
+	SE_ASSERT(pDesc->pRootSignature);
+	SE_ASSERT(pDesc->pShaderProgram->pShaderBlobs[0]);
 
 	//allocate new pipeline
 	Pipeline* pPipeline = (Pipeline*)conf_calloc(1, sizeof(Pipeline));
-	ASSERT(pPipeline);
+	SE_ASSERT(pPipeline);
 
 	pPipeline->mType = PIPELINE_TYPE_COMPUTE;
 	pPipeline->pRootSignature = pDesc->pRootSignature->pDxRootSignature;
@@ -4806,7 +4806,7 @@ void addComputePipeline(Renderer* pRenderer, const ComputePipelineDesc* pDesc, P
 
 	HRESULT hres = pRenderer->pDxDevice->CreateComputePipelineState(
 		&pipeline_state_desc, __uuidof(pPipeline->pDxPipelineState), (void**)&(pPipeline->pDxPipelineState));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	*ppPipeline = pPipeline;
 }
@@ -4834,7 +4834,7 @@ void addPipeline(Renderer* pRenderer, const PipelineDesc* pDesc, Pipeline** ppPi
 #endif
 	default:
 		{
-			ASSERT(false);
+			SE_ASSERT(false);
 			*ppPipeline = {};
 			break;
 		}
@@ -4843,8 +4843,8 @@ void addPipeline(Renderer* pRenderer, const PipelineDesc* pDesc, Pipeline** ppPi
 
 void removePipeline(Renderer* pRenderer, Pipeline* pPipeline)
 {
-	ASSERT(pRenderer);
-	ASSERT(pPipeline);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pPipeline);
 
 	//delete pipeline from device
 	SAFE_RELEASE(pPipeline->pDxPipelineState);
@@ -4859,15 +4859,15 @@ void removePipeline(Renderer* pRenderer, Pipeline* pPipeline)
 /************************************************************************/
 void beginCmd(Cmd* pCmd)
 {
-	ASSERT(pCmd);
-	ASSERT(pCmd->pDxCmdList);
-	ASSERT(pCmd->pDxCmdAlloc);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pCmd->pDxCmdList);
+	SE_ASSERT(pCmd->pDxCmdAlloc);
 
 	HRESULT hres = pCmd->pDxCmdAlloc->Reset();
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	hres = pCmd->pDxCmdList->Reset(pCmd->pDxCmdAlloc, NULL);
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	if ( pCmd->mType != QUEUE_TYPE_TRANSFER )
 	{
@@ -4893,11 +4893,11 @@ void beginCmd(Cmd* pCmd)
 
 void endCmd(Cmd* pCmd)
 {
-	ASSERT(pCmd);
-	ASSERT(pCmd->pDxCmdList);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pCmd->pDxCmdList);
 
 	HRESULT hres = pCmd->pDxCmdList->Close();
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 }
 
 void cmdBindRenderTargets(
@@ -4905,8 +4905,8 @@ void cmdBindRenderTargets(
 	const LoadActionsDesc* pLoadActions /* = NULL*/, uint32_t* pColorArraySlices, uint32_t* pColorMipSlices, uint32_t depthArraySlice,
 	uint32_t depthMipSlice)
 {
-	ASSERT(pCmd);
-	ASSERT(pCmd->pDxCmdList);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pCmd->pDxCmdList);
 
 	if ( !renderTargetCount && !pDepthStencil )
 		return;
@@ -4986,14 +4986,14 @@ void cmdBindRenderTargets(
 		}
 		if ( pLoadActions->mLoadActionDepth == LOAD_ACTION_CLEAR || pLoadActions->mLoadActionStencil == LOAD_ACTION_CLEAR )
 		{
-			ASSERT(dsv.ptr != D3D12_GPU_VIRTUAL_ADDRESS_NULL);
+			SE_ASSERT(dsv.ptr != D3D12_GPU_VIRTUAL_ADDRESS_NULL);
 
 			D3D12_CLEAR_FLAGS flags = (D3D12_CLEAR_FLAGS)0;
 			if ( pLoadActions->mLoadActionDepth == LOAD_ACTION_CLEAR )
 				flags |= D3D12_CLEAR_FLAG_DEPTH;
 			if ( pLoadActions->mLoadActionStencil == LOAD_ACTION_CLEAR )
 				flags |= D3D12_CLEAR_FLAG_STENCIL;
-			ASSERT(flags);
+			SE_ASSERT(flags);
 			pCmd->pDxCmdList->ClearDepthStencilView(dsv, flags, pLoadActions->mClearDepth.depth, (UINT8)pLoadActions->mClearDepth.stencil, 0, NULL);
 		}
 	}
@@ -5001,10 +5001,10 @@ void cmdBindRenderTargets(
 
 void cmdSetViewport(Cmd* pCmd, float x, float y, float width, float height, float minDepth, float maxDepth)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	//set new viewport
-	ASSERT(pCmd->pDxCmdList);
+	SE_ASSERT(pCmd->pDxCmdList);
 
 	D3D12_VIEWPORT viewport;
 	viewport.TopLeftX = x;
@@ -5019,10 +5019,10 @@ void cmdSetViewport(Cmd* pCmd, float x, float y, float width, float height, floa
 
 void cmdSetScissor(Cmd* pCmd, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	//set new scissor values
-	ASSERT(pCmd->pDxCmdList);
+	SE_ASSERT(pCmd->pDxCmdList);
 
 	D3D12_RECT scissor;
 	scissor.left = x;
@@ -5035,15 +5035,15 @@ void cmdSetScissor(Cmd* pCmd, uint32_t x, uint32_t y, uint32_t width, uint32_t h
 
 void cmdBindPipeline(Cmd* pCmd, Pipeline* pPipeline)
 {
-	ASSERT(pCmd);
-	ASSERT(pPipeline);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pPipeline);
 
 	//bind given pipeline
-	ASSERT(pCmd->pDxCmdList);
+	SE_ASSERT(pCmd->pDxCmdList);
 
 	if ( pPipeline->mType == PIPELINE_TYPE_GRAPHICS )
 	{
-		ASSERT(pPipeline->pDxPipelineState);
+		SE_ASSERT(pPipeline->pDxPipelineState);
 		reset_root_signature(pCmd, pPipeline->mType, pPipeline->pRootSignature);
 		pCmd->pDxCmdList->IASetPrimitiveTopology(pPipeline->mDxPrimitiveTopology);
 		pCmd->pDxCmdList->SetPipelineState(pPipeline->pDxPipelineState);
@@ -5057,7 +5057,7 @@ void cmdBindPipeline(Cmd* pCmd, Pipeline* pPipeline)
 #endif
 	else
 	{
-		ASSERT(pPipeline->pDxPipelineState);
+		SE_ASSERT(pPipeline->pDxPipelineState);
 		reset_root_signature(pCmd, pPipeline->mType, pPipeline->pRootSignature);
 		pCmd->pDxCmdList->SetPipelineState(pPipeline->pDxPipelineState);
 	}
@@ -5065,10 +5065,10 @@ void cmdBindPipeline(Cmd* pCmd, Pipeline* pPipeline)
 
 void cmdBindIndexBuffer(Cmd* pCmd, Buffer* pBuffer, uint32_t indexType, uint64_t offset)
 {
-	ASSERT(pCmd);
-	ASSERT(pBuffer);
-	ASSERT(pCmd->pDxCmdList);
-	ASSERT(D3D12_GPU_VIRTUAL_ADDRESS_NULL != pBuffer->mDxGpuAddress);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pBuffer);
+	SE_ASSERT(pCmd->pDxCmdList);
+	SE_ASSERT(D3D12_GPU_VIRTUAL_ADDRESS_NULL != pBuffer->mDxGpuAddress);
 
 	D3D12_INDEX_BUFFER_VIEW ibView = {};
 	ibView.BufferLocation = pBuffer->mDxGpuAddress + offset;
@@ -5081,16 +5081,16 @@ void cmdBindIndexBuffer(Cmd* pCmd, Buffer* pBuffer, uint32_t indexType, uint64_t
 
 void cmdBindVertexBuffer(Cmd* pCmd, uint32_t bufferCount, Buffer** ppBuffers, const uint32_t* pStrides, const uint64_t* pOffsets)
 {
-	ASSERT(pCmd);
-	ASSERT(0 != bufferCount);
-	ASSERT(ppBuffers);
-	ASSERT(pCmd->pDxCmdList);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(0 != bufferCount);
+	SE_ASSERT(ppBuffers);
+	SE_ASSERT(pCmd->pDxCmdList);
 	//bind given vertex buffer
 
 	DECLARE_ZERO(D3D12_VERTEX_BUFFER_VIEW, views[MAX_VERTEX_ATTRIBS]);
 	for ( uint32_t i = 0; i < bufferCount; ++i )
 	{
-		ASSERT(D3D12_GPU_VIRTUAL_ADDRESS_NULL != ppBuffers[i]->mDxGpuAddress);
+		SE_ASSERT(D3D12_GPU_VIRTUAL_ADDRESS_NULL != ppBuffers[i]->mDxGpuAddress);
 
 		views[i].BufferLocation = (ppBuffers[i]->mDxGpuAddress + (pOffsets ? pOffsets[i] : 0));
 		views[i].SizeInBytes = (UINT)(ppBuffers[i]->mSize - (pOffsets ? pOffsets[i] : 0));
@@ -5102,30 +5102,30 @@ void cmdBindVertexBuffer(Cmd* pCmd, uint32_t bufferCount, Buffer** ppBuffers, co
 
 void cmdDraw(Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	//draw given vertices
-	ASSERT(pCmd->pDxCmdList);
+	SE_ASSERT(pCmd->pDxCmdList);
 
 	pCmd->pDxCmdList->DrawInstanced((UINT)vertexCount, (UINT)1, (UINT)firstVertex, (UINT)0);
 }
 
 void cmdDrawInstanced(Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex, uint32_t instanceCount, uint32_t firstInstance)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	//draw given vertices
-	ASSERT(pCmd->pDxCmdList);
+	SE_ASSERT(pCmd->pDxCmdList);
 
 	pCmd->pDxCmdList->DrawInstanced((UINT)vertexCount, (UINT)instanceCount, (UINT)firstVertex, (UINT)firstInstance);
 }
 
 void cmdDrawIndexed(Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	//draw indexed mesh
-	ASSERT(pCmd->pDxCmdList);
+	SE_ASSERT(pCmd->pDxCmdList);
 
 	pCmd->pDxCmdList->DrawIndexedInstanced((UINT)indexCount, (UINT)1, (UINT)firstIndex, (UINT)firstVertex, (UINT)0);
 }
@@ -5133,20 +5133,20 @@ void cmdDrawIndexed(Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_
 void cmdDrawIndexedInstanced(
 	Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_t instanceCount, uint32_t firstInstance, uint32_t firstVertex)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	//draw indexed mesh
-	ASSERT(pCmd->pDxCmdList);
+	SE_ASSERT(pCmd->pDxCmdList);
 
 	pCmd->pDxCmdList->DrawIndexedInstanced((UINT)indexCount, (UINT)instanceCount, (UINT)firstIndex, (UINT)firstVertex, (UINT)firstInstance);
 }
 
 void cmdDispatch(Cmd* pCmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	//dispatch given command
-	ASSERT(pCmd->pDxCmdList != NULL);
+	SE_ASSERT(pCmd->pDxCmdList != NULL);
 
 	pCmd->pDxCmdList->Dispatch(groupCountX, groupCountY, groupCountZ);
 }
@@ -5340,11 +5340,11 @@ void cmdResourceBarrier(Cmd* pCmd,
 
 void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSrcBuffer, uint64_t srcOffset, uint64_t size)
 {
-	ASSERT(pCmd);
-	ASSERT(pSrcBuffer);
-	ASSERT(pSrcBuffer->pDxResource);
-	ASSERT(pBuffer);
-	ASSERT(pBuffer->pDxResource);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pSrcBuffer);
+	SE_ASSERT(pSrcBuffer->pDxResource);
+	SE_ASSERT(pBuffer);
+	SE_ASSERT(pBuffer->pDxResource);
 
 #ifdef _DURANGO
 	pCmd->mDma.pDxCmdList->CopyBufferRegion(
@@ -5417,18 +5417,18 @@ void acquireNextImage(
 {
 	UNREF_PARAM(pSignalSemaphore);
 	UNREF_PARAM(pFence);
-	ASSERT(pRenderer);
+	SE_ASSERT(pRenderer);
 
 	//get latest backbuffer image
-	ASSERT(pSwapChain->pDxSwapChain);
-	ASSERT(pSwapChainImageIndex);
+	SE_ASSERT(pSwapChain->pDxSwapChain);
+	SE_ASSERT(pSwapChainImageIndex);
 
 	*pSwapChainImageIndex = fnHookGetSwapChainImageIndex(pSwapChain);
 }
 
 void queueSubmit(Queue* pQueue, const QueueSubmitDesc* pDesc)
 {
-	ASSERT(pDesc);
+	SE_ASSERT(pDesc);
 
 	uint32_t cmdCount = pDesc->mCmdCount;
 	Cmd** pCmds = pDesc->ppCmds;
@@ -5438,21 +5438,21 @@ void queueSubmit(Queue* pQueue, const QueueSubmitDesc* pDesc)
 	uint32_t signalSemaphoreCount = pDesc->mSignalSemaphoreCount;
 	Semaphore** ppSignalSemaphores = pDesc->ppSignalSemaphores;
 
-	//ASSERT that given cmd list and given params are valid
-	ASSERT(pQueue);
-	ASSERT(cmdCount > 0);
-	ASSERT(pCmds);
+	//SE_ASSERT that given cmd list and given params are valid
+	SE_ASSERT(pQueue);
+	SE_ASSERT(cmdCount > 0);
+	SE_ASSERT(pCmds);
 	if ( waitSemaphoreCount > 0 )
 	{
-		ASSERT(ppWaitSemaphores);
+		SE_ASSERT(ppWaitSemaphores);
 	}
 	if ( signalSemaphoreCount > 0 )
 	{
-		ASSERT(ppSignalSemaphores);
+		SE_ASSERT(ppSignalSemaphores);
 	}
 
 	//execute given command list
-	ASSERT(pQueue->pDxQueue);
+	SE_ASSERT(pQueue->pDxQueue);
 
 	cmdCount = cmdCount > MAX_SUBMIT_CMDS ? MAX_SUBMIT_CMDS : cmdCount;
 	ID3D12CommandList** cmds = (ID3D12CommandList**)alloca(cmdCount * sizeof(ID3D12CommandList*));
@@ -5505,7 +5505,7 @@ void queuePresent(Queue* pQueue, const QueuePresentDesc* pDesc)
 				pSwapChain->pDxSwapChain->GetDevice(IID_ARGS(&device));
 				HRESULT removeHr = device->GetDeviceRemovedReason();
 				if ( FAILED(removeHr) )
-					ASSERT(false);    //TODO: let's do something with the error
+					SE_ASSERT(false);    //TODO: let's do something with the error
 			}
 		}
 		else
@@ -5517,7 +5517,7 @@ void queuePresent(Queue* pQueue, const QueuePresentDesc* pDesc)
 				pSwapChain->pDxSwapChain->GetDevice(IID_ARGS(&device));
 				HRESULT removeHr = device->GetDeviceRemovedReason();
 				if ( FAILED(removeHr) )
-					ASSERT(false);    //TODO: let's do something with the error
+					SE_ASSERT(false);    //TODO: let's do something with the error
 			}
 		}
 #else
@@ -5528,7 +5528,7 @@ void queuePresent(Queue* pQueue, const QueuePresentDesc* pDesc)
 			pSwapChain->pDxSwapChain->GetDevice(IID_ARGS(&device));
 			HRESULT removeHr = device->GetDeviceRemovedReason();
 			if ( FAILED(removeHr) )
-				ASSERT(false);    //TODO: let's do something with the error
+				SE_ASSERT(false);    //TODO: let's do something with the error
 		}
 #endif
 	}
@@ -5575,7 +5575,7 @@ void getFenceStatus(Renderer* pRenderer, Fence* pFence, FenceStatus* pFenceStatu
 
 bool fenceSetEventOnCompletion(Fence* fence, uint64_t value, HANDLE fenceEvent)
 {
-	ASSERT(fence);
+	SE_ASSERT(fence);
 	HRESULT hres = fence->pDxFence->SetEventOnCompletion(value, fenceEvent);
 	return SUCCEEDED(hres);
 }
@@ -5616,13 +5616,13 @@ D3D12_INDIRECT_ARGUMENT_TYPE util_to_dx_indirect_argument_type(IndirectArgumentT
 
 void addIndirectCommandSignature(Renderer* pRenderer, const CommandSignatureDesc* pDesc, CommandSignature** ppCommandSignature)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(pDesc->pArgDescs);
-	ASSERT(ppCommandSignature);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(pDesc->pArgDescs);
+	SE_ASSERT(ppCommandSignature);
 
 	CommandSignature* pCommandSignature = (CommandSignature*)conf_calloc(1, sizeof(CommandSignature));
-	ASSERT(pCommandSignature);
+	SE_ASSERT(pCommandSignature);
 
 	bool change = false;
 	// calculate size through arguement types
@@ -5682,13 +5682,13 @@ void addIndirectCommandSignature(Renderer* pRenderer, const CommandSignatureDesc
 		case D3D12_INDIRECT_ARGUMENT_TYPE_DRAW: commandStride += sizeof(IndirectDrawArguments); break;
 		case D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED: commandStride += sizeof(IndirectDrawIndexArguments); break;
 		case D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH: commandStride += sizeof(IndirectDispatchArguments); break;
-		default: ASSERT(false); break;
+		default: SE_ASSERT(false); break;
 		}
 	}
 
 	if ( change )
 	{
-		ASSERT(pDesc->pRootSignature);
+		SE_ASSERT(pDesc->pRootSignature);
 	}
 
 	commandStride = round_up(commandStride, 16);
@@ -5702,7 +5702,7 @@ void addIndirectCommandSignature(Renderer* pRenderer, const CommandSignatureDesc
 	commandSignatureDesc.NodeMask = util_calculate_shared_node_mask(pRenderer);
 	HRESULT hres = pRenderer->pDxDevice->CreateCommandSignature(
 		&commandSignatureDesc, change ? pDesc->pRootSignature->pDxRootSignature : NULL, IID_ARGS(&pCommandSignature->pDxHandle));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	*ppCommandSignature = pCommandSignature;
 }
@@ -5715,11 +5715,11 @@ void removeIndirectCommandSignature(Renderer* pRenderer, CommandSignature* pComm
 }
 
 void cmdExecuteIndirect(
-	Cmd* pCmd, CommandSignature* pCommandSignature, uint maxCommandCount, Buffer* pIndirectBuffer, uint64_t bufferOffset,
+	Cmd* pCmd, CommandSignature* pCommandSignature, uint32_t maxCommandCount, Buffer* pIndirectBuffer, uint64_t bufferOffset,
 	Buffer* pCounterBuffer, uint64_t counterBufferOffset)
 {
-	ASSERT(pCommandSignature);
-	ASSERT(pIndirectBuffer);
+	SE_ASSERT(pCommandSignature);
+	SE_ASSERT(pIndirectBuffer);
 
 	if ( !pCounterBuffer )
 		pCmd->pDxCmdList->ExecuteIndirect(
@@ -5734,8 +5734,8 @@ void cmdExecuteIndirect(
 /************************************************************************/
 void getTimestampFrequency(Queue* pQueue, double* pFrequency)
 {
-	ASSERT(pQueue);
-	ASSERT(pFrequency);
+	SE_ASSERT(pQueue);
+	SE_ASSERT(pFrequency);
 
 	UINT64 freq = 0;
 	pQueue->pDxQueue->GetTimestampFrequency(&freq);
@@ -5744,12 +5744,12 @@ void getTimestampFrequency(Queue* pQueue, double* pFrequency)
 
 void addQueryPool(Renderer* pRenderer, const QueryPoolDesc* pDesc, QueryPool** ppQueryPool)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppQueryPool);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppQueryPool);
 
 	QueryPool* pQueryPool = (QueryPool*)conf_calloc(1, sizeof(QueryPool));
-	ASSERT(pQueryPool);
+	SE_ASSERT(pQueryPool);
 
 	pQueryPool->mType = util_to_dx_query_type(pDesc->mType);
 	pQueryPool->mCount = pDesc->mQueryCount;
@@ -5872,13 +5872,13 @@ void cmdAddDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName)
 /************************************************************************/
 void setBufferName(Renderer* pRenderer, Buffer* pBuffer, const char* pName)
 {
-	ASSERT(pRenderer);
-	ASSERT(pBuffer);
-	ASSERT(pName);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pBuffer);
+	SE_ASSERT(pName);
 
 	size_t length = strlen(pName);
 
-	ASSERT(length < MAX_PATH && "Name too long");
+	SE_ASSERT(length < MAX_PATH && "Name too long");
 
 	wchar_t wName[MAX_PATH] = {};
 	wName[strlen(pName)] = '\0';
@@ -5889,13 +5889,13 @@ void setBufferName(Renderer* pRenderer, Buffer* pBuffer, const char* pName)
 
 void setTextureName(Renderer* pRenderer, Texture* pTexture, const char* pName)
 {
-	ASSERT(pRenderer);
-	ASSERT(pTexture);
-	ASSERT(pName);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pTexture);
+	SE_ASSERT(pName);
 
 	size_t length = strlen(pName);
 
-	ASSERT(length < MAX_PATH && "Name too long");
+	SE_ASSERT(length < MAX_PATH && "Name too long");
 
 	wchar_t wName[MAX_PATH] = {};
 	wName[strlen(pName)] = '\0';
@@ -5969,8 +5969,8 @@ VirtualTexturePage* addPage(Renderer* pRenderer, Texture* pTexture, D3D12_TILED_
 
 struct PageCounts
 {
-	uint mAlivePageCount;
-	uint mRemovePageCount;
+	uint32_t mAlivePageCount;
+	uint32_t mRemovePageCount;
 };
 
 void releasePage(Cmd* pCmd, Texture* pTexture)
@@ -5984,7 +5984,7 @@ void releasePage(Cmd* pCmd, Texture* pTexture)
 		mapBuffer(pRenderer, pTexture->pSvt->mPageCounts, NULL);
 	}
 
-	uint removePageCount = ((const PageCounts*)pTexture->pSvt->mPageCounts->pCpuMappedAddress)->mRemovePageCount;
+	uint32_t removePageCount = ((const PageCounts*)pTexture->pSvt->mPageCounts->pCpuMappedAddress)->mRemovePageCount;
 
 	if ( map )
 	{
@@ -6002,7 +6002,7 @@ void releasePage(Cmd* pCmd, Texture* pTexture)
 	{
 		mapBuffer(pRenderer, pTexture->pSvt->mRemovePage, NULL);
 	}
-	memcpy(RemovePageTable.data(), pTexture->pSvt->mRemovePage->pCpuMappedAddress, sizeof(uint));
+	memcpy(RemovePageTable.data(), pTexture->pSvt->mRemovePage->pCpuMappedAddress, sizeof(uint32_t));
 	if ( map )
 	{
 		unmapBuffer(pRenderer, pTexture->pSvt->mRemovePage);
@@ -6043,7 +6043,7 @@ void fillVirtualTexture(Cmd* pCmd, Texture* pTexture, Fence* pFence)
 		mapBuffer(pRenderer, pTexture->pSvt->mPageCounts, NULL);
 	}
 
-	uint alivePageCount = ((const PageCounts*)pTexture->pSvt->mPageCounts->pCpuMappedAddress)->mAlivePageCount;
+	uint32_t alivePageCount = ((const PageCounts*)pTexture->pSvt->mPageCounts->pCpuMappedAddress)->mAlivePageCount;
 
 	if ( map )
 	{
@@ -6056,9 +6056,9 @@ void fillVirtualTexture(Cmd* pCmd, Texture* pTexture, Fence* pFence)
 		mapBuffer(pRenderer, pTexture->pSvt->mAlivePage, NULL);
 	}
 
-	eastl::vector<uint> VisibilityData;
+	eastl::vector<uint32_t> VisibilityData;
 	VisibilityData.resize(alivePageCount);
-	memcpy(VisibilityData.data(), pTexture->pSvt->mAlivePage->pCpuMappedAddress, VisibilityData.size() * sizeof(uint));
+	memcpy(VisibilityData.data(), pTexture->pSvt->mAlivePage->pCpuMappedAddress, VisibilityData.size() * sizeof(uint32_t));
 
 	if ( map )
 	{
@@ -6070,7 +6070,7 @@ void fillVirtualTexture(Cmd* pCmd, Texture* pTexture, Fence* pFence)
 
 	for ( int i = 0; i < (int)VisibilityData.size(); ++i )
 	{
-		uint pageIndex = VisibilityData[i];
+		uint32_t pageIndex = VisibilityData[i];
 		VirtualTexturePage* pPage = &(*pPageTable)[pageIndex];
 
 		if ( allocateVirtualPage(pRenderer, pTexture, *pPage) )
@@ -6087,8 +6087,8 @@ void fillVirtualTexture(Cmd* pCmd, Texture* pTexture, Fence* pFence)
 
 
 			D3D12_TILED_RESOURCE_COORDINATE startCoord;
-			startCoord.X = pPage->offset.X / (uint)pTexture->pSvt->mSparseVirtualTexturePageWidth;
-			startCoord.Y = pPage->offset.Y / (uint)pTexture->pSvt->mSparseVirtualTexturePageHeight;
+			startCoord.X = pPage->offset.X / (uint32_t)pTexture->pSvt->mSparseVirtualTexturePageWidth;
+			startCoord.Y = pPage->offset.Y / (uint32_t)pTexture->pSvt->mSparseVirtualTexturePageHeight;
 			startCoord.Z = pPage->offset.Z;
 			startCoord.Subresource = pPage->offset.Subresource;
 
@@ -6186,8 +6186,8 @@ void fillVirtualTextureLevel(Cmd* pCmd, Texture* pTexture, uint32_t mipLevel)
 				memcpy(pPage->pIntermediateBuffer->pCpuMappedAddress, pData, pPage->size);
 
 				D3D12_TILED_RESOURCE_COORDINATE startCoord;
-				startCoord.X = pPage->offset.X / (uint)pTexture->pSvt->mSparseVirtualTexturePageWidth;
-				startCoord.Y = pPage->offset.Y / (uint)pTexture->pSvt->mSparseVirtualTexturePageHeight;
+				startCoord.X = pPage->offset.X / (uint32_t)pTexture->pSvt->mSparseVirtualTexturePageWidth;
+				startCoord.Y = pPage->offset.Y / (uint32_t)pTexture->pSvt->mSparseVirtualTexturePageHeight;
 				startCoord.Z = pPage->offset.Z;
 				startCoord.Subresource = pPage->offset.Subresource;
 
@@ -6247,9 +6247,9 @@ void fillVirtualTextureLevel(Cmd* pCmd, Texture* pTexture, uint32_t mipLevel)
 
 void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture ** ppTexture, void* pImageData)
 {
-	ASSERT(pRenderer);
+	SE_ASSERT(pRenderer);
 	Texture* pTexture = (Texture*)conf_calloc(1, sizeof(*pTexture) + sizeof(VirtualTexture));
-	ASSERT(pTexture);
+	SE_ASSERT(pTexture);
 
 	pTexture->pSvt = (VirtualTexture*)(pTexture + 1);
 
@@ -6288,7 +6288,7 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture 
 	DXGI_FORMAT         dxFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DescriptorType      descriptors = pDesc->mDescriptors;
 
-	ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
+	SE_ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
 
 	desc.Width = pDesc->mWidth;
 	desc.Height = pDesc->mHeight;
@@ -6304,7 +6304,7 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture 
 	D3D12_RESOURCE_STATES res_states = util_to_dx_resource_state(pDesc->mStartState);
 
 	HRESULT hres = pRenderer->pDxDevice->CreateReservedResource(&desc, res_states, NULL, IID_ARGS(&pTexture->pDxResource));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	pTexture->mCurrentState = RESOURCE_STATE_COPY_DEST;
 
@@ -6380,7 +6380,7 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture 
 						extent.Subresource = mipLevel;
 
 						// Add new virtual page
-						VirtualTexturePage *newPage = addPage(pRenderer, pTexture, offset, extent, (uint32_t)pTexture->pSvt->mSparseVirtualTexturePageWidth * (uint32_t)pTexture->pSvt->mSparseVirtualTexturePageHeight * sizeof(uint), mipLevel, layer);
+						VirtualTexturePage *newPage = addPage(pRenderer, pTexture, offset, extent, (uint32_t)pTexture->pSvt->mSparseVirtualTexturePageWidth * (uint32_t)pTexture->pSvt->mSparseVirtualTexturePageHeight * sizeof(uint32_t), mipLevel, layer);
 					}
 				}
 			}
@@ -6399,7 +6399,7 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture 
 	desc_heap.SizeInBytes = heapSize;
 
 	hres = pRenderer->pDxDevice->CreateHeap(&desc_heap, __uuidof(pTexture->pSvt->pSparseImageMemory), (void**)&pTexture->pSvt->pSparseImageMemory);
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	LOGF(LogLevel::eINFO, "Virtual Texture info: Dim %d x %d Pages %d", pDesc->mWidth, pDesc->mHeight, (uint32_t)(((eastl::vector<VirtualTexturePage>*)pTexture->pSvt->pPages)->size()));
 

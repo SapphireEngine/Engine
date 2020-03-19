@@ -158,7 +158,7 @@ void fill_shader_resources(ID3D12ReflectionT* d3d12reflection, const D3D12_SHADE
 					break;
 				}
 			}
-			ASSERT(resourceIndex != ~0u);
+			SE_ASSERT(resourceIndex != ~0u);
 
 			//Go through all the variables in the constant buffer
 			for ( UINT j = 0; j < bufferDesc.Variables; ++j )

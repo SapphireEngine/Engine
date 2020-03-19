@@ -159,7 +159,7 @@ struct FlushBarriersCmd
 struct ExecuteIndirectCmd
 {
 	CommandSignature* pCommandSignature;
-	uint              maxCommandCount;
+	uint32_t              maxCommandCount;
 	Buffer*           pIndirectBuffer;
 	uint64_t          bufferOffset;
 	Buffer*           pCounterBuffer;

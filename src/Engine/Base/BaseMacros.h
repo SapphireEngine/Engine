@@ -45,3 +45,9 @@ namespace SE_NAMESPACE {}
 #	define SE_PRAGMA_WARNING_DISABLE_CLANG(id)
 #	define SE_PRAGMA_WARNING_DISABLE_GCC(id)  _Pragma(SE_STRINGIZE_2(GCC diagnostic ignored id) )
 #endif
+
+#if SE_DEBUG
+#	define SE_ASSERT(b) __assume(b)
+#else
+#	define SE_ASSERT(b)
+#endif

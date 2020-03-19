@@ -12,7 +12,7 @@ extern ResourceDirectory RD_MIDDLEWARE_TEXT;
 
 typedef struct TextDrawDesc
 {
-	TextDrawDesc(uint font = 0, uint32_t color = 0xffffffff, float size = 15.0f, float spacing = 0.0f, float blur = 0.0f) :
+	TextDrawDesc(uint32_t font = 0, uint32_t color = 0xffffffff, float size = 15.0f, float spacing = 0.0f, float blur = 0.0f) :
 		mFontID(font),
 		mFontColor(color),
 		mFontSize(size),

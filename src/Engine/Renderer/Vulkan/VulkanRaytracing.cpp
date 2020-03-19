@@ -82,13 +82,13 @@ bool isRaytracingSupported(Renderer* pRenderer)
 
 bool initRaytracing(Renderer* pRenderer, Raytracing** ppRaytracing)
 {
-	ASSERT(pRenderer);
-	ASSERT(ppRaytracing);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(ppRaytracing);
 
 	if ( !isRaytracingSupported(pRenderer) ) return false;
 
 	Raytracing* pRaytracing = (Raytracing*)conf_calloc(1, sizeof(*pRaytracing));
-	ASSERT(pRaytracing);
+	SE_ASSERT(pRaytracing);
 
 	VkPhysicalDeviceRayTracingPropertiesNV gpuRaytracingProperties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV };
 	VkPhysicalDeviceProperties2KHR gpuProperties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR, &gpuRaytracingProperties };
@@ -110,10 +110,10 @@ void removeRaytracing(Renderer* pRenderer, Raytracing* pRaytracing)
 
 AccelerationStructureBottom* createBottomAS(Raytracing* pRaytracing, const AccelerationStructureDescTop* pDesc, uint32_t* pScratchBufferSize)
 {
-	ASSERT(pRaytracing);
-	ASSERT(pDesc);
-	ASSERT(pScratchBufferSize);
-	ASSERT(pDesc->mBottomASDescsCount > 0);
+	SE_ASSERT(pRaytracing);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(pScratchBufferSize);
+	SE_ASSERT(pDesc->mBottomASDescsCount > 0);
 
 	uint32_t scratchBufferSize = 0;
 	AccelerationStructureBottom* pResult = (AccelerationStructureBottom*)conf_calloc(pDesc->mBottomASDescsCount, sizeof(AccelerationStructureBottom));
@@ -250,11 +250,11 @@ AccelerationStructureBottom* createBottomAS(Raytracing* pRaytracing, const Accel
 
 Buffer* createTopAS(Raytracing* pRaytracing, const AccelerationStructureDescTop* pDesc, const AccelerationStructureBottom* pASBottom, uint32_t* pScratchBufferSize, Buffer** ppInstanceDescBuffer, VkAccelerationStructureNV *pAccelerationStructure)
 {
-	ASSERT(pRaytracing);
-	ASSERT(pDesc);
-	ASSERT(pScratchBufferSize);
-	ASSERT(pASBottom);
-	ASSERT(ppInstanceDescBuffer);
+	SE_ASSERT(pRaytracing);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(pScratchBufferSize);
+	SE_ASSERT(pASBottom);
+	SE_ASSERT(ppInstanceDescBuffer);
 	/************************************************************************/
 	// Get the size requirement for the Acceleration Structures
 	/************************************************************************/
@@ -303,7 +303,7 @@ Buffer* createTopAS(Raytracing* pRaytracing, const AccelerationStructureDescTop*
 		uint64_t accelerationStructureHandle = 0;
 		VkResult error = vkGetAccelerationStructureHandleNV(pRaytracing->pRenderer->pVkDevice,
 			pASBottom[pInst->mAccelerationStructureIndex].pAccelerationStructure, sizeof(uint64_t), &accelerationStructureHandle);
-		ASSERT(error == VK_SUCCESS);
+		SE_ASSERT(error == VK_SUCCESS);
 
 		const Buffer* pASBuffer = pASBottom[pInst->mAccelerationStructureIndex].pASBuffer;
 		instanceDescs[i].accelerationStructureHandle = accelerationStructureHandle;
@@ -349,12 +349,12 @@ Buffer* createTopAS(Raytracing* pRaytracing, const AccelerationStructureDescTop*
 
 void addAccelerationStructure(Raytracing* pRaytracing, const AccelerationStructureDescTop* pDesc, AccelerationStructure** ppAccelerationStructure)
 {
-	ASSERT(pRaytracing);
-	ASSERT(pDesc);
-	ASSERT(ppAccelerationStructure);
+	SE_ASSERT(pRaytracing);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppAccelerationStructure);
 
 	AccelerationStructure* pAccelerationStructure = (AccelerationStructure*)conf_calloc(1, sizeof(*pAccelerationStructure));
-	ASSERT(pAccelerationStructure);
+	SE_ASSERT(pAccelerationStructure);
 
 	uint32_t scratchBottomBufferSize = 0;
 	pAccelerationStructure->mBottomASCount = pDesc->mBottomASDescsCount;
@@ -391,7 +391,7 @@ void util_build_acceleration_structure(VkCommandBuffer pCmd, VkBuffer pScratchBu
 	const VkBuffer pInstanceDescBuffer,
 	uint32_t descCount)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	VkAccelerationStructureInfoNV info = {};
 	info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
@@ -419,8 +419,8 @@ void util_build_acceleration_structure(VkCommandBuffer pCmd, VkBuffer pScratchBu
 
 void cmdBuildAccelerationStructure(Cmd* pCmd, Raytracing* pRaytracing, RaytracingBuildASDesc* pDesc)
 {
-	ASSERT(pDesc);
-	ASSERT(pDesc->pAccelerationStructure);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(pDesc->pAccelerationStructure);
 
 	AccelerationStructure* pAccelerationStructure = pDesc->pAccelerationStructure;
 
@@ -488,14 +488,14 @@ void FillShaderIdentifiers(const char* const* pRecords, uint32_t shaderCount,
 
 void addRaytracingShaderTable(Raytracing* pRaytracing, const RaytracingShaderTableDesc* pDesc, RaytracingShaderTable** ppTable)
 {
-	ASSERT(pRaytracing);
-	ASSERT(pDesc);
-	ASSERT(pDesc->pPipeline);
-	ASSERT(ppTable);
+	SE_ASSERT(pRaytracing);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(pDesc->pPipeline);
+	SE_ASSERT(ppTable);
 
 	RaytracingShaderTable* pTable = (RaytracingShaderTable*)conf_calloc(1, sizeof(*pTable));
 	conf_placement_new<RaytracingShaderTable>((void*)pTable);
-	ASSERT(pTable);
+	SE_ASSERT(pTable);
 
 	pTable->pPipeline = pDesc->pPipeline;
 
@@ -566,8 +566,8 @@ void cmdDispatchRays(Cmd* pCmd, Raytracing* pRaytracing, const RaytracingDispatc
 
 void removeAccelerationStructure(Raytracing* pRaytracing, AccelerationStructure* pAccelerationStructure)
 {
-	ASSERT(pRaytracing);
-	ASSERT(pAccelerationStructure);
+	SE_ASSERT(pRaytracing);
+	SE_ASSERT(pAccelerationStructure);
 
 	removeBuffer(pRaytracing->pRenderer, pAccelerationStructure->pASBuffer);
 	removeBuffer(pRaytracing->pRenderer, pAccelerationStructure->pInstanceDescBuffer);
@@ -589,8 +589,8 @@ void removeAccelerationStructure(Raytracing* pRaytracing, AccelerationStructure*
 
 void removeRaytracingShaderTable(Raytracing* pRaytracing, RaytracingShaderTable* pTable)
 {
-	ASSERT(pRaytracing);
-	ASSERT(pTable);
+	SE_ASSERT(pRaytracing);
+	SE_ASSERT(pTable);
 
 	removeBuffer(pRaytracing->pRenderer, pTable->pBuffer);
 	pTable->~RaytracingShaderTable();
@@ -645,7 +645,7 @@ VkGeometryInstanceFlagsNV util_to_vk_instance_flags(AccelerationStructureInstanc
 void addRaytracingPipelineImpl(const RaytracingPipelineDesc* pDesc, Pipeline** ppPipeline)
 {
 	Pipeline* pResult = (Pipeline*)conf_calloc(1, sizeof(Pipeline));
-	ASSERT(pResult);
+	SE_ASSERT(pResult);
 
 	pResult->mType = PIPELINE_TYPE_RAYTRACING;
 	eastl::vector<VkPipelineShaderStageCreateInfo> stages;
@@ -797,7 +797,7 @@ void addRaytracingPipelineImpl(const RaytracingPipelineDesc* pDesc, Pipeline** p
 	createInfo.basePipelineIndex = 0;
 
 	VkResult vk_result = vkCreateRayTracingPipelinesNV(pDesc->pRaytracing->pRenderer->pVkDevice, VK_NULL_HANDLE, 1, &createInfo, nullptr, &pResult->pVkPipeline);
-	ASSERT(VK_SUCCESS == vk_result);
+	SE_ASSERT(VK_SUCCESS == vk_result);
 
 	*ppPipeline = pResult;
 }

@@ -75,7 +75,7 @@ int systemRun(const char* command, const char** arguments, size_t argumentCount,
 	return res;
 #elif TARGET_OS_IPHONE
 
-	ASSERT(false && "processRun is unsupported on iOS");
+	SE_ASSERT(false && "processRun is unsupported on iOS");
 	return -1;
 #elif defined(ORBIS)
 	return -1;
@@ -129,7 +129,7 @@ LRESULT CALLBACK WinProc(HWND _hwnd, UINT _id, WPARAM wParam, LPARAM lParam)
 	if ( !pCurrentWindow || _hwnd != pCurrentWindow->handle.window )
 		return DefWindowProcW(_hwnd, _id, wParam, lParam);
 
-	ASSERT(pCurrentWindow);
+	SE_ASSERT(pCurrentWindow);
 
 	switch ( _id )
 	{
@@ -585,7 +585,7 @@ void setMousePositionRelative(const WindowsDesc* winDesc, int32_t x, int32_t y)
 
 MonitorDesc* getMonitor(uint32_t index)
 {
-	ASSERT(gMonitorCount > index);
+	SE_ASSERT(gMonitorCount > index);
 	return &gMonitors[index];
 }
 

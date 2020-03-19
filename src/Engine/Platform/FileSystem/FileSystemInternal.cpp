@@ -474,7 +474,7 @@ Path* fsReplacePathExtension(const Path* path, const char* newExtension)
 	size_t newExtensionLength = 0;
 	while ( newExtension[newExtensionLength] != 0 )
 	{
-		ASSERT(newExtension[newExtensionLength] != directorySeparator && "Directory separator present in file extension.");
+		SE_ASSERT(newExtension[newExtensionLength] != directorySeparator && "Directory separator present in file extension.");
 		newExtensionLength += 1;
 	}
 
@@ -772,7 +772,7 @@ Path* fsCopyPathForResourceDirectory(ResourceDirectory resourceDir)
 	}
 
 	Path* rootPath = gResourceDirectoryOverrides[RD_ROOT];
-	ASSERT(rootPath);
+	SE_ASSERT(rootPath);
 	return fsAppendPathComponent(rootPath, gResourceDirectoryDefaults[resourceDir]);
 }
 
@@ -789,7 +789,7 @@ void fsSetRelativePathForResourceDirectory(ResourceDirectory resourceDir, const 
 
 void fsSetPathForResourceDirectory(ResourceDirectory resourceDir, const Path* path)
 {
-	ASSERT(resourceDir != RD_ROOT || path != NULL);
+	SE_ASSERT(resourceDir != RD_ROOT || path != NULL);
 
 	fsFreePath(gResourceDirectoryOverrides[resourceDir]);    // fsFreePath checks for NULL
 	gResourceDirectoryOverrides[resourceDir] = fsCopyPath(path);

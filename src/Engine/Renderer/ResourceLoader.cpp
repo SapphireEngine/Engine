@@ -223,21 +223,21 @@ public:
 		return ::max(GetTextureRowAlignment(pRenderer), pRenderer->pActiveGpuSettings->mUploadBufferTextureAlignment);
 	}
 
-	static size_t GetImageSize(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, uint rowAlignment, uint subtextureAlignment)
+	static size_t GetImageSize(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, uint32_t rowAlignment, uint32_t subtextureAlignment)
 	{
 		Image image;
 		image.Create(fmt, w, h, d, mipMapCount, arraySize, NULL, rowAlignment, subtextureAlignment);
 		return image.GetSizeInBytes();
 	}
 
-	static Image* CreateImage(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, const unsigned char* rawData, uint rowAlignment, uint subtextureAlignment)
+	static Image* CreateImage(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, const unsigned char* rawData, uint32_t rowAlignment, uint32_t subtextureAlignment)
 	{
 		Image* pImage = AllocImage();
 		pImage->Create(fmt, w, h, d, mipMapCount, arraySize, rawData, rowAlignment, subtextureAlignment);
 		return pImage;
 	}
 
-	static ImageLoadingResult CreateImage(const Path* filePath, memoryAllocationFunc pAllocator, void* pUserData, uint rowAlignment, uint subtextureAlignment, Image** pOutImage)
+	static ImageLoadingResult CreateImage(const Path* filePath, memoryAllocationFunc pAllocator, void* pUserData, uint32_t rowAlignment, uint32_t subtextureAlignment, Image** pOutImage)
 	{
 		Image* pImage = AllocImage();
 
@@ -260,7 +260,7 @@ public:
 		return result;
 	}
 
-	static ImageLoadingResult CreateImage(void const* mem, uint32_t size, char const* extension, memoryAllocationFunc pAllocator, void* pUserData, uint rowAlignment, uint subtextureAlignment, Image** pOutImage)
+	static ImageLoadingResult CreateImage(void const* mem, uint32_t size, char const* extension, memoryAllocationFunc pAllocator, void* pUserData, uint32_t rowAlignment, uint32_t subtextureAlignment, Image** pOutImage)
 	{
 		FileStream* stream = fsOpenReadOnlyMemory(mem, size);
 
@@ -387,14 +387,14 @@ static void cleanupCopyEngine(Renderer* pRenderer, CopyEngine* pCopyEngine)
 
 static void waitCopyEngineSet(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t activeSet)
 {
-	ASSERT(!pCopyEngine->isRecording);
+	SE_ASSERT(!pCopyEngine->isRecording);
 	CopyResourceSet& resourceSet = pCopyEngine->resourceSets[activeSet];
 	waitForFences(pRenderer, 1, &resourceSet.pFence);
 }
 
 static void resetCopyEngineSet(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t activeSet)
 {
-	ASSERT(!pCopyEngine->isRecording);
+	SE_ASSERT(!pCopyEngine->isRecording);
 	pCopyEngine->resourceSets[activeSet].allocatedSpace = 0;
 	pCopyEngine->isRecording = false;
 
@@ -457,7 +457,7 @@ static MappedMemoryRange allocateStagingMemory(uint64_t memoryRequirement, uint3
 	if ( memoryAvailable )
 	{
 		Buffer* buffer = pResourceSet->mBuffer;
-		ASSERT(buffer->pCpuMappedAddress);
+		SE_ASSERT(buffer->pCpuMappedAddress);
 		uint8_t* pDstData = (uint8_t*)buffer->pCpuMappedAddress + offset;
 		pCopyEngine->resourceSets[pResourceLoader->mActiveSetIndex].allocatedSpace = offset + memoryRequirement;
 		return { pDstData, buffer, offset, memoryRequirement };
@@ -601,7 +601,7 @@ Region3D calculateUploadRegion(uint3 offset, uint3 extent, uint3 uploadBlock, ui
 	return { regionOffset.x, regionOffset.y, regionOffset.z, regionSize.x, regionSize.y, regionSize.z };
 }
 
-uint64_t GetMipMappedSizeUpTo(uint3 dims, uint32_t nMipMapLevels, int32_t slices, TinyImageFormat format, uint subtextureAlignment)
+uint64_t GetMipMappedSizeUpTo(uint3 dims, uint32_t nMipMapLevels, int32_t slices, TinyImageFormat format, uint32_t subtextureAlignment)
 {
 	uint32_t w = dims.x;
 	uint32_t h = dims.y;
@@ -660,7 +660,7 @@ static void* allocateTextureStagingMemory(Image* pImage, uint64_t byteCount, uin
 static UploadFunctionResult updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t activeSet, UpdateState& pTextureUpdate)
 {
 	TextureUpdateDescInternal& texUpdateDesc = pTextureUpdate.mRequest.texUpdateDesc;
-	ASSERT(pCopyEngine->pQueue->mNodeIndex == texUpdateDesc.pTexture->mNodeIndex);
+	SE_ASSERT(pCopyEngine->pQueue->mNodeIndex == texUpdateDesc.pTexture->mNodeIndex);
 	bool         applyBarriers = pRenderer->mApi == RENDERER_API_VULKAN || pRenderer->mApi == RENDERER_API_XBOX_D3D12 || pRenderer->mApi == RENDERER_API_METAL;
 
 	uint32_t  textureAlignment = ResourceLoader::GetSubtextureAlignment(pRenderer);
@@ -688,8 +688,8 @@ static UploadFunctionResult updateTexture(Renderer* pRenderer, CopyEngine* pCopy
 
 	Cmd*         pCmd = acquireCmd(pCopyEngine, activeSet);
 
-	ASSERT(pTexture);
-	//ASSERT(texUpdateDesc.mStagingAllocation.pBuffer == pCopyEngine->resourceSets[activeSet].mBuffer);
+	SE_ASSERT(pTexture);
+	//SE_ASSERT(texUpdateDesc.mStagingAllocation.pBuffer == pCopyEngine->resourceSets[activeSet].mBuffer);
 
 	// TODO: move to Image
 	bool isSwizzledZCurve = !pImage->IsLinearLayout();
@@ -732,16 +732,16 @@ static UploadFunctionResult updateTexture(Renderer* pRenderer, CopyEngine* pCopy
 
 		uint3    pitches{ blockSize, srcPitchY, srcPitchY * uploadExtent.y };
 
-		ASSERT(uploadOffset.x < uploadExtent.x || uploadOffset.y < uploadExtent.y || uploadOffset.z < uploadExtent.z);
+		SE_ASSERT(uploadOffset.x < uploadExtent.x || uploadOffset.y < uploadExtent.y || uploadOffset.z < uploadExtent.z);
 
 		for ( ; j < arrayCount; ++j )
 		{
 			uint3    uploadRectExtent{ calculateUploadRect(pitches, uploadOffset, uploadExtent, granularity) };
 			uint32_t uploadPitchY{ pImage->GetBytesPerRow(i) };
 			uint3    uploadPitches{ blockSize, uploadPitchY, uploadPitchY * uploadRectExtent.y };
-			ASSERT(uploadPitches.x <= pitches.x && uploadPitches.y <= pitches.y && uploadPitches.z <= pitches.z);
+			SE_ASSERT(uploadPitches.x <= pitches.x && uploadPitches.y <= pitches.y && uploadPitches.z <= pitches.z);
 
-			ASSERT(
+			SE_ASSERT(
 				uploadOffset.x + uploadRectExtent.x <= uploadExtent.x || uploadOffset.y + uploadRectExtent.y <= uploadExtent.y ||
 				uploadOffset.z + uploadRectExtent.z <= uploadExtent.z);
 
@@ -784,7 +784,7 @@ static UploadFunctionResult updateTexture(Renderer* pRenderer, CopyEngine* pCopy
 					uint32_t k = j - n * nSlices;
 					pSrcData = (uint8_t *)pImage->GetPixels(i, n) + k * pitches.z;
 				}
-				ASSERT(pSrcData);
+				SE_ASSERT(pSrcData);
 
 				MappedMemoryRange range =
 					allocateStagingMemory(uploadRectExtent.z * uploadPitches.z, textureAlignment, /* waitForSpace = */ false);
@@ -800,11 +800,11 @@ static UploadFunctionResult updateTexture(Renderer* pRenderer, CopyEngine* pCopy
 			else
 			{
 				uint64_t srcOffset = (uint64_t)(pImage->GetPixels(i, j) - pImage->GetPixels());
-				ASSERT(srcOffset < texUpdateDesc.mStagingAllocation.mSize);
+				SE_ASSERT(srcOffset < texUpdateDesc.mStagingAllocation.mSize);
 				texData.mBufferOffset = texUpdateDesc.mStagingAllocation.mOffset + srcOffset;
 			}
 
-			ASSERT(texData.mBufferOffset % textureAlignment == 0);
+			SE_ASSERT(texData.mBufferOffset % textureAlignment == 0);
 
 			cmdUpdateSubresource(pCmd, pTexture, texUpdateDesc.mStagingAllocation.pBuffer, &texData);
 
@@ -825,7 +825,7 @@ static UploadFunctionResult updateTexture(Renderer* pRenderer, CopyEngine* pCopy
 			}
 		}
 		j = 0;
-		ASSERT(uploadOffset.x == 0 && uploadOffset.y == 0 && uploadOffset.z == 0);
+		SE_ASSERT(uploadOffset.x == 0 && uploadOffset.y == 0 && uploadOffset.z == 0);
 	}
 
 	// Only need transition for vulkan and durango since resource will decay to srv on graphics queue in PC dx12
@@ -909,7 +909,7 @@ static UploadFunctionResult loadTexture(Renderer* pRenderer, CopyEngine* pCopyEn
 			BufferLoadDesc visDesc = {};
 			visDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_RW_BUFFER;
 			visDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-			visDesc.mDesc.mStructStride = sizeof(uint);
+			visDesc.mDesc.mStructStride = sizeof(uint32_t);
 			visDesc.mDesc.mElementCount = (uint64_t)pPageTable->size();
 			visDesc.mDesc.mSize = visDesc.mDesc.mStructStride * visDesc.mDesc.mElementCount;
 			visDesc.mDesc.pDebugName = L"Vis Buffer for Sparse Texture";
@@ -919,7 +919,7 @@ static UploadFunctionResult loadTexture(Renderer* pRenderer, CopyEngine* pCopyEn
 			BufferLoadDesc prevVisDesc = {};
 			prevVisDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_RW_BUFFER;
 			prevVisDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-			prevVisDesc.mDesc.mStructStride = sizeof(uint);
+			prevVisDesc.mDesc.mStructStride = sizeof(uint32_t);
 			prevVisDesc.mDesc.mElementCount = (uint64_t)pPageTable->size();
 			prevVisDesc.mDesc.mSize = prevVisDesc.mDesc.mStructStride * prevVisDesc.mDesc.mElementCount;
 			prevVisDesc.mDesc.pDebugName = L"Prev Vis Buffer for Sparse Texture";
@@ -936,7 +936,7 @@ static UploadFunctionResult loadTexture(Renderer* pRenderer, CopyEngine* pCopyEn
 #else
 			alivePageDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
 #endif
-			alivePageDesc.mDesc.mStructStride = sizeof(uint);
+			alivePageDesc.mDesc.mStructStride = sizeof(uint32_t);
 			alivePageDesc.mDesc.mElementCount = (uint64_t)pPageTable->size();
 			alivePageDesc.mDesc.mSize = alivePageDesc.mDesc.mStructStride * alivePageDesc.mDesc.mElementCount;
 			alivePageDesc.mDesc.pDebugName = L"Alive pages buffer for Sparse Texture";
@@ -953,7 +953,7 @@ static UploadFunctionResult loadTexture(Renderer* pRenderer, CopyEngine* pCopyEn
 #else
 			removePageDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
 #endif
-			removePageDesc.mDesc.mStructStride = sizeof(uint);
+			removePageDesc.mDesc.mStructStride = sizeof(uint32_t);
 			removePageDesc.mDesc.mElementCount = (uint64_t)pPageTable->size();
 			removePageDesc.mDesc.mSize = removePageDesc.mDesc.mStructStride * removePageDesc.mDesc.mElementCount;
 			removePageDesc.mDesc.pDebugName = L"Remove pages buffer for Sparse Texture";
@@ -970,7 +970,7 @@ static UploadFunctionResult loadTexture(Renderer* pRenderer, CopyEngine* pCopyEn
 #else
 			pageCountsDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
 #endif
-			pageCountsDesc.mDesc.mStructStride = sizeof(uint);
+			pageCountsDesc.mDesc.mStructStride = sizeof(uint32_t);
 			pageCountsDesc.mDesc.mElementCount = 4;
 			pageCountsDesc.mDesc.mSize = pageCountsDesc.mDesc.mStructStride * pageCountsDesc.mDesc.mElementCount;
 			pageCountsDesc.mDesc.pDebugName = L"Page count buffer for Sparse Texture";
@@ -1005,7 +1005,7 @@ static UploadFunctionResult loadTexture(Renderer* pRenderer, CopyEngine* pCopyEn
 			return UPLOAD_FUNCTION_RESULT_INVALID_REQUEST;
 	}
 	else
-		ASSERT(0 && "Invalid params");
+		SE_ASSERT(0 && "Invalid params");
 
 	TextureDesc desc = {};
 	desc.mFlags = pTextureDesc->mCreationFlag;
@@ -1251,9 +1251,9 @@ static inline void pack_float3_direction_to_half2(uint32_t count, uint32_t strid
 static UploadFunctionResult updateBuffer(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t activeSet, UpdateState& pBufferUpdate)
 {
 	BufferUpdateDesc& bufUpdateDesc = pBufferUpdate.mRequest.bufUpdateDesc;
-	ASSERT(pCopyEngine->pQueue->mNodeIndex == bufUpdateDesc.pBuffer->mNodeIndex);
+	SE_ASSERT(pCopyEngine->pQueue->mNodeIndex == bufUpdateDesc.pBuffer->mNodeIndex);
 	Buffer* pBuffer = bufUpdateDesc.pBuffer;
-	ASSERT(pBuffer->mMemoryUsage == RESOURCE_MEMORY_USAGE_GPU_ONLY || pBuffer->mMemoryUsage == RESOURCE_MEMORY_USAGE_GPU_TO_CPU);
+	SE_ASSERT(pBuffer->mMemoryUsage == RESOURCE_MEMORY_USAGE_GPU_ONLY || pBuffer->mMemoryUsage == RESOURCE_MEMORY_USAGE_GPU_TO_CPU);
 
 	Cmd* pCmd = acquireCmd(pCopyEngine, activeSet);
 
@@ -1291,7 +1291,7 @@ static UploadFunctionResult updateResourceState(Renderer* pRenderer, CopyEngine*
 		}
 		else
 		{
-			ASSERT(0 && "Invalid params");
+			SE_ASSERT(0 && "Invalid params");
 			return UPLOAD_FUNCTION_RESULT_INVALID_REQUEST;
 		}
 	}
@@ -1312,7 +1312,7 @@ static UploadFunctionResult loadGeometry(Renderer* pRenderer, CopyEngine* pCopyE
 		if ( !file )
 		{
 			LOGF(eERROR, "Failed to open gltf file %s", fsGetPathFileName(pDesc->pFilePath).buffer);
-			ASSERT(false);
+			SE_ASSERT(false);
 			return UPLOAD_FUNCTION_RESULT_INVALID_REQUEST;
 		}
 
@@ -1332,7 +1332,7 @@ static UploadFunctionResult loadGeometry(Renderer* pRenderer, CopyEngine* pCopyE
 		if ( cgltf_result_success != result )
 		{
 			LOGF(eERROR, "Failed to parse gltf file %s with error %u", fsGetPathFileName(pDesc->pFilePath).buffer, (uint32_t)result);
-			ASSERT(false);
+			SE_ASSERT(false);
 			conf_free(fileData);
 			return UPLOAD_FUNCTION_RESULT_INVALID_REQUEST;
 		}
@@ -1362,7 +1362,7 @@ static UploadFunctionResult loadGeometry(Renderer* pRenderer, CopyEngine* pCopyE
 				FileStream* fs = fsOpenFile(path, FM_READ_BINARY);
 				if ( fs )
 				{
-					ASSERT(fsGetStreamFileSize(fs) >= (ssize_t)data->buffers[i].size);
+					SE_ASSERT(fsGetStreamFileSize(fs) >= (ssize_t)data->buffers[i].size);
 
 					data->buffers[i].data = conf_malloc(data->buffers[i].size);
 					fsReadFromStream(fs, data->buffers[i].data, data->buffers[i].size);
@@ -1377,7 +1377,7 @@ static UploadFunctionResult loadGeometry(Renderer* pRenderer, CopyEngine* pCopyE
 		if ( cgltf_result_success != result )
 		{
 			LOGF(eERROR, "Failed to load buffers from gltf file %s with error %u", fsGetPathFileName(pDesc->pFilePath).buffer, (uint32_t)result);
-			ASSERT(false);
+			SE_ASSERT(false);
 			conf_free(fileData);
 			return UPLOAD_FUNCTION_RESULT_INVALID_REQUEST;
 		}
@@ -1420,7 +1420,7 @@ static UploadFunctionResult loadGeometry(Renderer* pRenderer, CopyEngine* pCopyE
 		{
 			const VertexAttrib* attr = &pDesc->pVertexLayout->mAttribs[i];
 			const cgltf_attribute* cgltfAttr = vertexAttribs[attr->mSemantic];
-			ASSERT(cgltfAttr);
+			SE_ASSERT(cgltfAttr);
 
 			const uint32_t dstFormatSize = TinyImageFormat_BitSizeOfBlock(attr->mFormat) >> 3;
 			const uint32_t srcFormatSize = (uint32_t)cgltfAttr->data->stride;
@@ -1485,7 +1485,7 @@ static UploadFunctionResult loadGeometry(Renderer* pRenderer, CopyEngine* pCopyE
 		totalSize += round_up(jointCount * sizeof(uint32_t), 16);
 
 		Geometry* geom = (Geometry*)conf_calloc(1, totalSize);
-		ASSERT(geom);
+		SE_ASSERT(geom);
 
 		geom->pDrawArgs = (IndirectDrawIndexArguments*)(geom + 1);
 		geom->pInverseBindPoses = (mat4*)((uint8_t*)geom->pDrawArgs + round_up(drawCount * sizeof(*geom->pDrawArgs), 16));
@@ -1677,7 +1677,7 @@ static UploadFunctionResult loadGeometry(Renderer* pRenderer, CopyEngine* pCopyE
 				jsmn_parser parser = {};
 				jsmntok_t* tokens = (jsmntok_t*)alloca((skin->joints_count + 1) * sizeof(jsmntok_t));
 				jsmn_parse(&parser, (const char*)jointRemaps, extrasSize, tokens, skin->joints_count + 1);
-				ASSERT(tokens[0].size == skin->joints_count + 1);
+				SE_ASSERT(tokens[0].size == skin->joints_count + 1);
 				cgltf_accessor_unpack_floats(skin->inverse_bind_matrices, (cgltf_float*)geom->pInverseBindPoses, skin->joints_count * sizeof(float[16]) / sizeof(float));
 				for ( uint32_t r = 0; r < skin->joints_count; ++r )
 					geom->pJointRemaps[remapCount + r] = atoi(jointRemaps + tokens[1 + r].start);
@@ -1776,7 +1776,7 @@ static bool allQueuesEmpty(ResourceLoader* pLoader)
 static void streamerThreadFunc(void* pThreadData)
 {
 	ResourceLoader* pLoader = (ResourceLoader*)pThreadData;
-	ASSERT(pLoader);
+	SE_ASSERT(pLoader);
 
 	uint32_t linkedGPUCount = pLoader->pRenderer->mLinkedNodeCount;
 
@@ -1896,11 +1896,11 @@ static void streamerThreadFunc(void* pThreadData)
 						// It's a queue, so items need to be processed in order for the SyncToken to work, but we're also inserting retries.
 						// We _have_ to execute everything with a staging buffer attached in the same frame since otherwise the activeSetIndex changes.
 
-						ASSERT(maxToken.mWaitIndex[priority] < updateState.mRequest.mWaitIndex);
+						SE_ASSERT(maxToken.mWaitIndex[priority] < updateState.mRequest.mWaitIndex);
 						maxToken.mWaitIndex[priority] = updateState.mRequest.mWaitIndex;
 					}
 
-					ASSERT(result != UPLOAD_FUNCTION_RESULT_STAGING_BUFFER_FULL || priority != LOAD_PRIORITY_UPDATE);
+					SE_ASSERT(result != UPLOAD_FUNCTION_RESULT_STAGING_BUFFER_FULL || priority != LOAD_PRIORITY_UPDATE);
 
 					if ( priority != LOAD_PRIORITY_UPDATE )
 					{
@@ -2061,7 +2061,7 @@ static void queueResourceUpdate(ResourceLoader* pLoader, GeometryLoadDesc* pGeom
 
 static void queueResourceUpdate(ResourceLoader* pLoader, TextureUpdateDescInternal* pTextureUpdate, SyncToken* token, LoadPriority priority)
 {
-	ASSERT(pTextureUpdate->mStagingAllocation.pData);
+	SE_ASSERT(pTextureUpdate->mStagingAllocation.pData);
 
 	uint32_t nodeIndex = pTextureUpdate->pTexture->mNodeIndex;
 	pLoader->mQueueMutex.Acquire();
@@ -2157,7 +2157,7 @@ static uint64_t getMaximumStagingAllocationSize()
 
 static void beginAddBuffer(BufferLoadDesc* pBufferDesc)
 {
-	ASSERT(pBufferDesc->ppBuffer);
+	SE_ASSERT(pBufferDesc->ppBuffer);
 
 	bool update = !pBufferDesc->mSkipUpload || pBufferDesc->mForceReset;
 
@@ -2181,7 +2181,7 @@ static void beginAddBuffer(BufferLoadDesc* pBufferDesc)
 
 static void endAddBuffer(BufferLoadDesc* pBufferDesc, SyncToken* token, LoadPriority priority)
 {
-	ASSERT(pBufferDesc->ppBuffer);
+	SE_ASSERT(pBufferDesc->ppBuffer);
 
 	bool update = pBufferDesc->mInternalData.mMappedRange.pData;
 
@@ -2208,7 +2208,7 @@ static void endAddBuffer(BufferLoadDesc* pBufferDesc, SyncToken* token, LoadPrio
 
 static void beginAddTexture(TextureLoadDesc* pTextureDesc)
 {
-	ASSERT(pTextureDesc->ppTexture);
+	SE_ASSERT(pTextureDesc->ppTexture);
 
 	if ( pTextureDesc->pRawImageData )
 	{
@@ -2245,7 +2245,7 @@ static void beginAddTexture(TextureLoadDesc* pTextureDesc)
 
 static void endAddTexture(TextureLoadDesc* pTextureDesc, SyncToken* token, LoadPriority priority)
 {
-	ASSERT(pTextureDesc->ppTexture);
+	SE_ASSERT(pTextureDesc->ppTexture);
 
 	if ( !pTextureDesc->pFilePath && !pTextureDesc->pRawImageData && !pTextureDesc->pBinaryImageData && pTextureDesc->pDesc )
 	{
@@ -2286,7 +2286,7 @@ static void endAddTexture(TextureLoadDesc* pTextureDesc, SyncToken* token, LoadP
 void addResource(BufferLoadDesc* pBufferDesc, SyncToken* token, LoadPriority priority)
 {
 	uint64_t stagingBufferSize = getMaximumStagingAllocationSize();
-	ASSERT(stagingBufferSize > 0);
+	SE_ASSERT(stagingBufferSize > 0);
 
 	if ( pBufferDesc->pData && pBufferDesc->mDesc.mSize > stagingBufferSize && pBufferDesc->mDesc.mMemoryUsage != RESOURCE_MEMORY_USAGE_CPU_ONLY )
 	{
@@ -2329,7 +2329,7 @@ void addResource(TextureLoadDesc* pTextureDesc, SyncToken* token, LoadPriority p
 
 void addResource(GeometryLoadDesc* pDesc, SyncToken* token, LoadPriority priority)
 {
-	ASSERT(pDesc->ppGeometry);
+	SE_ASSERT(pDesc->ppGeometry);
 
 	GeometryLoadDesc updateDesc = *pDesc;
 	updateDesc.pFilePath = fsCopyPath(pDesc->pFilePath);
@@ -2361,10 +2361,10 @@ void removeResource(Geometry* pGeom)
 void beginUpdateResource(BufferUpdateDesc* pBufferUpdate)
 {
 	Buffer* pBuffer = pBufferUpdate->pBuffer;
-	ASSERT(pBuffer);
+	SE_ASSERT(pBuffer);
 
 	uint64_t size = pBufferUpdate->mSize > 0 ? pBufferUpdate->mSize : (pBufferUpdate->pBuffer->mSize - pBufferUpdate->mDstOffset);
-	ASSERT(pBufferUpdate->mDstOffset + size <= pBuffer->mSize);
+	SE_ASSERT(pBufferUpdate->mDstOffset + size <= pBuffer->mSize);
 
 	ResourceMemoryUsage memoryUsage = (ResourceMemoryUsage)pBufferUpdate->pBuffer->mMemoryUsage;
 	if ( UMA || memoryUsage == RESOURCE_MEMORY_USAGE_CPU_ONLY || memoryUsage == RESOURCE_MEMORY_USAGE_CPU_TO_GPU || memoryUsage == RESOURCE_MEMORY_USAGE_UNKNOWN )
@@ -2473,7 +2473,7 @@ void endUpdateResource(TextureUpdateDesc* pTextureUpdate, SyncToken* token)
 	}
 	else
 	{
-		ASSERT(false && "TextureUpdateDesc::pRawImageData cannot be NULL");
+		SE_ASSERT(false && "TextureUpdateDesc::pRawImageData cannot be NULL");
 		return;
 	}
 
@@ -2541,7 +2541,7 @@ shaderc_shader_kind getShadercShaderType(ShaderStage type)
 	case ShaderStage::SHADER_STAGE_TESE: return shaderc_glsl_tess_evaluation_shader;
 	case ShaderStage::SHADER_STAGE_GEOM: return shaderc_glsl_geometry_shader;
 	case ShaderStage::SHADER_STAGE_COMP: return shaderc_glsl_compute_shader;
-	default: ASSERT(0); abort();
+	default: SE_ASSERT(0); abort();
 	}
 	return static_cast<shaderc_shader_kind>(-1);
 }
@@ -2656,7 +2656,7 @@ void vk_compileShader(
 	{
 		FileStream* fh = fsOpenFile(outFilePath, FM_READ_BINARY);
 		//Check if the File Handle exists
-		ASSERT(fh);
+		SE_ASSERT(fh);
 		pByteCode->resize(fsGetStreamFileSize(fh));
 		fsReadFromStream(fh, pByteCode->data(), pByteCode->size());
 		fsCloseStream(fh);
@@ -2758,7 +2758,7 @@ void mtl_compileShader(
 			// Store the compiled bytecode.
 			FileStream* fHandle = fsOpenFile(outFilePath, FM_READ_BINARY);
 
-			ASSERT(fHandle);
+			SE_ASSERT(fHandle);
 			pByteCode->resize(fsGetStreamFileSize(fHandle));
 			fsReadFromStream(fHandle, pByteCode->data(), pByteCode->size());
 			fsCloseStream(fHandle);
@@ -2952,7 +2952,7 @@ bool load_shader_stage_byte_code(
 
 #if !defined(METAL) && !defined(NX64)
 	FileStream* sourceFileStream = fsOpenFile(filePath, FM_READ_BINARY);
-	ASSERT(sourceFileStream);
+	SE_ASSERT(sourceFileStream);
 
 	if ( !process_source_file(pRenderer->pName, sourceFileStream, filePath, sourceFileStream, timeStamp, code) )
 	{
@@ -2975,7 +2975,7 @@ bool load_shader_stage_byte_code(
 	PathHandle nxShaderPath = fsAppendPathExtension(filePath, hashStringBuffer);
 	nxShaderPath = fsAppendPathExtension(nxShaderPath, "spv");
 	FileStream* sourceFileStream = fsOpenFile(nxShaderPath, FM_READ_BINARY);
-	ASSERT(sourceFileStream);
+	SE_ASSERT(sourceFileStream);
 
 	if ( sourceFileStream )
 	{
@@ -2993,7 +2993,7 @@ bool load_shader_stage_byte_code(
 #else
 	PathHandle metalShaderPath = fsAppendPathExtension(filePath, "metal");
 	FileStream* sourceFileStream = fsOpenFile(metalShaderPath, FM_READ_BINARY);
-	ASSERT(sourceFileStream);
+	SE_ASSERT(sourceFileStream);
 
 	if ( !process_source_file(pRenderer->pName, sourceFileStream, metalShaderPath, sourceFileStream, timeStamp, code) )
 	{
@@ -3336,7 +3336,7 @@ void addShader(Renderer* pRenderer, const ShaderLoadDesc* pDesc, Shader** ppShad
 			{
 				PathHandle metalFilePath = fsAppendPathExtension(filePath, "metal");
 				FileStream* fh = fsOpenFile(metalFilePath, FM_READ_BINARY);
-				ASSERT(fh);
+				SE_ASSERT(fh);
 
 				pStage->pName = pDesc->mStages[i].pFileName;
 				time_t timestamp = 0;

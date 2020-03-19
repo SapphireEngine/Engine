@@ -1,28 +1,23 @@
 #pragma once
 
-#include <tinyimageformat/tinyimageformat_base.h>
-#include <tinyimageformat/tinyimageformat_query.h>
-
 //=============================================================================
 SE_NAMESPACE_BEGIN
 
-
-static inline uint32_t Image_GetMipMappedSize(uint32_t w, uint32_t h, uint32_t d,
-	uint32_t nMipMapLevels, TinyImageFormat srcFormat)
+static inline uint32_t ImageGetMipMappedSize(uint32_t w, uint32_t h, uint32_t d, uint32_t mipMapLevels, TinyImageFormat srcFormat)
 {
 	// PVR formats get special case
 	if ( srcFormat == TinyImageFormat_PVRTC1_2BPP_UNORM || srcFormat == TinyImageFormat_PVRTC1_2BPP_SRGB ||
-		srcFormat == TinyImageFormat_PVRTC1_4BPP_UNORM || srcFormat == TinyImageFormat_PVRTC1_4BPP_SRGB )
+		 srcFormat == TinyImageFormat_PVRTC1_4BPP_UNORM || srcFormat == TinyImageFormat_PVRTC1_4BPP_SRGB )
 	{
 		uint32_t totalSize = 0;
 		uint32_t sizeX = w;
 		uint32_t sizeY = h;
 		uint32_t sizeD = d;
-		int level = nMipMapLevels;
+		int level = mipMapLevels;
 
-		uint32_t minWidth = 8;
+		uint32_t minWidth  = 8;
 		uint32_t minHeight = 8;
-		uint32_t minDepth = 1;
+		uint32_t minDepth  = 1;
 		int bpp = 4;
 
 		if ( srcFormat == TinyImageFormat_PVRTC1_2BPP_UNORM || srcFormat == TinyImageFormat_PVRTC1_2BPP_SRGB )
@@ -35,15 +30,15 @@ static inline uint32_t Image_GetMipMappedSize(uint32_t w, uint32_t h, uint32_t d
 		while ( level > 0 )
 		{
 			// If pixel format is compressed, the dimensions need to be padded.
-			uint paddedWidth = sizeX + ((-1 * sizeX) % minWidth);
-			uint paddedHeight = sizeY + ((-1 * sizeY) % minHeight);
-			uint paddedDepth = sizeD + ((-1 * sizeD) % minDepth);
+			const uint32_t paddedWidth =  sizeX + ((-1 * sizeX) % minWidth);
+			const uint32_t paddedHeight = sizeY + ((-1 * sizeY) % minHeight);
+			const uint32_t paddedDepth =  sizeD + ((-1 * sizeD) % minDepth);
 
-			uint32_t mipSize = paddedWidth * paddedHeight * paddedDepth * bpp / 8;
+			const uint32_t mipSize = paddedWidth * paddedHeight * paddedDepth * bpp / 8;
 
 			totalSize += mipSize;
 
-			unsigned int MinimumSize = 1;
+			const unsigned int MinimumSize = 1;
 			sizeX = max(sizeX / 2, MinimumSize);
 			sizeY = max(sizeY / 2, MinimumSize);
 			sizeD = max(sizeD / 2, MinimumSize);
@@ -54,7 +49,7 @@ static inline uint32_t Image_GetMipMappedSize(uint32_t w, uint32_t h, uint32_t d
 	}
 
 	uint32_t size = 0;
-	while ( nMipMapLevels )
+	while ( mipMapLevels )
 	{
 		uint32_t bx = TinyImageFormat_WidthOfBlock(srcFormat);
 		uint32_t by = TinyImageFormat_HeightOfBlock(srcFormat);
@@ -66,14 +61,11 @@ static inline uint32_t Image_GetMipMappedSize(uint32_t w, uint32_t h, uint32_t d
 		d >>= 1;
 		if ( w + h + d == 0 )
 			break;
-		if ( w == 0 )
-			w = 1;
-		if ( h == 0 )
-			h = 1;
-		if ( d == 0 )
-			d = 1;
+		if ( w == 0 ) w = 1;
+		if ( h == 0 ) h = 1;
+		if ( d == 0 ) d = 1;
 
-		nMipMapLevels--;
+		mipMapLevels--;
 	}
 
 	size *= TinyImageFormat_BitSizeOfBlock(srcFormat) / 8;

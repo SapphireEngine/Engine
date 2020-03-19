@@ -130,7 +130,7 @@ typedef unsigned long long uint64;
 typedef uint8        ubyte;
 typedef uint16       ushort;
 typedef unsigned int uint;
-typedef const char * LPCSTR, *PCSTR;
+typedef const char *LPCSTR, *PCSTR;
 
 // API functions
 void requestShutdown();

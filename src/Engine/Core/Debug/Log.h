@@ -134,15 +134,6 @@ void _OutputDebugStringV(const char* str, va_list args);
 void _PrintUnicode(const stl::string& str, bool error = false);
 void _PrintUnicodeLine(const stl::string& str, bool error = false);
 
-#pragma warning(disable : 4996)
-#define assume(x) __assume(x)
-#define no_alias __declspec(noalias)
-#ifdef _DEBUG
-#define ASSERT(b) assume(b)
-#else
-#define ASSERT(b)
-#endif
-
 // Usage: LOGF(LogLevel::eINFO | LogLevel::eDEBUG, "Whatever string %s, this is an int %d", "This is a string", 1)
 #define LOGF(log_level, ...) se::Log::Write((log_level), se::ToString(__VA_ARGS__), __FILE__, __LINE__)
 

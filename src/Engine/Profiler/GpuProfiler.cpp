@@ -91,7 +91,7 @@ static void calculateTimes(Cmd* pCmd, GpuProfiler* pGpuProfiler, uint32_t index)
     if ( !pRoot || !pRoot->mStarted )
         return;
 
-    ASSERT(pGpuProfiler->pTimeStamp != NULL && "Time stamp readback buffer is not mapped");
+    SE_ASSERT(pGpuProfiler->pTimeStamp != NULL && "Time stamp readback buffer is not mapped");
 
     uint64_t  elapsedTime = 0;
     const uint32_t historyIndex = pRoot->mHistoryIndex;
@@ -169,7 +169,7 @@ double getAverageGpuTime(struct GpuProfiler* pGpuProfiler, struct GpuTimer* pGpu
 void addGpuProfiler(Renderer* pRenderer, Queue* pQueue, GpuProfiler** ppGpuProfiler, const char * pName)
 {
     GpuProfiler* pGpuProfiler = (GpuProfiler*)conf_calloc(1, sizeof(*pGpuProfiler));
-    ASSERT(pGpuProfiler);
+    SE_ASSERT(pGpuProfiler);
 
     conf_placement_new<GpuProfiler>(pGpuProfiler);
     pGpuProfiler->mReset = true;
@@ -298,7 +298,7 @@ ProfileToken cmdBeginGpuTimestampQuery(Cmd* pCmd, struct GpuProfiler* pGpuProfil
         cmdBeginDebugMarker(pCmd, color.getX(), color.getY(), color.getZ(), pName);
     }
 
-    ASSERT(pGpuProfiler->mCurrentTimerCount < pGpuProfiler->mCurrentPoolIndex && "Duplicate timers found in one gpu frame");
+    SE_ASSERT(pGpuProfiler->mCurrentTimerCount < pGpuProfiler->mCurrentPoolIndex && "Duplicate timers found in one gpu frame");
     ++pGpuProfiler->mCurrentTimerCount;
     return node->mToken;
 }
@@ -324,7 +324,7 @@ void cmdEndGpuTimestampQuery(Cmd* pCmd, struct GpuProfiler* pGpuProfiler, bool i
 void initGpuProfilers()
 {
     gGpuProfilerContainer = (GpuProfilerContainer*)conf_calloc(1, sizeof(*gGpuProfilerContainer));
-    ASSERT(gGpuProfilerContainer);
+    SE_ASSERT(gGpuProfilerContainer);
     conf_placement_new<GpuProfilerContainer>(gGpuProfilerContainer);
 }
 
@@ -352,7 +352,7 @@ ProfileToken addGpuProfiler(Renderer* pRenderer, Queue* pQueue, const char* pNam
 
     GpuProfiler* pGpuProfiler;
     addGpuProfiler(pRenderer, pQueue, &pGpuProfiler, pName);
-    ASSERT(pGpuProfiler);
+    SE_ASSERT(pGpuProfiler);
 
     for ( uint32_t i = 0; i < GpuProfilerContainer::MAX_GPU_PROFILERS; ++i )
     {

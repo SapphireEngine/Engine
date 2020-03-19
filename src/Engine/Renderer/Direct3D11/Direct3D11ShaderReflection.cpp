@@ -205,7 +205,7 @@ void d3d11_createShaderReflection(const uint8_t* shaderCode, uint32_t shaderSize
 					break;
 				}
 			}
-			ASSERT(resourceIndex != ~0u);
+			SE_ASSERT(resourceIndex != ~0u);
 
 			//Go through all the variables in the constant buffer
 			for ( UINT j = 0; j < bufferDesc.Variables; ++j )

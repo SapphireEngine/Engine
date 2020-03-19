@@ -575,7 +575,7 @@ static void add_dsv(
 			}
 			break;
 		}
-	case D3D11_RESOURCE_DIMENSION_TEXTURE3D: ASSERT(false && "Cannot create 3D Depth Stencil"); break;
+	case D3D11_RESOURCE_DIMENSION_TEXTURE3D: SE_ASSERT(false && "Cannot create 3D Depth Stencil"); break;
 	default: break;
 	}
 
@@ -598,15 +598,15 @@ void FORGE_CALLCONV compileShader(Renderer* pRenderer, ShaderTarget target, Shad
 // clang-format on
 void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSrcBuffer, uint64_t srcOffset, uint64_t size)
 {
-	ASSERT(pCmd);
-	ASSERT(pSrcBuffer);
-	//ASSERT(pSrcBuffer->pDxResource);
-	ASSERT(pBuffer);
-	//ASSERT(pBuffer->pDxResource);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pSrcBuffer);
+	//SE_ASSERT(pSrcBuffer->pDxResource);
+	SE_ASSERT(pBuffer);
+	//SE_ASSERT(pBuffer->pDxResource);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -626,15 +626,15 @@ void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSr
 
 void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, SubresourceDataDesc* pSubresourceDesc)
 {
-	ASSERT(pCmd);
-	ASSERT(pSubresourceDesc);
-	//ASSERT(pSrcBuffer->pDxResource);
-	ASSERT(pTexture);
-	//ASSERT(pBuffer->pDxResource);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pSubresourceDesc);
+	//SE_ASSERT(pSrcBuffer->pDxResource);
+	SE_ASSERT(pTexture);
+	//SE_ASSERT(pBuffer->pDxResource);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -669,7 +669,7 @@ static void AddDevice(Renderer* pRenderer)
 		LOGF(LogLevel::eERROR, "Could not create DXGI factory.");
 		return;
 	}
-	ASSERT(pRenderer->pDXGIFactory);
+	SE_ASSERT(pRenderer->pDXGIFactory);
 
 	// Enumerate all adapters
 	typedef struct GpuDesc
@@ -754,7 +754,7 @@ static void AddDevice(Renderer* pRenderer)
 
 		adapter->Release();
 	}
-	ASSERT(gpuCount);
+	SE_ASSERT(gpuCount);
 
 	// Sort GPUs by poth Preset and highest feature level gpu at front
 	//Prioritize Preset first
@@ -843,7 +843,7 @@ static void AddDevice(Renderer* pRenderer)
 
 	// Get the latest and greatest feature level gpu
 	gpuDesc[gpuIndex].pGpu->QueryInterface(&pRenderer->pDxActiveGPU);
-	ASSERT(pRenderer->pDxActiveGPU != NULL);
+	SE_ASSERT(pRenderer->pDxActiveGPU != NULL);
 	pRenderer->pActiveGpuSettings = (GPUSettings*)conf_malloc(sizeof(GPUSettings));
 	*pRenderer->pActiveGpuSettings = gpuSettings[gpuIndex];
 	pRenderer->mLinkedNodeCount = 1;
@@ -870,7 +870,7 @@ static void AddDevice(Renderer* pRenderer)
 		&pRenderer->pDxDevice,
 		&featLevelOut,    // max feature level
 		&pRenderer->pDxContext);
-	ASSERT(SUCCEEDED(hr));
+	SE_ASSERT(SUCCEEDED(hr));
 	if ( FAILED(hr) )
 		LOGF(LogLevel::eERROR, "Failed to create D3D11 device and context.");
 
@@ -918,12 +918,12 @@ static ID3D11BlendState* util_to_blend_state(Renderer* pRenderer, const BlendSta
 	{
 		if ( pDesc->mRenderTargetMask & (1 << i) )
 		{
-			ASSERT(pDesc->mSrcFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
-			ASSERT(pDesc->mDstFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
-			ASSERT(pDesc->mSrcAlphaFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
-			ASSERT(pDesc->mDstAlphaFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
-			ASSERT(pDesc->mBlendModes[blendDescIndex] < BlendMode::MAX_BLEND_MODES);
-			ASSERT(pDesc->mBlendAlphaModes[blendDescIndex] < BlendMode::MAX_BLEND_MODES);
+			SE_ASSERT(pDesc->mSrcFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
+			SE_ASSERT(pDesc->mDstFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
+			SE_ASSERT(pDesc->mSrcAlphaFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
+			SE_ASSERT(pDesc->mDstAlphaFactors[blendDescIndex] < BlendConstant::MAX_BLEND_CONSTANTS);
+			SE_ASSERT(pDesc->mBlendModes[blendDescIndex] < BlendMode::MAX_BLEND_MODES);
+			SE_ASSERT(pDesc->mBlendAlphaModes[blendDescIndex] < BlendMode::MAX_BLEND_MODES);
 		}
 
 		if ( pDesc->mIndependentBlend )
@@ -972,15 +972,15 @@ static ID3D11DepthStencilState* util_to_depth_state(Renderer* pRenderer, const D
 {
 	UNREF_PARAM(pRenderer);
 
-	ASSERT(pDesc->mDepthFunc < CompareMode::MAX_COMPARE_MODES);
-	ASSERT(pDesc->mStencilFrontFunc < CompareMode::MAX_COMPARE_MODES);
-	ASSERT(pDesc->mStencilFrontFail < StencilOp::MAX_STENCIL_OPS);
-	ASSERT(pDesc->mDepthFrontFail < StencilOp::MAX_STENCIL_OPS);
-	ASSERT(pDesc->mStencilFrontPass < StencilOp::MAX_STENCIL_OPS);
-	ASSERT(pDesc->mStencilBackFunc < CompareMode::MAX_COMPARE_MODES);
-	ASSERT(pDesc->mStencilBackFail < StencilOp::MAX_STENCIL_OPS);
-	ASSERT(pDesc->mDepthBackFail < StencilOp::MAX_STENCIL_OPS);
-	ASSERT(pDesc->mStencilBackPass < StencilOp::MAX_STENCIL_OPS);
+	SE_ASSERT(pDesc->mDepthFunc < CompareMode::MAX_COMPARE_MODES);
+	SE_ASSERT(pDesc->mStencilFrontFunc < CompareMode::MAX_COMPARE_MODES);
+	SE_ASSERT(pDesc->mStencilFrontFail < StencilOp::MAX_STENCIL_OPS);
+	SE_ASSERT(pDesc->mDepthFrontFail < StencilOp::MAX_STENCIL_OPS);
+	SE_ASSERT(pDesc->mStencilFrontPass < StencilOp::MAX_STENCIL_OPS);
+	SE_ASSERT(pDesc->mStencilBackFunc < CompareMode::MAX_COMPARE_MODES);
+	SE_ASSERT(pDesc->mStencilBackFail < StencilOp::MAX_STENCIL_OPS);
+	SE_ASSERT(pDesc->mDepthBackFail < StencilOp::MAX_STENCIL_OPS);
+	SE_ASSERT(pDesc->mStencilBackPass < StencilOp::MAX_STENCIL_OPS);
 
 	D3D11_DEPTH_STENCIL_DESC desc;
 	desc.DepthEnable = (BOOL)pDesc->mDepthTest;
@@ -1009,9 +1009,9 @@ static ID3D11RasterizerState* util_to_rasterizer_state(Renderer* pRenderer, cons
 {
 	UNREF_PARAM(pRenderer);
 
-	ASSERT(pDesc->mFillMode < FillMode::MAX_FILL_MODES);
-	ASSERT(pDesc->mCullMode < CullMode::MAX_CULL_MODES);
-	ASSERT(pDesc->mFrontFace == FRONT_FACE_CCW || pDesc->mFrontFace == FRONT_FACE_CW);
+	SE_ASSERT(pDesc->mFillMode < FillMode::MAX_FILL_MODES);
+	SE_ASSERT(pDesc->mCullMode < CullMode::MAX_CULL_MODES);
+	SE_ASSERT(pDesc->mFrontFace == FRONT_FACE_CCW || pDesc->mFrontFace == FRONT_FACE_CW);
 
 	D3D11_RASTERIZER_DESC desc;
 	desc.FillMode = gFillModeTranslator[pDesc->mFillMode];
@@ -1069,12 +1069,12 @@ static void remove_default_resources(Renderer* pRenderer)
 /************************************************************************/
 void initRenderer(const char* appName, const RendererDesc* settings, Renderer** ppRenderer)
 {
-	ASSERT(ppRenderer);
-	ASSERT(settings);
-	ASSERT(settings->mShaderTarget <= shader_target_5_0);
+	SE_ASSERT(ppRenderer);
+	SE_ASSERT(settings);
+	SE_ASSERT(settings->mShaderTarget <= shader_target_5_0);
 
 	Renderer* pRenderer = (Renderer*)conf_calloc(1, sizeof(Renderer));
-	ASSERT(pRenderer);
+	SE_ASSERT(pRenderer);
 
 	pRenderer->mGpuMode = settings->mGpuMode;
 	pRenderer->mShaderTarget = shader_target_5_0;
@@ -1093,7 +1093,7 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 		{
 			//have the condition in the assert as well so its cleared when the assert message box appears
 
-			ASSERT(pRenderer->pActiveGpuSettings->mGpuVendorPreset.mPresetLevel >= GPU_PRESET_LOW);
+			SE_ASSERT(pRenderer->pActiveGpuSettings->mGpuVendorPreset.mPresetLevel >= GPU_PRESET_LOW);
 
 			SAFE_FREE(pRenderer->pName);
 
@@ -1121,7 +1121,7 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 
 void removeRenderer(Renderer* pRenderer)
 {
-	ASSERT(pRenderer);
+	SE_ASSERT(pRenderer);
 
 	remove_default_resources(pRenderer);
 
@@ -1143,16 +1143,16 @@ void addFence(Renderer* pRenderer, Fence** pFence)
 	// NOTE: We will still use it to be able to generate
 	// a dependency graph to serialize parallel GPU workload.
 
-	//ASSERT that renderer is valid
-	ASSERT(pRenderer);
-	ASSERT(pFence);
+	//SE_ASSERT that renderer is valid
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pFence);
 }
 
 void removeFence(Renderer* pRenderer, Fence* pFence)
 {
-	//ASSERT that renderer is valid
-	ASSERT(pRenderer);
-	//ASSERT that given fence to remove is valid
+	//SE_ASSERT that renderer is valid
+	SE_ASSERT(pRenderer);
+	//SE_ASSERT that given fence to remove is valid
 }
 
 void addSemaphore(Renderer* pRenderer, Semaphore** pSemaphore)
@@ -1160,28 +1160,28 @@ void addSemaphore(Renderer* pRenderer, Semaphore** pSemaphore)
 	// NOTE: We will still use it to be able to generate
 	// a dependency graph to serialize parallel GPU workload.
 
-	//ASSERT that renderer is valid
-	ASSERT(pRenderer);
-	ASSERT(pSemaphore);
+	//SE_ASSERT that renderer is valid
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pSemaphore);
 }
 
 void removeSemaphore(Renderer* pRenderer, Semaphore* pSemaphore)
 {
-	//ASSERT that renderer and given semaphore are valid
-	ASSERT(pRenderer);
+	//SE_ASSERT that renderer and given semaphore are valid
+	SE_ASSERT(pRenderer);
 }
 
 void addQueue(Renderer* pRenderer, QueueDesc* pDesc, Queue** ppQueue)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppQueue);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppQueue);
 
 	// DX11 doesn't use queues -- so just create a dummy object for the client
 	// NOTE: We will still use it to reference the renderer in the queue and to be able to generate
 	// a dependency graph to serialize parallel GPU workload.
 	Queue* pQueue = (Queue*)conf_calloc(1, sizeof(Queue));
-	ASSERT(pQueue);
+	SE_ASSERT(pQueue);
 
 	// Provided description for queue creation.
 	// Note these don't really mean much w/ DX11 but we can use it for debugging
@@ -1197,8 +1197,8 @@ void addQueue(Renderer* pRenderer, QueueDesc* pDesc, Queue** ppQueue)
 
 void removeQueue(Renderer* pRenderer, Queue* pQueue)
 {
-	ASSERT(pRenderer);
-	ASSERT(pQueue);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pQueue);
 
 	pQueue->pDxContext = NULL;
 
@@ -1207,17 +1207,17 @@ void removeQueue(Renderer* pRenderer, Queue* pQueue)
 
 void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** ppSwapChain)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppSwapChain);
-	ASSERT(pDesc->mImageCount <= MAX_SWAPCHAIN_IMAGES);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppSwapChain);
+	SE_ASSERT(pDesc->mImageCount <= MAX_SWAPCHAIN_IMAGES);
 
 	SwapChain* pSwapChain = (SwapChain*)conf_calloc(1, sizeof(SwapChain) + pDesc->mImageCount * sizeof(RenderTarget*));
-	ASSERT(pSwapChain);
+	SE_ASSERT(pSwapChain);
 
 	pSwapChain->mDxSyncInterval = pDesc->mEnableVsync ? 1 : 0;
 	pSwapChain->ppRenderTargets = (RenderTarget**)(pSwapChain + 1);
-	ASSERT(pSwapChain->ppRenderTargets);
+	SE_ASSERT(pSwapChain->ppRenderTargets);
 
 	HWND hwnd = (HWND)pDesc->mWindowHandle.window;
 
@@ -1239,17 +1239,17 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 
 #ifdef _DURANGO
 	HRESULT hres = create_swap_chain(pRenderer, pSwapChain, &desc, &swapchain);
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 #else
 	HRESULT hres = pRenderer->pDXGIFactory->CreateSwapChain(pRenderer->pDxDevice, &desc, &swapchain);
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	hres = pRenderer->pDXGIFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 #endif
 
 	hres = swapchain->QueryInterface(__uuidof(pSwapChain->pDxSwapChain), (void**)&(pSwapChain->pDxSwapChain));
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 	swapchain->Release();
 
 	ID3D11Resource** buffers = (ID3D11Resource**)alloca(pDesc->mImageCount * sizeof(ID3D11Resource*));
@@ -1258,7 +1258,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	for ( uint32_t i = 0; i < pDesc->mImageCount; ++i )
 	{
 		hres = pSwapChain->pDxSwapChain->GetBuffer(0, IID_ARGS(&buffers[i]));
-		ASSERT(SUCCEEDED(hres) && buffers[i]);
+		SE_ASSERT(SUCCEEDED(hres) && buffers[i]);
 	}
 
 	RenderTargetDesc descColor = {};
@@ -1303,14 +1303,14 @@ void addCmdPool(Renderer* pRenderer, const CmdPoolDesc* pDesc, CmdPool** ppCmdPo
 	// NOTE: We will still use cmd pools to be able to generate
 	// a dependency graph to serialize parallel GPU workload.
 
-	//ASSERT that renderer is valid
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppCmdPool);
+	//SE_ASSERT that renderer is valid
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppCmdPool);
 
 	// initialize to zero
 	CmdPool* pCmdPool = (CmdPool*)conf_calloc(1, sizeof(CmdPool));
-	ASSERT(pCmdPool);
+	SE_ASSERT(pCmdPool);
 
 	pCmdPool->pQueue = pDesc->pQueue;
 
@@ -1320,8 +1320,8 @@ void addCmdPool(Renderer* pRenderer, const CmdPoolDesc* pDesc, CmdPool** ppCmdPo
 void removeCmdPool(Renderer* pRenderer, CmdPool* pCmdPool)
 {
 	//check validity of given renderer and command pool
-	ASSERT(pRenderer);
-	ASSERT(pCmdPool);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pCmdPool);
 
 	SAFE_FREE(pCmdPool);
 }
@@ -1329,12 +1329,12 @@ void removeCmdPool(Renderer* pRenderer, CmdPool* pCmdPool)
 void addCmd(Renderer* pRenderer, const CmdDesc* pDesc, Cmd** ppCmd)
 {
 	//verify that given pool is valid
-	ASSERT(pRenderer);
-	ASSERT(ppCmd);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(ppCmd);
 
 	//allocate new command
 	Cmd* pCmd = (Cmd*)conf_calloc(1, sizeof(Cmd));
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	//set command pool of new command
 	pCmd->pRenderer = pRenderer;
@@ -1345,8 +1345,8 @@ void addCmd(Renderer* pRenderer, const CmdDesc* pDesc, Cmd** ppCmd)
 void removeCmd(Renderer* pRenderer, Cmd* pCmd)
 {
 	//verify that given command and pool are valid
-	ASSERT(pRenderer);
-	ASSERT(pCmd);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pCmd);
 
 	SAFE_RELEASE(pCmd->pRootConstantBuffer);
 	SAFE_RELEASE(pCmd->pTransientConstantBuffer);
@@ -1357,13 +1357,13 @@ void removeCmd(Renderer* pRenderer, Cmd* pCmd)
 void addCmd_n(Renderer* pRenderer, const CmdDesc* pDesc, uint32_t cmdCount, Cmd*** pppCmd)
 {
 	//verify that ***cmd is valid
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(cmdCount);
-	ASSERT(pppCmd);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(cmdCount);
+	SE_ASSERT(pppCmd);
 
 	Cmd** ppCmds = (Cmd**)conf_calloc(cmdCount, sizeof(Cmd*));
-	ASSERT(ppCmds);
+	SE_ASSERT(ppCmds);
 
 	//add n new cmds to given pool
 	for ( uint32_t i = 0; i < cmdCount; ++i )
@@ -1377,7 +1377,7 @@ void addCmd_n(Renderer* pRenderer, const CmdDesc* pDesc, uint32_t cmdCount, Cmd*
 void removeCmd_n(Renderer* pRenderer, uint32_t cmdCount, Cmd** ppCmds)
 {
 	//verify that given command list is valid
-	ASSERT(ppCmds);
+	SE_ASSERT(ppCmds);
 
 	//remove every given cmd in array
 	for ( uint32_t i = 0; i < cmdCount; ++i )
@@ -1393,14 +1393,14 @@ void removeCmd_n(Renderer* pRenderer, uint32_t cmdCount, Cmd** ppCmds)
 /************************************************************************/
 void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderTarget** ppRenderTarget)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppRenderTarget);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppRenderTarget);
 
 	bool const isDepth = TinyImageFormat_IsDepthAndStencil(pDesc->mFormat) ||
 		TinyImageFormat_IsDepthOnly(pDesc->mFormat);
 
-	ASSERT(!((isDepth) && (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_TEXTURE)) && "Cannot use depth stencil as UAV");
+	SE_ASSERT(!((isDepth) && (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_TEXTURE)) && "Cannot use depth stencil as UAV");
 
 	((RenderTargetDesc*)pDesc)->mMipLevels = max(1U, pDesc->mMipLevels);
 
@@ -1412,7 +1412,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	size_t totalSize = sizeof(RenderTarget);
 	totalSize += numRTVs * sizeof(ID3D11DepthStencilView*);
 	RenderTarget* pRenderTarget = (RenderTarget*)conf_calloc(1, totalSize);
-	ASSERT(pRenderTarget);
+	SE_ASSERT(pRenderTarget);
 
 	if ( isDepth )
 		pRenderTarget->pDxDsvSliceDescriptors = (ID3D11DepthStencilView**)(pRenderTarget + 1);
@@ -1421,7 +1421,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 
 	//add to gpu
 	DXGI_FORMAT dxFormat = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->mFormat);
-	ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
+	SE_ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
 
 	TextureDesc textureDesc = {};
 	textureDesc.mArraySize = pDesc->mArraySize;
@@ -1551,14 +1551,14 @@ void removeRenderTarget(Renderer* pRenderer, RenderTarget* pRenderTarget)
 
 void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** ppSampler)
 {
-	ASSERT(pRenderer);
-	ASSERT(pRenderer->pDxDevice);
-	ASSERT(pDesc->mCompareFunc < MAX_COMPARE_MODES);
-	ASSERT(ppSampler);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pRenderer->pDxDevice);
+	SE_ASSERT(pDesc->mCompareFunc < MAX_COMPARE_MODES);
+	SE_ASSERT(ppSampler);
 
 	// initialize to zero
 	Sampler* pSampler = (Sampler*)conf_calloc(1, sizeof(Sampler));
-	ASSERT(pSampler);
+	SE_ASSERT(pSampler);
 
 	//add sampler to gpu
 	D3D11_SAMPLER_DESC desc;
@@ -1586,8 +1586,8 @@ void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** ppSampl
 
 void removeSampler(Renderer* pRenderer, Sampler* pSampler)
 {
-	ASSERT(pRenderer);
-	ASSERT(pSampler);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pSampler);
 
 	SAFE_RELEASE(pSampler->pSamplerState);
 	SAFE_FREE(pSampler);
@@ -1669,13 +1669,13 @@ void compileShader(
 	if ( FAILED(hres) )
 	{
 		char* msg = (char*)conf_calloc(error_msgs->GetBufferSize() + 1, sizeof(*msg));
-		ASSERT(msg);
+		SE_ASSERT(msg);
 		memcpy(msg, error_msgs->GetBufferPointer(), error_msgs->GetBufferSize());
 		eastl::string error = eastl::string(fsGetPathAsNativeString(filePath)) + " " + msg;
 		LOGF(eERROR, error.c_str());
 		SAFE_FREE(msg);
 	}
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	char* pByteCode = (char*)allocator(compiled_code->GetBufferSize(), __FILE__, __LINE__, __FUNCTION__);
 	memcpy(pByteCode, compiled_code->GetBufferPointer(), compiled_code->GetBufferSize());
@@ -1687,12 +1687,12 @@ void compileShader(
 
 void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader** ppShaderProgram)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc && pDesc->mStages);
-	ASSERT(ppShaderProgram);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc && pDesc->mStages);
+	SE_ASSERT(ppShaderProgram);
 
 	Shader* pShaderProgram = (Shader*)conf_calloc(1, sizeof(Shader) + sizeof(PipelineReflection));
-	ASSERT(pShaderProgram);
+	SE_ASSERT(pShaderProgram);
 
 	pShaderProgram->mStages = pDesc->mStages;
 	pShaderProgram->pReflection = (PipelineReflection*)(pShaderProgram + 1);
@@ -1713,9 +1713,9 @@ void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader*
 					pStage = &pDesc->mVert;
 					HRESULT hr = pRenderer->pDxDevice->CreateVertexShader(
 						pStage->pByteCode, pStage->mByteCodeSize, NULL, &pShaderProgram->pDxVertexShader);
-					ASSERT(SUCCEEDED(hr));
+					SE_ASSERT(SUCCEEDED(hr));
 					hr = D3DGetInputSignatureBlob(pStage->pByteCode, pStage->mByteCodeSize, &pShaderProgram->pDxInputSignature);
-					ASSERT(SUCCEEDED(hr));
+					SE_ASSERT(SUCCEEDED(hr));
 				}
 				break;
 			case SHADER_STAGE_HULL:
@@ -1723,7 +1723,7 @@ void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader*
 					pStage = &pDesc->mHull;
 					HRESULT hr = pRenderer->pDxDevice->CreateHullShader(
 						pStage->pByteCode, pStage->mByteCodeSize, NULL, &pShaderProgram->pDxHullShader);
-					ASSERT(SUCCEEDED(hr));
+					SE_ASSERT(SUCCEEDED(hr));
 				}
 				break;
 			case SHADER_STAGE_DOMN:
@@ -1731,7 +1731,7 @@ void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader*
 					pStage = &pDesc->mDomain;
 					HRESULT hr = pRenderer->pDxDevice->CreateDomainShader(
 						pStage->pByteCode, pStage->mByteCodeSize, NULL, &pShaderProgram->pDxDomainShader);
-					ASSERT(SUCCEEDED(hr));
+					SE_ASSERT(SUCCEEDED(hr));
 				}
 				break;
 			case SHADER_STAGE_GEOM:
@@ -1739,7 +1739,7 @@ void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader*
 					pStage = &pDesc->mGeom;
 					HRESULT hr = pRenderer->pDxDevice->CreateGeometryShader(
 						pStage->pByteCode, pStage->mByteCodeSize, NULL, &pShaderProgram->pDxGeometryShader);
-					ASSERT(SUCCEEDED(hr));
+					SE_ASSERT(SUCCEEDED(hr));
 				}
 				break;
 			case SHADER_STAGE_FRAG:
@@ -1747,7 +1747,7 @@ void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader*
 					pStage = &pDesc->mFrag;
 					HRESULT hr = pRenderer->pDxDevice->CreatePixelShader(
 						pStage->pByteCode, pStage->mByteCodeSize, NULL, &pShaderProgram->pDxPixelShader);
-					ASSERT(SUCCEEDED(hr));
+					SE_ASSERT(SUCCEEDED(hr));
 				}
 				break;
 			case SHADER_STAGE_COMP:
@@ -1755,7 +1755,7 @@ void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader*
 					pStage = &pDesc->mComp;
 					HRESULT hr = pRenderer->pDxDevice->CreateComputeShader(
 						pStage->pByteCode, pStage->mByteCodeSize, NULL, &pShaderProgram->pDxComputeShader);
-					ASSERT(SUCCEEDED(hr));
+					SE_ASSERT(SUCCEEDED(hr));
 				}
 				break;
 			}
@@ -1830,7 +1830,7 @@ D3D11_CPU_ACCESS_FLAG util_determine_dx_cpu_access_flags(ResourceMemoryUsage mem
 	case RESOURCE_MEMORY_USAGE_CPU_ONLY: return (D3D11_CPU_ACCESS_FLAG)(D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE);
 	case RESOURCE_MEMORY_USAGE_CPU_TO_GPU: return (D3D11_CPU_ACCESS_FLAG)(D3D11_CPU_ACCESS_WRITE);
 	case RESOURCE_MEMORY_USAGE_GPU_TO_CPU: return (D3D11_CPU_ACCESS_FLAG)(D3D11_CPU_ACCESS_READ);
-	default: ASSERT(false && "Invalid Memory Usage"); return (D3D11_CPU_ACCESS_FLAG)(-1);
+	default: SE_ASSERT(false && "Invalid Memory Usage"); return (D3D11_CPU_ACCESS_FLAG)(-1);
 	}
 }
 
@@ -1862,18 +1862,18 @@ D3D11_USAGE util_to_dx_usage(ResourceMemoryUsage mem)
 	case RESOURCE_MEMORY_USAGE_CPU_ONLY: return D3D11_USAGE_STAGING;
 	case RESOURCE_MEMORY_USAGE_CPU_TO_GPU: return D3D11_USAGE_DYNAMIC;
 	case RESOURCE_MEMORY_USAGE_GPU_TO_CPU: return D3D11_USAGE_STAGING;
-	default: ASSERT(false && "Invalid Memory Usage"); return (D3D11_USAGE)(-1);
+	default: SE_ASSERT(false && "Invalid Memory Usage"); return (D3D11_USAGE)(-1);
 	}
 }
 
 void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** ppBuffer)
 {
 	//verify renderer validity
-	ASSERT(pRenderer);
+	SE_ASSERT(pRenderer);
 	//verify adding at least 1 buffer
-	ASSERT(pDesc);
-	ASSERT(pDesc->mSize > 0);
-	ASSERT(ppBuffer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(pDesc->mSize > 0);
+	SE_ASSERT(ppBuffer);
 
 	// Vertex buffer cannot have SRV or UAV in D3D11
 	if ( pDesc->mDescriptors & DESCRIPTOR_TYPE_BUFFER && pDesc->mDescriptors & DESCRIPTOR_TYPE_VERTEX_BUFFER )
@@ -1883,7 +1883,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** ppBuffer)
 
 	// initialize to zero
 	Buffer* pBuffer = (Buffer*)conf_calloc(1, sizeof(Buffer));
-	ASSERT(pBuffer);
+	SE_ASSERT(pBuffer);
 
 	uint64_t allocationSize = pDesc->mSize;
 	//add to renderer
@@ -1902,7 +1902,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** ppBuffer)
 	desc.Usage = util_to_dx_usage(pDesc->mMemoryUsage);
 
 	HRESULT hres = pRenderer->pDxDevice->CreateBuffer(&desc, NULL, &pBuffer->pDxResource);
-	ASSERT(SUCCEEDED(hres));
+	SE_ASSERT(SUCCEEDED(hres));
 
 	pBuffer->mCurrentState = pDesc->mStartState;
 
@@ -1968,8 +1968,8 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** ppBuffer)
 void removeBuffer(Renderer* pRenderer, Buffer* pBuffer)
 {
 	UNREF_PARAM(pRenderer);
-	ASSERT(pRenderer);
-	ASSERT(pBuffer);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pBuffer);
 
 	SAFE_RELEASE(pBuffer->pDxSrvHandle);
 	SAFE_RELEASE(pBuffer->pDxUavHandle);
@@ -2022,14 +2022,14 @@ void unmapBuffer(Renderer* pRenderer, Buffer* pBuffer)
 
 void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTexture)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
-	ASSERT(ppTexture);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
+	SE_ASSERT(ppTexture);
 
 	if ( pDesc->mSampleCount > SAMPLE_COUNT_1 && pDesc->mMipLevels > 1 )
 	{
 		LOGF(LogLevel::eERROR, "Multi-Sampled textures cannot have mip maps");
-		ASSERT(false);
+		SE_ASSERT(false);
 		return;
 	}
 
@@ -2039,7 +2039,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		totalSize += pDesc->mMipLevels * sizeof(ID3D11UnorderedAccessView*);
 
 	Texture* pTexture = (Texture*)conf_calloc(1, totalSize);
-	ASSERT(pTexture);
+	SE_ASSERT(pTexture);
 
 	if ( pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_TEXTURE )
 		pTexture->pDxUAVDescriptors = (ID3D11UnorderedAccessView**)(pTexture + 1);
@@ -2060,7 +2060,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	D3D11_RESOURCE_DIMENSION res_dim = {};
 	if ( pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_2D )
 	{
-		ASSERT(pDesc->mDepth == 1);
+		SE_ASSERT(pDesc->mDepth == 1);
 		res_dim = D3D11_RESOURCE_DIMENSION_TEXTURE2D;
 	}
 	else if ( pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_3D )
@@ -2077,7 +2077,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 			res_dim = D3D11_RESOURCE_DIMENSION_TEXTURE1D;
 	}
 
-	ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
+	SE_ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
 
 	if ( NULL == pTexture->pDxResource )
 	{
@@ -2219,7 +2219,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 			((ID3D11Texture2D*)pTexture->pDxResource)->GetDesc(&desc);
 			if ( DESCRIPTOR_TYPE_TEXTURE_CUBE == (descriptors & DESCRIPTOR_TYPE_TEXTURE_CUBE) )
 			{
-				ASSERT(desc.ArraySize % 6 == 0);
+				SE_ASSERT(desc.ArraySize % 6 == 0);
 
 				if ( desc.ArraySize > 6 )
 				{
@@ -2314,7 +2314,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 
 	if ( descriptors & DESCRIPTOR_TYPE_TEXTURE )
 	{
-		ASSERT(srvDesc.ViewDimension != D3D11_SRV_DIMENSION_UNKNOWN);
+		SE_ASSERT(srvDesc.ViewDimension != D3D11_SRV_DIMENSION_UNKNOWN);
 
 		srvDesc.Format = util_to_dx_srv_format(dxFormat);
 		pRenderer->pDxDevice->CreateShaderResourceView(pTexture->pDxResource, &srvDesc, &pTexture->pDxSRVDescriptor);
@@ -2352,8 +2352,8 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 
 void removeTexture(Renderer* pRenderer, Texture* pTexture)
 {
-	ASSERT(pRenderer);
-	ASSERT(pTexture);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pTexture);
 
 	SAFE_RELEASE(pTexture->pDxSRVDescriptor);
 	if ( pTexture->pDxUAVDescriptors )
@@ -2372,9 +2372,9 @@ void removeTexture(Renderer* pRenderer, Texture* pTexture)
 /************************************************************************/
 void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatureDesc, RootSignature** ppRootSignature)
 {
-	ASSERT(pRenderer);
-	ASSERT(pRootSignatureDesc);
-	ASSERT(ppRootSignature);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pRootSignatureDesc);
+	SE_ASSERT(ppRootSignature);
 
 	eastl::vector<ShaderResource>                            shaderResources;
 	eastl::vector<uint32_t>                                  constantSizes;
@@ -2483,7 +2483,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	totalSize += sizeof(DescriptorIndexMap);
 
 	RootSignature* pRootSignature = (RootSignature*)conf_calloc(1, totalSize);
-	ASSERT(pRootSignature);
+	SE_ASSERT(pRootSignature);
 
 	if ( (uint32_t)shaderResources.size() )
 	{
@@ -2492,7 +2492,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 
 	pRootSignature->pDescriptors = (DescriptorInfo*)(pRootSignature + 1);
 	pRootSignature->pDescriptorNameToIndexMap = (DescriptorIndexMap*)(pRootSignature->pDescriptors + pRootSignature->mDescriptorCount);
-	ASSERT(pRootSignature->pDescriptorNameToIndexMap);
+	SE_ASSERT(pRootSignature->pDescriptorNameToIndexMap);
 	conf_placement_new<DescriptorIndexMap>(pRootSignature->pDescriptorNameToIndexMap);
 
 	pRootSignature->mPipelineType = pipelineType;
@@ -2614,17 +2614,17 @@ void removeRootSignature(Renderer* pRenderer, RootSignature* pRootSignature)
 
 void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipeline** ppPipeline)
 {
-	ASSERT(pRenderer);
-	ASSERT(ppPipeline);
-	ASSERT(pDesc);
-	ASSERT(pDesc->pShaderProgram);
-	ASSERT(pDesc->pRootSignature);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(ppPipeline);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(pDesc->pShaderProgram);
+	SE_ASSERT(pDesc->pRootSignature);
 
 	const Shader*       pShaderProgram = pDesc->pShaderProgram;
 	const VertexLayout* pVertexLayout = pDesc->pVertexLayout;
 
 	Pipeline* pPipeline = (Pipeline*)conf_calloc(1, sizeof(Pipeline));
-	ASSERT(pPipeline);
+	SE_ASSERT(pPipeline);
 
 	pPipeline->mType = PIPELINE_TYPE_GRAPHICS;
 
@@ -2663,7 +2663,7 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 		{
 			const VertexAttrib* attrib = &(pVertexLayout->mAttribs[attrib_index]);
 
-			ASSERT(SEMANTIC_UNDEFINED != attrib->mSemantic);
+			SE_ASSERT(SEMANTIC_UNDEFINED != attrib->mSemantic);
 
 			if ( attrib->mSemanticNameLength > 0 )
 			{
@@ -2692,7 +2692,7 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 				case SEMANTIC_TEXCOORD9: sprintf_s(name, "TEXCOORD"); break;
 				default: break;
 				}
-				ASSERT(0 != strlen(name));
+				SE_ASSERT(0 != strlen(name));
 				strncpy_s(semantic_names[attrib_index], name, strlen(name));
 			}
 
@@ -2770,7 +2770,7 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 
 	default: break;
 	}
-	ASSERT(D3D_PRIMITIVE_TOPOLOGY_UNDEFINED != topology);
+	SE_ASSERT(D3D_PRIMITIVE_TOPOLOGY_UNDEFINED != topology);
 	pPipeline->mDxPrimitiveTopology = topology;
 
 	*ppPipeline = pPipeline;
@@ -2778,19 +2778,19 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 
 void addPipeline(Renderer* pRenderer, const PipelineDesc* pDesc, Pipeline** ppPipeline)
 {
-	ASSERT(pRenderer);
-	ASSERT(ppPipeline);
-	ASSERT(pDesc);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(ppPipeline);
+	SE_ASSERT(pDesc);
 
 	switch ( pDesc->mType )
 	{
 	case(PIPELINE_TYPE_COMPUTE):
 		{
-			ASSERT(pDesc->mComputeDesc.pShaderProgram);
-			ASSERT(pDesc->mComputeDesc.pRootSignature);
+			SE_ASSERT(pDesc->mComputeDesc.pShaderProgram);
+			SE_ASSERT(pDesc->mComputeDesc.pRootSignature);
 
 			Pipeline* pPipeline = (Pipeline*)conf_calloc(1, sizeof(Pipeline));
-			ASSERT(ppPipeline);
+			SE_ASSERT(ppPipeline);
 			pPipeline->mType = PIPELINE_TYPE_COMPUTE;
 			pPipeline->pDxComputeShader = pDesc->mComputeDesc.pShaderProgram->pDxComputeShader;
 			*ppPipeline = pPipeline;
@@ -2804,7 +2804,7 @@ void addPipeline(Renderer* pRenderer, const PipelineDesc* pDesc, Pipeline** ppPi
 	case(PIPELINE_TYPE_RAYTRACING):
 	default:
 		{
-			ASSERT(false);
+			SE_ASSERT(false);
 			*ppPipeline = {};
 			break;
 		}
@@ -2813,8 +2813,8 @@ void addPipeline(Renderer* pRenderer, const PipelineDesc* pDesc, Pipeline** ppPi
 
 void removePipeline(Renderer* pRenderer, Pipeline* pPipeline)
 {
-	ASSERT(pRenderer);
-	ASSERT(pPipeline);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pPipeline);
 
 	//delete pipeline from device
 	SAFE_RELEASE(pPipeline->pDxInputLayout);
@@ -2867,9 +2867,9 @@ typedef struct DescriptorDataArray
 
 void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, DescriptorSet** ppDescriptorSet)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppDescriptorSet);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppDescriptorSet);
 
 	const RootSignature* pRootSignature = pDesc->pRootSignature;
 
@@ -2949,9 +2949,9 @@ void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDe
 #define VALIDATE_DESCRIPTOR(descriptor,...)
 #endif
 
-	ASSERT(pRenderer);
-	ASSERT(pDescriptorSet);
-	ASSERT(index < pDescriptorSet->mMaxSets);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDescriptorSet);
+	SE_ASSERT(index < pDescriptorSet->mMaxSets);
 
 	const RootSignature* pRootSignature = pDescriptorSet->pRootSignature;
 
@@ -3134,7 +3134,7 @@ void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDe
 /************************************************************************/
 void beginCmd(Cmd* pCmd)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
 	if ( cachedCmdsIter != gCachedCmds.end() )
@@ -3147,7 +3147,7 @@ void beginCmd(Cmd* pCmd)
 
 void endCmd(Cmd* pCmd)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	// TODO: should we do anything particular here?
 }
@@ -3157,14 +3157,14 @@ void cmdBindRenderTargets(
 	const LoadActionsDesc* pLoadActions /* = NULL*/, uint32_t* pColorArraySlices, uint32_t* pColorMipSlices, uint32_t depthArraySlice,
 	uint32_t depthMipSlice)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	if ( !renderTargetCount && !pDepthStencil )
 		return;
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3227,11 +3227,11 @@ void cmdBindRenderTargets(
 
 void cmdSetViewport(Cmd* pCmd, float x, float y, float width, float height, float minDepth, float maxDepth)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3252,11 +3252,11 @@ void cmdSetViewport(Cmd* pCmd, float x, float y, float width, float height, floa
 
 void cmdSetScissor(Cmd* pCmd, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3275,12 +3275,12 @@ void cmdSetScissor(Cmd* pCmd, uint32_t x, uint32_t y, uint32_t width, uint32_t h
 
 void cmdBindPipeline(Cmd* pCmd, Pipeline* pPipeline)
 {
-	ASSERT(pCmd);
-	ASSERT(pPipeline);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pPipeline);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3296,13 +3296,13 @@ void cmdBindPipeline(Cmd* pCmd, Pipeline* pPipeline)
 
 void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorSet)
 {
-	ASSERT(pCmd);
-	ASSERT(pDescriptorSet);
-	ASSERT(index < pDescriptorSet->mMaxSets);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pDescriptorSet);
+	SE_ASSERT(index < pDescriptorSet->mMaxSets);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3339,14 +3339,14 @@ void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorS
 
 void cmdBindPushConstants(Cmd* pCmd, RootSignature* pRootSignature, const char* pName, const void* pConstants)
 {
-	ASSERT(pCmd);
-	ASSERT(pName);
-	ASSERT(pConstants);
-	ASSERT(pRootSignature);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pName);
+	SE_ASSERT(pConstants);
+	SE_ASSERT(pRootSignature);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3354,8 +3354,8 @@ void cmdBindPushConstants(Cmd* pCmd, RootSignature* pRootSignature, const char* 
 	}
 
 	const DescriptorInfo* pDesc = get_descriptor(pRootSignature, pName);
-	ASSERT(pDesc);
-	ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mType);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mType);
 
 	DECLARE_ZERO(CachedCmd, cmd);
 	cmd.pCmd = pCmd;
@@ -3369,14 +3369,14 @@ void cmdBindPushConstants(Cmd* pCmd, RootSignature* pRootSignature, const char* 
 
 void cmdBindPushConstantsByIndex(Cmd* pCmd, RootSignature* pRootSignature, uint32_t paramIndex, const void* pConstants)
 {
-	ASSERT(pCmd);
-	ASSERT(pConstants);
-	ASSERT(pRootSignature);
-	ASSERT(paramIndex >= 0 && paramIndex < pRootSignature->mDescriptorCount);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pConstants);
+	SE_ASSERT(pRootSignature);
+	SE_ASSERT(paramIndex >= 0 && paramIndex < pRootSignature->mDescriptorCount);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3384,8 +3384,8 @@ void cmdBindPushConstantsByIndex(Cmd* pCmd, RootSignature* pRootSignature, uint3
 	}
 
 	const DescriptorInfo* pDesc = pRootSignature->pDescriptors + paramIndex;
-	ASSERT(pDesc);
-	ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mType);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mType);
 
 	DECLARE_ZERO(CachedCmd, cmd);
 	cmd.pCmd = pCmd;
@@ -3399,12 +3399,12 @@ void cmdBindPushConstantsByIndex(Cmd* pCmd, RootSignature* pRootSignature, uint3
 
 void cmdBindIndexBuffer(Cmd* pCmd, Buffer* pBuffer, uint32_t indexType, uint64_t offset)
 {
-	ASSERT(pCmd);
-	ASSERT(pBuffer);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pBuffer);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3422,14 +3422,14 @@ void cmdBindIndexBuffer(Cmd* pCmd, Buffer* pBuffer, uint32_t indexType, uint64_t
 
 void cmdBindVertexBuffer(Cmd* pCmd, uint32_t bufferCount, Buffer** ppBuffers, const uint32_t* pStrides, const uint64_t* pOffsets)
 {
-	ASSERT(pCmd);
-	ASSERT(bufferCount);
-	ASSERT(ppBuffers);
-	ASSERT(pStrides);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(bufferCount);
+	SE_ASSERT(ppBuffers);
+	SE_ASSERT(pStrides);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3454,11 +3454,11 @@ void cmdBindVertexBuffer(Cmd* pCmd, uint32_t bufferCount, Buffer** ppBuffers, co
 
 void cmdDraw(Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3475,11 +3475,11 @@ void cmdDraw(Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex)
 
 void cmdDrawInstanced(Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex, uint32_t instanceCount, uint32_t firstInstance)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3498,11 +3498,11 @@ void cmdDrawInstanced(Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex, uin
 
 void cmdDrawIndexed(Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3521,11 +3521,11 @@ void cmdDrawIndexed(Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_
 void cmdDrawIndexedInstanced(
 	Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_t instanceCount, uint32_t firstInstance, uint32_t firstVertex)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -3545,11 +3545,11 @@ void cmdDrawIndexedInstanced(
 
 void cmdDispatch(Cmd* pCmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -4002,7 +4002,7 @@ void toggleVSync(Renderer* pRenderer, SwapChain** ppSwapChain)
 {
 	UNREF_PARAM(pRenderer);
 	// Initial vsync value is passed in with the desc when client creates a swapchain.
-	ASSERT(*ppSwapChain);
+	SE_ASSERT(*ppSwapChain);
 	(*ppSwapChain)->mEnableVsync = !(*ppSwapChain)->mEnableVsync;
 
 	//toggle vsync present flag (this can go up to 4 but we don't need to refresh on nth vertical sync)
@@ -4027,7 +4027,7 @@ void removeIndirectCommandSignature(Renderer* pRenderer, CommandSignature* pComm
 }
 
 void cmdExecuteIndirect(
-	Cmd* pCmd, CommandSignature* pCommandSignature, uint maxCommandCount, Buffer* pIndirectBuffer, uint64_t bufferOffset,
+	Cmd* pCmd, CommandSignature* pCommandSignature, uint32_t maxCommandCount, Buffer* pIndirectBuffer, uint64_t bufferOffset,
 	Buffer* pCounterBuffer, uint64_t counterBufferOffset)
 {
 }
@@ -4041,7 +4041,7 @@ D3D11_QUERY util_to_dx_query(QueryType type)
 	case QUERY_TYPE_TIMESTAMP: return D3D11_QUERY_TIMESTAMP;
 	case QUERY_TYPE_PIPELINE_STATISTICS: return D3D11_QUERY_PIPELINE_STATISTICS;
 	case QUERY_TYPE_OCCLUSION: return D3D11_QUERY_OCCLUSION;
-	default: ASSERT(false && "Invalid query type"); return D3D11_QUERY(-1);
+	default: SE_ASSERT(false && "Invalid query type"); return D3D11_QUERY(-1);
 	}
 }
 
@@ -4070,12 +4070,12 @@ void getTimestampFrequency(Queue* pQueue, double* pFrequency)
 
 void addQueryPool(Renderer* pRenderer, const QueryPoolDesc* pDesc, QueryPool** ppQueryPool)
 {
-	ASSERT(pRenderer);
-	ASSERT(pDesc);
-	ASSERT(ppQueryPool);
+	SE_ASSERT(pRenderer);
+	SE_ASSERT(pDesc);
+	SE_ASSERT(ppQueryPool);
 
 	QueryPool* pQueryPool = (QueryPool*)conf_calloc(1, sizeof(QueryPool) + pDesc->mQueryCount * sizeof(ID3D11Query*));
-	ASSERT(pQueryPool);
+	SE_ASSERT(pQueryPool);
 
 	pQueryPool->mCount = pDesc->mQueryCount;
 	pQueryPool->mType = util_to_dx_query(pDesc->mType);
@@ -4114,12 +4114,12 @@ void cmdResetQueryPool(Cmd* pCmd, QueryPool* pQueryPool, uint32_t startQuery, ui
 
 void cmdBeginQuery(Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery)
 {
-	ASSERT(pCmd);
-	ASSERT(pQuery);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pQuery);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -4136,12 +4136,12 @@ void cmdBeginQuery(Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery)
 
 void cmdEndQuery(Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery)
 {
-	ASSERT(pCmd);
-	ASSERT(pQuery);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pQuery);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -4158,12 +4158,12 @@ void cmdEndQuery(Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery)
 
 void cmdResolveQuery(Cmd* pCmd, QueryPool* pQueryPool, Buffer* pReadbackBuffer, uint32_t startQuery, uint32_t queryCount)
 {
-	ASSERT(pCmd);
-	ASSERT(pReadbackBuffer);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pReadbackBuffer);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -4194,12 +4194,12 @@ void freeMemoryStats(Renderer* pRenderer, char* stats)
 /************************************************************************/
 void cmdBeginDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName)
 {
-	ASSERT(pCmd);
-	ASSERT(pName);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pName);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -4218,11 +4218,11 @@ void cmdBeginDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName
 
 void cmdEndDebugMarker(Cmd* pCmd)
 {
-	ASSERT(pCmd);
+	SE_ASSERT(pCmd);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
@@ -4237,12 +4237,12 @@ void cmdEndDebugMarker(Cmd* pCmd)
 
 void cmdAddDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName)
 {
-	ASSERT(pCmd);
-	ASSERT(pName);
+	SE_ASSERT(pCmd);
+	SE_ASSERT(pName);
 
 	// Ensure beingCmd was actually called
 	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	SE_ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if ( cachedCmdsIter == gCachedCmds.end() )
 	{
 		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");

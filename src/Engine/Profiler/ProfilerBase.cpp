@@ -294,7 +294,7 @@ void initProfiler(Renderer* pRenderer, Queue** ppQueue, const char** ppProfilerN
 
 	if ( nGpuProfilerCount > 0 )
 	{
-		ASSERT(pRenderer != NULL && ppQueue != NULL && ppProfilerNames != NULL);
+		SE_ASSERT(pRenderer != NULL && ppQueue != NULL && ppProfilerNames != NULL);
 		for ( uint32_t i = 0; i < nGpuProfilerCount; ++i )
 		{
 			pProfileTokens[i] = addGpuProfiler(pRenderer, ppQueue[i], ppProfilerNames[i]);

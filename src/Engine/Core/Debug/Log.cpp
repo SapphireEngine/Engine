@@ -34,7 +34,7 @@ const char* get_filename(const char* path)
 void log_write(void * user_data, const stl::string & message)
 {
 	FileStream* fh = (FileStream*)user_data;
-	ASSERT(fh);
+	SE_ASSERT(fh);
 
 	fsWriteToStreamLine(fh, message.c_str());
 	fsFlushStream(fh);
@@ -44,7 +44,7 @@ void log_write(void * user_data, const stl::string & message)
 void log_close(void * user_data)
 {
 	FileStream* fh = (FileStream*)user_data;
-	ASSERT(fh);
+	SE_ASSERT(fh);
 	fsCloseStream(fh);
 }
 
@@ -52,7 +52,7 @@ void log_close(void * user_data)
 void log_flush(void * user_data)
 {
 	FileStream* fh = (FileStream*)user_data;
-	ASSERT(fh);
+	SE_ASSERT(fh);
 
 	fsFlushStream(fh);
 }

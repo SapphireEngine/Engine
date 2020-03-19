@@ -429,7 +429,7 @@ void UIApp::Exit()
 
 bool UIApp::Load(RenderTarget** rts, uint32_t count)
 {
-	ASSERT(rts && rts[0]);
+	SE_ASSERT(rts && rts[0]);
 	mWidth = (float)rts[0]->mWidth;
 	mHeight = (float)rts[0]->mHeight;
 
@@ -448,7 +448,7 @@ void UIApp::Unload()
 uint32_t UIApp::LoadFont(const char* pFontPath, ResourceDirectory root)
 {
 	uint32_t fontID = (uint32_t)pImpl->pFontStash->defineFont("default", pFontPath, root);
-	ASSERT(fontID != -1);
+	SE_ASSERT(fontID != -1);
 
 	return fontID;
 }
@@ -504,7 +504,7 @@ GuiComponent* UIApp::AddGuiComponent(const char* pTitle, const GuiDesc* pDesc)
 
 void UIApp::RemoveGuiComponent(GuiComponent* pComponent)
 {
-	ASSERT(pComponent);
+	SE_ASSERT(pComponent);
 
 	pComponent->RemoveAllWidgets();
 	GuiComponent** it = eastl::find(pImpl->mComponents.begin(), pImpl->mComponents.end(), pComponent);
@@ -612,7 +612,7 @@ void GuiComponent::RemoveAllWidgets()
 
 /************************************************************************/
 /************************************************************************/
-bool VirtualJoystickUI::Init(Renderer* renderer, const char* pJoystickTexture, uint root)
+bool VirtualJoystickUI::Init(Renderer* renderer, const char* pJoystickTexture, uint32_t root)
 {
 #if TOUCH_INPUT
 	pRenderer = renderer;
@@ -804,7 +804,7 @@ void VirtualJoystickUI::Draw(Cmd* pCmd, const float4& color)
 	float intSide = mInsideRadius;
 
 	uint64_t bufferOffset = 0;
-	for ( uint i = 0; i < 2; i++ )
+	for ( uint32_t i = 0; i < 2; i++ )
 	{
 		if ( mSticks[i].mPressed )
 		{

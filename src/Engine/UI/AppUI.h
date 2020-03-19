@@ -928,7 +928,7 @@ public:
 	void Update(float deltaTime);
 	void Draw(Cmd* cmd);
 
-	uint          LoadFont(const char* pFontPath, ResourceDirectory root);
+	uint32_t          LoadFont(const char* pFontPath, ResourceDirectory root);
 	GuiComponent* AddGuiComponent(const char* pTitle, const GuiDesc* pDesc);
 	void          RemoveGuiComponent(GuiComponent* pComponent);
 	void          RemoveAllGuiComponents();
@@ -996,7 +996,7 @@ public:
 	}
 
 	// Init resources
-	bool Init(Renderer* pRenderer, const char* pJoystickTexture, uint root);
+	bool Init(Renderer* pRenderer, const char* pJoystickTexture, uint32_t root);
 	void Exit();
 	bool Load(RenderTarget* pScreenRT);
 	void Unload();
