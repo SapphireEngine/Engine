@@ -7,7 +7,7 @@
 //=============================================================================
 SE_NAMESPACE_BEGIN
 
-typedef void* (*memoryAllocationFunc)(class Image *image, uint64_t byteCount, uint64_t alignment, void *userData);
+typedef void* (*MemoryAllocationFunc)(class Image *image, uint64_t byteCount, uint64_t alignment, void *userData);
 
 typedef enum ImageLoadingResult
 {
@@ -21,7 +21,6 @@ class Image
 	friend class ResourceLoader;
 	friend class AssetPipeline;
 	friend bool convertAndSaveImage(const Image&, bool (Image::*saverFunction)(const Path*), const Path*);
-	friend Image* conf_placement_new<Image>(void*);
 public:
 	Image();
 	Image(const Image &img);
@@ -151,14 +150,14 @@ public:
 	bool GenerateMipMaps(const uint32_t mipMaps = ALL_MIPLEVELS);
 	
 	// Image Format Saving
-	bool ISaveDDS(const Path *filePath);
-	bool ISaveKTX(const Path *filePath);
-	bool ISaveTGA(const Path *filePath);
-	bool ISaveBMP(const Path *filePath);
-	bool ISavePNG(const Path *filePath);
-	bool ISaveHDR(const Path *filePath);
-	bool ISaveJPG(const Path *filePath);
-	bool ISaveSVT(const Path *filePath, uint32_t pageSize = 128);
+	bool SaveDDS(const Path *filePath);
+	bool SaveKTX(const Path *filePath);
+	bool SaveTGA(const Path *filePath);
+	bool SaveBMP(const Path *filePath);
+	bool SavePNG(const Path *filePath);
+	bool SaveHDR(const Path *filePath);
+	bool SaveJPG(const Path *filePath);
+	bool SaveSVT(const Path *filePath, uint32_t pageSize = 128);
 	bool Save(const Path *filePath);
 
 	template<typename T>
@@ -178,43 +177,44 @@ public:
 	{
 		SE_ASSERT(IsLinearLayout() && !TinyImageFormat_IsCompressed(m_format));
 		uint32_t channelCount = TinyImageFormat_ChannelCount(m_format);
-		char* pixels = (char*)GetPixels(mipLevel, slice);
+		char *pixels = (char*)GetPixels(mipLevel, slice);
 		uint32_t bytesPerRow = GetBytesPerRow(mipLevel);
 
-		T* rowPixels = (T*)(pixels + m_height * bytesPerRow * z + bytesPerRow * y);
+		T *rowPixels = (T*)(pixels + m_height * bytesPerRow * z + bytesPerRow * y);
 		rowPixels[x * channelCount + channel] = pixel;
 	}
 
-	typedef ImageLoadingResult(*ImageLoaderFunction)(Image *image, FileStream *stream, memoryAllocationFunc allocator, void *userData);
+	typedef ImageLoadingResult(*ImageLoaderFunction)(Image *image, FileStream *stream, MemoryAllocationFunc allocator, void *userData);
 	static void AddImageLoader(const char *extension, ImageLoaderFunction func);
 
-protected:
+private:
 	static void init();
 	static void exit();
-
-	unsigned char *p_data;
-	PathHandle m_loadFilePath;
-	uint32_t m_width, m_height, m_depth;
-	uint32_t m_mipMapCount;
-	uint32_t m_arrayCount;
-	TinyImageFormat m_format;
-	uint32_t m_rowAlignment;
-	uint32_t m_subtextureAlignment;
-	bool m_linearLayout;
-	bool m_ownsMemory;
-	// is memory (mipmaps*w*h*d)*s or mipmaps * (w*h*d*s) with s being constant for all mipmaps
-	bool m_mipsAfterSlices;
-
-private:
-	void destroy();
 
 	// The following create function will use passed in data as reference without allocating memory for internal p_data (meaning the Image object will not own the data)
 	unsigned char* create(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, const unsigned char *rawData, const int rowAlignment = 0, const int subtextureAlignment = 1);
 
+	void destroy();
+
 	void clear();
 
-	ImageLoadingResult loadFromFile(const Path *filePath, memoryAllocationFunc allocator = nullptr, void *userData = nullptr, uint32_t rowAlignment = 1, uint32_t subtextureAlignment = 1);
-	ImageLoadingResult loadFromStream(FileStream *stream, char const *extension, memoryAllocationFunc allocator = nullptr,void *userData = nullptr, uint32_t rowAlignment = 0, uint32_t subtextureAlignment = 1);
+	ImageLoadingResult loadFromFile(const Path *filePath, MemoryAllocationFunc allocator = nullptr, void *userData = nullptr, uint32_t rowAlignment = 1, uint32_t subtextureAlignment = 1);
+	ImageLoadingResult loadFromStream(FileStream *stream, char const *extension, MemoryAllocationFunc allocator = nullptr, void *userData = nullptr, uint32_t rowAlignment = 0, uint32_t subtextureAlignment = 1);
+
+	unsigned char *p_data = nullptr;
+	PathHandle m_loadFilePath = nullptr;
+	uint32_t m_width = 0;
+	uint32_t m_height = 0;
+	uint32_t m_depth = 0;
+	uint32_t m_mipMapCount = 0;
+	uint32_t m_arrayCount = 0;
+	TinyImageFormat m_format = TinyImageFormat_UNDEFINED;
+	uint32_t m_rowAlignment = 1;
+	uint32_t m_subtextureAlignment = 1;
+	bool m_linearLayout = true;
+	bool m_ownsMemory = true;
+	// is memory (mipmaps*w*h*d)*s or mipmaps * (w*h*d*s) with s being constant for all mipmaps
+	bool m_mipsAfterSlices = false;	
 };
 
 SE_NAMESPACE_END

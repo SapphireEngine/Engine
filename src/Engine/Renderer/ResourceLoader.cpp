@@ -232,7 +232,7 @@ public:
 		return pImage;
 	}
 
-	static ImageLoadingResult CreateImage(const Path* filePath, memoryAllocationFunc pAllocator, void* pUserData, uint32_t rowAlignment, uint32_t subtextureAlignment, Image** pOutImage)
+	static ImageLoadingResult CreateImage(const Path* filePath, MemoryAllocationFunc pAllocator, void* pUserData, uint32_t rowAlignment, uint32_t subtextureAlignment, Image** pOutImage)
 	{
 		Image* pImage = AllocImage();
 
@@ -255,7 +255,7 @@ public:
 		return result;
 	}
 
-	static ImageLoadingResult CreateImage(void const* mem, uint32_t size, char const* extension, memoryAllocationFunc pAllocator, void* pUserData, uint32_t rowAlignment, uint32_t subtextureAlignment, Image** pOutImage)
+	static ImageLoadingResult CreateImage(void const* mem, uint32_t size, char const* extension, MemoryAllocationFunc pAllocator, void* pUserData, uint32_t rowAlignment, uint32_t subtextureAlignment, Image** pOutImage)
 	{
 		FileStream* stream = fsOpenReadOnlyMemory(mem, size);
 
