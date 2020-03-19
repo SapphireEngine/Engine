@@ -779,16 +779,16 @@ typedef struct Region3D
 	uint32_t mXOffset;
 	uint32_t mYOffset;
 	uint32_t mZOffset;
-	uint32_t mWidth;
-	uint32_t mHeight;
-	uint32_t mDepth;
+	uint32_t m_width;
+	uint32_t m_height;
+	uint32_t m_depth;
 } Region3D;
 
 typedef struct Extent3D
 {
-	uint32_t mWidth;
-	uint32_t mHeight;
-	uint32_t mDepth;
+	uint32_t m_width;
+	uint32_t m_height;
+	uint32_t m_depth;
 } Extent3D;
 
 typedef enum QueryType
@@ -868,7 +868,7 @@ typedef struct BufferDesc
 	/// Set this to specify a counter buffer for this buffer (applicable to BUFFER_USAGE_STORAGE_SRV, BUFFER_USAGE_STORAGE_UAV)
 	struct Buffer* pCounterBuffer;
 	/// Format of the buffer (applicable to typed storage buffers (Buffer<T>)
-	TinyImageFormat mFormat;
+	TinyImageFormat m_format;
 	/// Flags specifying the suitable usage of this buffer (Uniform buffer, Vertex Buffer, Index Buffer,...)
 	DescriptorType mDescriptors;
 	/// Debug name used in gpu profile
@@ -947,11 +947,11 @@ typedef struct TextureDesc
 	/// Texture creation flags (decides memory allocation strategy, sharing access,...)
 	TextureCreationFlags mFlags;
 	/// Width
-	uint32_t mWidth;
+	uint32_t m_width;
 	/// Height
-	uint32_t mHeight;
+	uint32_t m_height;
 	/// Depth (Should be 1 if not a mType is not TEXTURE_TYPE_3D)
-	uint32_t mDepth;
+	uint32_t m_depth;
 	/// Texture array size (Should be 1 if texture is not a texture array or cubemap)
 	uint32_t mArraySize;
 	/// Number of mip levels
@@ -961,7 +961,7 @@ typedef struct TextureDesc
 	/// The image quality level. The higher the quality, the lower the performance. The valid range is between zero and the value appropriate for mSampleCount
 	uint32_t mSampleQuality;
 	///  image format
-	TinyImageFormat mFormat;
+	TinyImageFormat m_format;
 	/// Optimized clear value (recommended to use this same value when clearing the rendertarget)
 	ClearValue mClearValue;
 	/// What state will the texture get created in
@@ -1129,9 +1129,9 @@ typedef struct DEFINE_ALIGNED(Texture, 64)
 	/// Flags specifying which aspects (COLOR,DEPTH,STENCIL) are included in the pVkImageView
 	uint64_t                     mAspectMask : 4;
 	uint64_t                     mNodeIndex : 4;
-	uint64_t                     mWidth : 16;
-	uint64_t                     mHeight : 16;
-	uint64_t                     mDepth : 16;
+	uint64_t                     m_width : 16;
+	uint64_t                     m_height : 16;
+	uint64_t                     m_depth : 16;
 } Texture;
 // One cache line
 COMPILE_ASSERT(sizeof(Texture) == 8 * sizeof(uint64_t));
@@ -1141,11 +1141,11 @@ typedef struct RenderTargetDesc
 	/// Texture creation flags (decides memory allocation strategy, sharing access,...)
 	TextureCreationFlags mFlags;
 	/// Width
-	uint32_t mWidth;
+	uint32_t m_width;
 	/// Height
-	uint32_t mHeight;
+	uint32_t m_height;
 	/// Depth (Should be 1 if not a mType is not TEXTURE_TYPE_3D)
-	uint32_t mDepth;
+	uint32_t m_depth;
 	/// Texture array size (Should be 1 if texture is not a texture array or cubemap)
 	uint32_t mArraySize;
 	/// Number of mip levels
@@ -1153,7 +1153,7 @@ typedef struct RenderTargetDesc
 	/// MSAA
 	SampleCount mSampleCount;
 	/// Internal image format
-	TinyImageFormat mFormat;
+	TinyImageFormat m_format;
 	/// Optimized clear value (recommended to use this same value when clearing the rendertarget)
 	ClearValue mClearValue;
 	/// The image quality level. The higher the quality, the lower the performance. The valid range is between zero and the value appropriate for mSampleCount
@@ -1209,13 +1209,13 @@ typedef struct DEFINE_ALIGNED(RenderTarget, 64)
 #endif
 	ClearValue                    mClearValue;
 	uint32_t                      mArraySize : 16;
-	uint32_t                      mDepth : 16;
-	uint32_t                      mWidth : 16;
-	uint32_t                      mHeight : 16;
+	uint32_t                      m_depth : 16;
+	uint32_t                      m_width : 16;
+	uint32_t                      m_height : 16;
 	uint32_t                      mDescriptors : 20;
 	uint32_t                      mMipLevels : 10;
 	uint32_t                      mSampleQuality : 5;
-	TinyImageFormat               mFormat;
+	TinyImageFormat               m_format;
 	SampleCount                   mSampleCount;
 } RenderTarget;
 // Two cache lines
@@ -1911,7 +1911,7 @@ typedef struct VertexAttrib
 	ShaderSemantic    mSemantic;
 	uint32_t          mSemanticNameLength;
 	char              mSemanticName[MAX_SEMANTIC_NAME_LENGTH];
-	TinyImageFormat	  mFormat;
+	TinyImageFormat	  m_format;
 	uint32_t          mBinding;
 	uint32_t          mLocation;
 	uint32_t          mOffset;
@@ -2082,9 +2082,9 @@ typedef struct SwapChainDesc
 	/// Number of backbuffers in this swapchain
 	uint32_t mImageCount;
 	/// Width of the swapchain
-	uint32_t mWidth;
+	uint32_t m_width;
 	/// Height of the swapchain
-	uint32_t mHeight;
+	uint32_t m_height;
 	/// Color format of the swapchain
 	TinyImageFormat mColorFormat;
 	/// Clear value

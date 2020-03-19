@@ -20,7 +20,7 @@ typedef struct GpuTimer
 	char mName[64] = "Timer";
 	uint32_t             mIndex;
 	uint32_t             mHistoryIndex;
-	uint32_t             mDepth;
+	uint32_t             m_depth;
 
 	uint64_t mStartGpuTime;
 	uint64_t mEndGpuTime;

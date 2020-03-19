@@ -3,6 +3,21 @@
 //=============================================================================
 SE_NAMESPACE_BEGIN
 
+static inline uint32_t CalculateMipMapLevels(uint32_t width, uint32_t height)
+{
+	if ( width == 0 || height == 0 )
+		return 0;
+
+	uint32_t result = 1;
+	while ( width > 1 || height > 1 )
+	{
+		width >>= 1;
+		height >>= 1;
+		result++;
+	}
+	return result;
+}
+
 static inline uint32_t ImageGetMipMappedSize(uint32_t w, uint32_t h, uint32_t d, uint32_t mipMapLevels, TinyImageFormat srcFormat)
 {
 	// PVR formats get special case

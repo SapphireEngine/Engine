@@ -118,7 +118,7 @@ IWidget* VerticalSeparatorWidget::Clone() const
 IWidget* SliderFloatWidget::Clone() const
 {
 	SliderFloatWidget* pWidget = conf_placement_new<SliderFloatWidget>(
-		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData, this->mMin, this->mMax, this->mStep, this->mFormat);
+		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data, this->mMin, this->mMax, this->mStep, this->m_format);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -129,7 +129,7 @@ IWidget* SliderFloatWidget::Clone() const
 IWidget* SliderFloat2Widget::Clone() const
 {
 	SliderFloat2Widget* pWidget = conf_placement_new<SliderFloat2Widget>(
-		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData, this->mMin, this->mMax, this->mStep, this->mFormat);
+		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data, this->mMin, this->mMax, this->mStep, this->m_format);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -140,7 +140,7 @@ IWidget* SliderFloat2Widget::Clone() const
 IWidget* SliderFloat3Widget::Clone() const
 {
 	SliderFloat3Widget* pWidget = conf_placement_new<SliderFloat3Widget>(
-		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData, this->mMin, this->mMax, this->mStep, this->mFormat);
+		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data, this->mMin, this->mMax, this->mStep, this->m_format);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -151,7 +151,7 @@ IWidget* SliderFloat3Widget::Clone() const
 IWidget* SliderFloat4Widget::Clone() const
 {
 	SliderFloat4Widget* pWidget = conf_placement_new<SliderFloat4Widget>(
-		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData, this->mMin, this->mMax, this->mStep, this->mFormat);
+		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data, this->mMin, this->mMax, this->mStep, this->m_format);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -162,7 +162,7 @@ IWidget* SliderFloat4Widget::Clone() const
 IWidget* SliderIntWidget::Clone() const
 {
 	SliderIntWidget* pWidget = conf_placement_new<SliderIntWidget>(
-		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData, this->mMin, this->mMax, this->mStep, this->mFormat);
+		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data, this->mMin, this->mMax, this->mStep, this->m_format);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -173,7 +173,7 @@ IWidget* SliderIntWidget::Clone() const
 IWidget* SliderUintWidget::Clone() const
 {
 	SliderUintWidget* pWidget = conf_placement_new<SliderUintWidget>(
-		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData, this->mMin, this->mMax, this->mStep, this->mFormat);
+		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data, this->mMin, this->mMax, this->mStep, this->m_format);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -184,7 +184,7 @@ IWidget* SliderUintWidget::Clone() const
 IWidget* RadioButtonWidget::Clone() const
 {
 	RadioButtonWidget* pWidget =
-		conf_placement_new<RadioButtonWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData, this->mRadioId);
+		conf_placement_new<RadioButtonWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data, this->mRadioId);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -198,7 +198,7 @@ IWidget* DropdownWidget::Clone() const
 	for ( uint32_t i = 0; i < (uint32_t)mValues.size(); ++i )
 		ppNames[i] = mNames[i].c_str();
 	DropdownWidget* pWidget = conf_placement_new<DropdownWidget>(
-		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData, ppNames, this->mValues.data(), (uint32_t)this->mValues.size());
+		conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data, ppNames, this->mValues.data(), (uint32_t)this->mValues.size());
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -209,7 +209,7 @@ IWidget* DropdownWidget::Clone() const
 IWidget* ProgressBarWidget::Clone() const
 {
 	ProgressBarWidget* pWidget =
-		conf_placement_new<ProgressBarWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData, mMaxProgress);
+		conf_placement_new<ProgressBarWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data, mMaxProgress);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -219,7 +219,7 @@ IWidget* ProgressBarWidget::Clone() const
 
 IWidget* ColorSliderWidget::Clone() const
 {
-	ColorSliderWidget* pWidget = conf_placement_new<ColorSliderWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData);
+	ColorSliderWidget* pWidget = conf_placement_new<ColorSliderWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -250,7 +250,7 @@ IWidget* PlotLinesWidget::Clone() const
 
 IWidget* ColorPickerWidget::Clone() const
 {
-	ColorPickerWidget* pWidget = conf_placement_new<ColorPickerWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData);
+	ColorPickerWidget* pWidget = conf_placement_new<ColorPickerWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -261,7 +261,7 @@ IWidget* ColorPickerWidget::Clone() const
 IWidget* TextboxWidget::Clone() const
 {
 	TextboxWidget* pWidget =
-		conf_placement_new<TextboxWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData, this->mLength, this->mAutoSelectAll);
+		conf_placement_new<TextboxWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data, this->mLength, this->mAutoSelectAll);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -272,7 +272,7 @@ IWidget* TextboxWidget::Clone() const
 IWidget* DynamicTextWidget::Clone() const
 {
 	DynamicTextWidget* pWidget =
-		conf_placement_new<DynamicTextWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData, this->mLength, this->pColor);
+		conf_placement_new<DynamicTextWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data, this->mLength, this->pColor);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -338,7 +338,7 @@ IWidget* DrawCurveWidget::Clone() const
 
 IWidget* CheckboxWidget::Clone() const
 {
-	CheckboxWidget* pWidget = conf_placement_new<CheckboxWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData);
+	CheckboxWidget* pWidget = conf_placement_new<CheckboxWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -348,7 +348,7 @@ IWidget* CheckboxWidget::Clone() const
 
 IWidget* OneLineCheckboxWidget::Clone() const
 {
-	OneLineCheckboxWidget* pWidget = conf_placement_new<OneLineCheckboxWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->pData, this->mColor);
+	OneLineCheckboxWidget* pWidget = conf_placement_new<OneLineCheckboxWidget>(conf_calloc(1, sizeof(*pWidget)), this->mLabel, this->p_data, this->mColor);
 
 	// Clone the callbacks
 	CloneCallbacks((IWidget*)this, pWidget);
@@ -430,8 +430,8 @@ void UIApp::Exit()
 bool UIApp::Load(RenderTarget** rts, uint32_t count)
 {
 	SE_ASSERT(rts && rts[0]);
-	mWidth = (float)rts[0]->mWidth;
-	mHeight = (float)rts[0]->mHeight;
+	m_width = (float)rts[0]->m_width;
+	m_height = (float)rts[0]->m_height;
 
 	bool success = pDriver->load(rts, count);
 	success &= pImpl->pFontStash->load(rts, count);
@@ -548,7 +548,7 @@ void UIApp::Update(float deltaTime)
 		if ( pImpl->mComponentsToUpdate[i]->mActive )
 			activeComponents[activeComponentCount++] = pImpl->mComponentsToUpdate[i];
 
-	GUIDriver::GUIUpdate guiUpdate{ activeComponents.data(), activeComponentCount, deltaTime, mWidth, mHeight, mShowDemoUiWindow };
+	GUIDriver::GUIUpdate guiUpdate{ activeComponents.data(), activeComponentCount, deltaTime, m_width, m_height, mShowDemoUiWindow };
 	pDriver->update(&guiUpdate);
 
 	pImpl->mComponentsToUpdate.clear();
@@ -743,7 +743,7 @@ bool VirtualJoystickUI::Load(RenderTarget* pScreenRT)
 	addPipeline(pRenderer, &desc, &pPipeline);
 
 	mRenderSize[0] = (float)pScreenRT->mWidth;
-	mRenderSize[1] = (float)pScreenRT->mHeight;
+	mRenderSize[1] = (float)pScreenRT->m_height;
 #endif
 	return true;
 }

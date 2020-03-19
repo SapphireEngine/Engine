@@ -246,8 +246,8 @@ public:
 	SliderFloatWidget(
 		const eastl::string& _label, float* _data, float _min, float _max, float _step = 0.01f, const eastl::string& _format = "%.3f") :
 		IWidget(_label),
-		mFormat(_format),
-		pData(_data),
+		m_format(_format),
+		p_data(_data),
 		mMin(_min),
 		mMax(_max),
 		mStep(_step)
@@ -258,8 +258,8 @@ public:
 	void     Draw();
 
 protected:
-	eastl::string mFormat;
-	float*          pData;
+	eastl::string m_format;
+	float*          p_data;
 	float           mMin;
 	float           mMax;
 	float           mStep;
@@ -272,8 +272,8 @@ public:
 		const eastl::string& _label, float2* _data, const float2& _min, const float2& _max, const float2& _step = float2(0.01f, 0.01f),
 		const eastl::string& _format = "%.3f") :
 		IWidget(_label),
-		mFormat(_format),
-		pData(_data),
+		m_format(_format),
+		p_data(_data),
 		mMin(_min),
 		mMax(_max),
 		mStep(_step)
@@ -284,8 +284,8 @@ public:
 	void     Draw();
 
 protected:
-	eastl::string mFormat;
-	float2*         pData;
+	eastl::string m_format;
+	float2*         p_data;
 	float2          mMin;
 	float2          mMax;
 	float2          mStep;
@@ -298,8 +298,8 @@ public:
 		const eastl::string& _label, float3* _data, const float3& _min, const float3& _max,
 		const float3& _step = float3(0.01f, 0.01f, 0.01f), const eastl::string& _format = "%.3f") :
 		IWidget(_label),
-		mFormat(_format),
-		pData(_data),
+		m_format(_format),
+		p_data(_data),
 		mMin(_min),
 		mMax(_max),
 		mStep(_step)
@@ -310,8 +310,8 @@ public:
 	void     Draw();
 
 protected:
-	eastl::string mFormat;
-	float3*         pData;
+	eastl::string m_format;
+	float3*         p_data;
 	float3          mMin;
 	float3          mMax;
 	float3          mStep;
@@ -324,8 +324,8 @@ public:
 		const eastl::string& _label, float4* _data, const float4& _min, const float4& _max,
 		const float4& _step = float4(0.01f, 0.01f, 0.01f, 0.01f), const eastl::string& _format = "%.3f") :
 		IWidget(_label),
-		mFormat(_format),
-		pData(_data),
+		m_format(_format),
+		p_data(_data),
 		mMin(_min),
 		mMax(_max),
 		mStep(_step)
@@ -336,8 +336,8 @@ public:
 	void     Draw();
 
 protected:
-	eastl::string mFormat;
-	float4*         pData;
+	eastl::string m_format;
+	float4*         p_data;
 	float4          mMin;
 	float4          mMax;
 	float4          mStep;
@@ -350,8 +350,8 @@ public:
 		const eastl::string& _label, int32_t* _data, int32_t _min, int32_t _max, int32_t _step = 1,
 		const eastl::string& _format = "%d") :
 		IWidget(_label),
-		mFormat(_format),
-		pData(_data),
+		m_format(_format),
+		p_data(_data),
 		mMin(_min),
 		mMax(_max),
 		mStep(_step)
@@ -362,8 +362,8 @@ public:
 	void     Draw();
 
 protected:
-	eastl::string mFormat;
-	int32_t*        pData;
+	eastl::string m_format;
+	int32_t*        p_data;
 	int32_t         mMin;
 	int32_t         mMax;
 	int32_t         mStep;
@@ -376,8 +376,8 @@ public:
 		const eastl::string& _label, uint32_t* _data, uint32_t _min, uint32_t _max, uint32_t _step = 1,
 		const eastl::string& _format = "%d") :
 		IWidget(_label),
-		mFormat(_format),
-		pData(_data),
+		m_format(_format),
+		p_data(_data),
 		mMin(_min),
 		mMax(_max),
 		mStep(_step)
@@ -388,8 +388,8 @@ public:
 	void     Draw();
 
 protected:
-	eastl::string mFormat;
-	uint32_t*       pData;
+	eastl::string m_format;
+	uint32_t*       p_data;
 	uint32_t        mMin;
 	uint32_t        mMax;
 	uint32_t        mStep;
@@ -400,7 +400,7 @@ class RadioButtonWidget : public IWidget
 public:
 	RadioButtonWidget(const eastl::string& _label, int32_t* _data, const int32_t _radioId) :
 		IWidget(_label),
-		pData(_data),
+		p_data(_data),
 		mRadioId(_radioId)
 	{
 	}
@@ -409,34 +409,34 @@ public:
 	void     Draw();
 
 protected:
-	int32_t* pData;
+	int32_t* p_data;
 	int32_t  mRadioId;
 };
 
 class CheckboxWidget : public IWidget
 {
 public:
-	CheckboxWidget(const eastl::string& _label, bool* _data) : IWidget(_label), pData(_data)
+	CheckboxWidget(const eastl::string& _label, bool* _data) : IWidget(_label), p_data(_data)
 	{
 	}
 	IWidget* Clone() const;
 	void     Draw();
 
 protected:
-	bool* pData;
+	bool* p_data;
 };
 
 class OneLineCheckboxWidget : public IWidget
 {
 public:
-	OneLineCheckboxWidget(const eastl::string& _label, bool* _data, const uint32_t& _color) : IWidget(_label), pData(_data), mColor(_color)
+	OneLineCheckboxWidget(const eastl::string& _label, bool* _data, const uint32_t& _color) : IWidget(_label), p_data(_data), mColor(_color)
 	{
 	}
 	IWidget* Clone() const;
 	void     Draw();
 
 protected:
-	bool* pData;
+	bool* p_data;
 	uint32_t mColor;
 };
 
@@ -458,7 +458,7 @@ class DropdownWidget : public IWidget
 public:
 	DropdownWidget(const eastl::string& _label, uint32_t* _data, const char** _names, const uint32_t* _values, uint32_t count) :
 		IWidget(_label),
-		pData(_data)
+		p_data(_data)
 	{
 		mValues.resize(count);
 		mNames.resize(count);
@@ -472,7 +472,7 @@ public:
 	void     Draw();
 
 protected:
-	uint32_t*                        pData;
+	uint32_t*                        p_data;
 	eastl::vector<uint32_t>        mValues;
 	eastl::vector<eastl::string> mNames;
 };
@@ -504,7 +504,7 @@ class ProgressBarWidget : public IWidget
 public:
 	ProgressBarWidget(const eastl::string& _label, size_t* _data, size_t const _maxProgress) :
 		IWidget(_label),
-		pData(_data),
+		p_data(_data),
 		mMaxProgress(_maxProgress)
 	{
 	}
@@ -513,14 +513,14 @@ public:
 	void     Draw();
 
 protected:
-	size_t* pData;
+	size_t* p_data;
 	size_t  mMaxProgress;
 };
 
 class ColorSliderWidget : public IWidget
 {
 public:
-	ColorSliderWidget(const eastl::string& _label, uint32_t* _data) : IWidget(_label), pData(_data)
+	ColorSliderWidget(const eastl::string& _label, uint32_t* _data) : IWidget(_label), p_data(_data)
 	{
 	}
 
@@ -528,7 +528,7 @@ public:
 	void     Draw();
 
 protected:
-	uint32_t* pData;
+	uint32_t* p_data;
 };
 
 class HistogramWidget : public IWidget
@@ -584,7 +584,7 @@ protected:
 class ColorPickerWidget : public IWidget
 {
 public:
-	ColorPickerWidget(const eastl::string& _label, uint32_t* _data) : IWidget(_label), pData(_data)
+	ColorPickerWidget(const eastl::string& _label, uint32_t* _data) : IWidget(_label), p_data(_data)
 	{
 	}
 
@@ -592,7 +592,7 @@ public:
 	void     Draw();
 
 protected:
-	uint32_t* pData;
+	uint32_t* p_data;
 };
 
 class TextboxWidget : public IWidget
@@ -600,7 +600,7 @@ class TextboxWidget : public IWidget
 public:
 	TextboxWidget(const eastl::string& _label, char* _data, uint32_t const _length, bool const _autoSelectAll = true) :
 		IWidget(_label),
-		pData(_data),
+		p_data(_data),
 		mLength(_length),
 		mAutoSelectAll(_autoSelectAll)
 	{
@@ -610,7 +610,7 @@ public:
 	void     Draw();
 
 protected:
-	char*    pData;
+	char*    p_data;
 	uint32_t mLength;
 	bool     mAutoSelectAll;
 };
@@ -620,7 +620,7 @@ class DynamicTextWidget : public IWidget
 public:
 	DynamicTextWidget(const eastl::string& _label, char* _data, uint32_t const _length, float4* _color) :
 		IWidget(_label),
-		pData(_data),
+		p_data(_data),
 		mLength(_length),
 		pColor(_color)
 	{
@@ -630,7 +630,7 @@ public:
 	void     Draw();
 
 protected:
-	char*    pData;
+	char*    p_data;
 	uint32_t mLength;
 	float4*  pColor;
 };
@@ -979,8 +979,8 @@ public:
 	bool mShowDemoUiWindow;
 
 private:
-	float   mWidth;
-	float   mHeight;
+	float   m_width;
+	float   m_height;
 	int32_t  mFontAtlasSize = 0;
 	uint32_t mMaxDynamicUIUpdatesPerBatch = 20;
 };

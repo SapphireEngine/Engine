@@ -8,7 +8,7 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/IResourceLoader.h"
 
-#define LABELID(prop) eastl::string().sprintf("##%llu", (uint64_t)(prop.pData)).c_str()
+#define LABELID(prop) eastl::string().sprintf("##%llu", (uint64_t)(prop.p_data)).c_str()
 #define LABELID1(prop) eastl::string().sprintf("##%llu", (uint64_t)(prop)).c_str()
 
 namespace ImGui
@@ -375,7 +375,7 @@ void ButtonWidget::Draw()
 void SliderFloatWidget::Draw()
 {
 	ImGui::Text("%s", mLabel.c_str());
-	ImGui::SliderFloatWithSteps(LABELID1(pData), pData, mMin, mMax, mStep, mFormat.c_str());
+	ImGui::SliderFloatWithSteps(LABELID1(p_data), p_data, mMin, mMax, mStep, m_format.c_str());
 	ProcessCallbacks();
 }
 
@@ -384,7 +384,7 @@ void SliderFloat2Widget::Draw()
 	ImGui::Text("%s", mLabel.c_str());
 	for ( uint32_t i = 0; i < 2; ++i )
 	{
-		ImGui::SliderFloatWithSteps(LABELID1(&pData->operator[](i)), &pData->operator[](i), mMin[i], mMax[i], mStep[i], mFormat.c_str());
+		ImGui::SliderFloatWithSteps(LABELID1(&p_data->operator[](i)), &p_data->operator[](i), mMin[i], mMax[i], mStep[i], m_format.c_str());
 		ProcessCallbacks();
 	}
 }
@@ -394,7 +394,7 @@ void SliderFloat3Widget::Draw()
 	ImGui::Text("%s", mLabel.c_str());
 	for ( uint32_t i = 0; i < 3; ++i )
 	{
-		ImGui::SliderFloatWithSteps(LABELID1(&pData->operator[](i)), &pData->operator[](i), mMin[i], mMax[i], mStep[i], mFormat.c_str());
+		ImGui::SliderFloatWithSteps(LABELID1(&p_data->operator[](i)), &p_data->operator[](i), mMin[i], mMax[i], mStep[i], m_format.c_str());
 		ProcessCallbacks();
 	}
 }
@@ -404,7 +404,7 @@ void SliderFloat4Widget::Draw()
 	ImGui::Text("%s", mLabel.c_str());
 	for ( uint32_t i = 0; i < 4; ++i )
 	{
-		ImGui::SliderFloatWithSteps(LABELID1(&pData->operator[](i)), &pData->operator[](i), mMin[i], mMax[i], mStep[i], mFormat.c_str());
+		ImGui::SliderFloatWithSteps(LABELID1(&p_data->operator[](i)), &p_data->operator[](i), mMin[i], mMax[i], mStep[i], m_format.c_str());
 		ProcessCallbacks();
 	}
 }
@@ -412,33 +412,33 @@ void SliderFloat4Widget::Draw()
 void SliderIntWidget::Draw()
 {
 	ImGui::Text("%s", mLabel.c_str());
-	ImGui::SliderIntWithSteps(LABELID1(pData), pData, mMin, mMax, mStep, mFormat.c_str());
+	ImGui::SliderIntWithSteps(LABELID1(p_data), p_data, mMin, mMax, mStep, m_format.c_str());
 	ProcessCallbacks();
 }
 
 void SliderUintWidget::Draw()
 {
 	ImGui::Text("%s", mLabel.c_str());
-	ImGui::SliderIntWithSteps(LABELID1(pData), (int32_t*)pData, (int32_t)mMin, (int32_t)mMax, (int32_t)mStep, mFormat.c_str());
+	ImGui::SliderIntWithSteps(LABELID1(p_data), (int32_t*)p_data, (int32_t)mMin, (int32_t)mMax, (int32_t)mStep, m_format.c_str());
 	ProcessCallbacks();
 }
 
 void RadioButtonWidget::Draw()
 {
-	ImGui::RadioButton(mLabel.c_str(), pData, mRadioId);
+	ImGui::RadioButton(mLabel.c_str(), p_data, mRadioId);
 	ProcessCallbacks();
 }
 
 void CheckboxWidget::Draw()
 {
 	ImGui::Text("%s", mLabel.c_str());
-	ImGui::Checkbox(LABELID1(pData), pData);
+	ImGui::Checkbox(LABELID1(p_data), p_data);
 	ProcessCallbacks();
 }
 
 void OneLineCheckboxWidget::Draw()
 {
-	ImGui::Checkbox(LABELID1(pData), pData);
+	ImGui::Checkbox(LABELID1(p_data), p_data);
 	ImGui::SameLine();
 	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(mColor), "%s", mLabel.c_str());
 	ProcessCallbacks();
@@ -452,9 +452,9 @@ void CursorLocationWidget::Draw()
 
 void DropdownWidget::Draw()
 {
-	uint32_t& current = *pData;
+	uint32_t& current = *p_data;
 	ImGui::Text("%s", mLabel.c_str());
-	if ( ImGui::BeginCombo(LABELID1(pData), mNames[current].c_str()) )
+	if ( ImGui::BeginCombo(LABELID1(p_data), mNames[current].c_str()) )
 	{
 		for ( uint32_t i = 0; i < (uint32_t)mNames.size(); ++i )
 		{
@@ -497,7 +497,7 @@ void ColumnWidget::Draw()
 
 void ProgressBarWidget::Draw()
 {
-	size_t currProgress = *pData;
+	size_t currProgress = *p_data;
 	ImGui::Text("%s", mLabel.c_str());
 	ImGui::ProgressBar((float)currProgress / mMaxProgress);
 	ProcessCallbacks();
@@ -505,12 +505,12 @@ void ProgressBarWidget::Draw()
 
 void ColorSliderWidget::Draw()
 {
-	uint32_t&  colorPick = *(uint32_t*)pData;
+	uint32_t&  colorPick = *(uint32_t*)p_data;
 	float4 combo_color = ToFloat4Color(colorPick) / 255.0f;
 
 	float col[4] = { combo_color.x, combo_color.y, combo_color.z, combo_color.w };
 	ImGui::Text("%s", mLabel.c_str());
-	if ( ImGui::ColorEdit4(LABELID1(pData), col, ImGuiColorEditFlags_AlphaPreview) )
+	if ( ImGui::ColorEdit4(LABELID1(p_data), col, ImGuiColorEditFlags_AlphaPreview) )
 	{
 		if ( col[0] != combo_color.x || col[1] != combo_color.y || col[2] != combo_color.z || col[3] != combo_color.w )
 		{
@@ -535,12 +535,12 @@ void PlotLinesWidget::Draw()
 
 void ColorPickerWidget::Draw()
 {
-	uint32_t&  colorPick = *(uint32_t*)pData;
+	uint32_t&  colorPick = *(uint32_t*)p_data;
 	float4 combo_color = ToFloat4Color(colorPick) / 255.0f;
 
 	float col[4] = { combo_color.x, combo_color.y, combo_color.z, combo_color.w };
 	ImGui::Text("%s", mLabel.c_str());
-	if ( ImGui::ColorPicker4(LABELID1(pData), col, ImGuiColorEditFlags_AlphaPreview) )
+	if ( ImGui::ColorPicker4(LABELID1(p_data), col, ImGuiColorEditFlags_AlphaPreview) )
 	{
 		if ( col[0] != combo_color.x || col[1] != combo_color.y || col[2] != combo_color.z || col[3] != combo_color.w )
 		{
@@ -553,13 +553,13 @@ void ColorPickerWidget::Draw()
 
 void TextboxWidget::Draw()
 {
-	ImGui::InputText(LABELID1(pData), (char*)pData, mLength, mAutoSelectAll ? ImGuiInputTextFlags_AutoSelectAll : 0);
+	ImGui::InputText(LABELID1(p_data), (char*)p_data, mLength, mAutoSelectAll ? ImGuiInputTextFlags_AutoSelectAll : 0);
 	ProcessCallbacks();
 }
 
 void DynamicTextWidget::Draw()
 {
-	ImGui::TextColored(*pColor, "%s", pData);
+	ImGui::TextColored(*pColor, "%s", p_data);
 	ProcessCallbacks();
 }
 
@@ -761,21 +761,21 @@ bool ImguiGUIDriver::init(Renderer* renderer, uint32_t const maxDynamicUIUpdates
 
 	mVertexLayoutTextured.mAttribCount = 3;
 	mVertexLayoutTextured.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-	mVertexLayoutTextured.mAttribs[0].mFormat = TinyImageFormat_R32G32_SFLOAT;
+	mVertexLayoutTextured.mAttribs[0].m_format = TinyImageFormat_R32G32_SFLOAT;
 	mVertexLayoutTextured.mAttribs[0].mBinding = 0;
 	mVertexLayoutTextured.mAttribs[0].mLocation = 0;
 	mVertexLayoutTextured.mAttribs[0].mOffset = 0;
 	mVertexLayoutTextured.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD0;
-	mVertexLayoutTextured.mAttribs[1].mFormat = TinyImageFormat_R32G32_SFLOAT;
+	mVertexLayoutTextured.mAttribs[1].m_format = TinyImageFormat_R32G32_SFLOAT;
 	mVertexLayoutTextured.mAttribs[1].mBinding = 0;
 	mVertexLayoutTextured.mAttribs[1].mLocation = 1;
-	mVertexLayoutTextured.mAttribs[1].mOffset = TinyImageFormat_BitSizeOfBlock(mVertexLayoutTextured.mAttribs[0].mFormat) / 8;
+	mVertexLayoutTextured.mAttribs[1].mOffset = TinyImageFormat_BitSizeOfBlock(mVertexLayoutTextured.mAttribs[0].m_format) / 8;
 	mVertexLayoutTextured.mAttribs[2].mSemantic = SEMANTIC_COLOR;
-	mVertexLayoutTextured.mAttribs[2].mFormat = TinyImageFormat_R8G8B8A8_UNORM;
+	mVertexLayoutTextured.mAttribs[2].m_format = TinyImageFormat_R8G8B8A8_UNORM;
 	mVertexLayoutTextured.mAttribs[2].mBinding = 0;
 	mVertexLayoutTextured.mAttribs[2].mLocation = 2;
 	mVertexLayoutTextured.mAttribs[2].mOffset =
-		mVertexLayoutTextured.mAttribs[1].mOffset + TinyImageFormat_BitSizeOfBlock(mVertexLayoutTextured.mAttribs[1].mFormat) / 8;
+		mVertexLayoutTextured.mAttribs[1].mOffset + TinyImageFormat_BitSizeOfBlock(mVertexLayoutTextured.mAttribs[1].m_format) / 8;
 	/************************************************************************/
 	/************************************************************************/
 	dpiScale = getDpiScale();
@@ -902,7 +902,7 @@ bool ImguiGUIDriver::load(RenderTarget** ppRts, uint32_t count)
 	pipelineDesc.mSampleCount = ppRts[0]->mSampleCount;
 	pipelineDesc.pBlendState = &blendStateDesc;
 	pipelineDesc.mSampleQuality = ppRts[0]->mSampleQuality;
-	pipelineDesc.pColorFormats = &ppRts[0]->mFormat;
+	pipelineDesc.pColorFormats = &ppRts[0]->m_format;
 	pipelineDesc.pDepthState = &depthStateDesc;
 	pipelineDesc.pRasterizerState = &rasterizerStateDesc;
 	pipelineDesc.pRootSignature = pRootSignatureTextured;

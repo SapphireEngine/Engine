@@ -34,7 +34,7 @@ typedef enum LoadPriority
 typedef struct BufferLoadDesc
 {
 	Buffer**    ppBuffer;
-	const void* pData;
+	const void* p_data;
 	BufferDesc  mDesc;
 	/// Force Reset buffer to NULL
 	bool mForceReset;
@@ -49,9 +49,9 @@ typedef struct BufferLoadDesc
 typedef struct RawImageData
 {
 	uint8_t* pRawData;
-	TinyImageFormat mFormat;
-	uint32_t mWidth, mHeight, mDepth, mArraySize, mMipLevels;
-	bool mMipsAfterSlices;
+	TinyImageFormat m_format;
+	uint32_t m_width, m_height, m_depth, mArraySize, mMipLevels;
+	bool m_mipsAfterSlices;
 
 	// The stride between subsequent rows.
 	// If using a beginUpdateResource/endUpdateResource pair,

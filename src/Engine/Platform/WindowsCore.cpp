@@ -295,8 +295,8 @@ static void collectMonitorInfo()
 		devMode.dmFields = DM_PELSHEIGHT | DM_PELSWIDTH;
 
 		EnumDisplaySettingsW(pMonitor->adapterName, ENUM_CURRENT_SETTINGS, &devMode);
-		pMonitor->defaultResolution.mHeight = devMode.dmPelsHeight;
-		pMonitor->defaultResolution.mWidth = devMode.dmPelsWidth;
+		pMonitor->defaultResolution.m_height = devMode.dmPelsHeight;
+		pMonitor->defaultResolution.m_width = devMode.dmPelsWidth;
 
 		eastl::vector<Resolution> displays;
 		DWORD current = 0;
@@ -305,7 +305,7 @@ static void collectMonitorInfo()
 			bool duplicate = false;
 			for ( uint32_t i = 0; i < (uint32_t)displays.size(); ++i )
 			{
-				if ( displays[i].mWidth == (uint32_t)devMode.dmPelsWidth && displays[i].mHeight == (uint32_t)devMode.dmPelsHeight )
+				if ( displays[i].m_width == (uint32_t)devMode.dmPelsWidth && displays[i].m_height == (uint32_t)devMode.dmPelsHeight )
 				{
 					duplicate = true;
 					break;
@@ -316,17 +316,17 @@ static void collectMonitorInfo()
 				continue;
 
 			Resolution videoMode = {};
-			videoMode.mHeight = devMode.dmPelsHeight;
-			videoMode.mWidth = devMode.dmPelsWidth;
+			videoMode.m_height = devMode.dmPelsHeight;
+			videoMode.m_width = devMode.dmPelsWidth;
 			displays.emplace_back(videoMode);
 		}
 		qsort(displays.data(), displays.size(), sizeof(Resolution), [](const void* lhs, const void* rhs) {
 			Resolution* pLhs = (Resolution*)lhs;
 			Resolution* pRhs = (Resolution*)rhs;
-			if ( pLhs->mHeight == pRhs->mHeight )
-				return (int)(pLhs->mWidth - pRhs->mWidth);
+			if ( pLhs->m_height == pRhs->m_height )
+				return (int)(pLhs->m_width - pRhs->m_width);
 
-			return (int)(pLhs->mHeight - pRhs->mHeight);
+			return (int)(pLhs->m_height - pRhs->m_height);
 			});
 
 		pMonitor->resolutionCount = (uint32_t)displays.size();
@@ -339,8 +339,8 @@ void setResolution(const MonitorDesc* pMonitor, const Resolution* pMode)
 {
 	DEVMODEW devMode = {};
 	devMode.dmSize = sizeof(DEVMODEW);
-	devMode.dmPelsHeight = pMode->mHeight;
-	devMode.dmPelsWidth = pMode->mWidth;
+	devMode.dmPelsHeight = pMode->m_height;
+	devMode.dmPelsWidth = pMode->m_width;
 	devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
 	ChangeDisplaySettingsW(&devMode, CDS_FULLSCREEN);
 }
@@ -617,7 +617,7 @@ bool getResolutionSupport(const MonitorDesc* pMonitor, const Resolution* pRes)
 {
 	for ( uint32_t i = 0; i < pMonitor->resolutionCount; ++i )
 	{
-		if ( pMonitor->resolutions[i].mWidth == pRes->mWidth && pMonitor->resolutions[i].mHeight == pRes->mHeight )
+		if ( pMonitor->resolutions[i].m_width == pRes->m_width && pMonitor->resolutions[i].m_height == pRes->m_height )
 			return true;
 	}
 
@@ -629,8 +629,8 @@ static void onResize(WindowsDesc* wnd, int32_t newSizeX, int32_t newSizeY)
 	if ( !pApp )
 		return;
 
-	pApp->mSettings.mWidth = newSizeX;
-	pApp->mSettings.mHeight = newSizeY;
+	pApp->mSettings.m_width = newSizeX;
+	pApp->mSettings.m_height = newSizeY;
 
 	pApp->mSettings.mFullScreen = wnd->fullScreen;
 	pApp->Unload();
@@ -663,24 +663,24 @@ int WindowsMain(int argc, char** argv, IApp* app)
 	WindowsDesc window = {};
 	Timer deltaTimer;
 
-	if ( pSettings->mWidth == -1 || pSettings->mHeight == -1 )
+	if ( pSettings->m_width == -1 || pSettings->m_height == -1 )
 	{
 		RectDesc rect = {};
 		getRecommendedResolution(&rect);
-		pSettings->mWidth = getRectWidth(rect);
-		pSettings->mHeight = getRectHeight(rect);
+		pSettings->m_width = getRectWidth(rect);
+		pSettings->m_height = getRectHeight(rect);
 	}
 
 
-	window.windowedRect = { 0, 0, (int)pSettings->mWidth, (int)pSettings->mHeight };
+	window.windowedRect = { 0, 0, (int)pSettings->m_width, (int)pSettings->m_height };
 	window.fullScreen = pSettings->mFullScreen;
 	window.maximized = false;
 
 	if ( !pSettings->mExternalWindow )
 		openWindow(pApp->GetName(), &window);
 
-	pSettings->mWidth = window.fullScreen ? getRectWidth(window.fullscreenRect) : getRectWidth(window.windowedRect);
-	pSettings->mHeight = window.fullScreen ? getRectHeight(window.fullscreenRect) : getRectHeight(window.windowedRect);
+	pSettings->m_width = window.fullScreen ? getRectWidth(window.fullscreenRect) : getRectWidth(window.windowedRect);
+	pSettings->m_height = window.fullScreen ? getRectHeight(window.fullscreenRect) : getRectHeight(window.windowedRect);
 
 	pApp->pWindow = &window;
 	pApp->pCommandLine = GetCommandLineA();

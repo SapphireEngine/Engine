@@ -22,8 +22,8 @@ public:
 	_Impl_FontStash()
 	{
 		pCurrentTexture = {};
-		mWidth = 0;
-		mHeight = 0;
+		m_width = 0;
+		m_height = 0;
 		pContext = NULL;
 
 		mText3D = false;
@@ -36,15 +36,15 @@ public:
 		// create image
 		TextureDesc desc = {};
 		desc.mArraySize = 1;
-		desc.mDepth = 1;
+		desc.m_depth = 1;
 		desc.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 		desc.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
-		desc.mFormat = TinyImageFormat_R8_UNORM;
-		desc.mHeight = height_;
+		desc.m_format = TinyImageFormat_R8_UNORM;
+		desc.m_height = height_;
 		desc.mMipLevels = 1;
 		desc.mSampleCount = SAMPLE_COUNT_1;
 		desc.mStartState = RESOURCE_STATE_COMMON;
-		desc.mWidth = width_;
+		desc.m_width = width_;
 		desc.pDebugName = L"Fontstash Texture";
 		TextureLoadDesc loadDesc = {};
 		loadDesc.ppTexture = &pCurrentTexture;
@@ -163,16 +163,16 @@ public:
 		VertexLayout vertexLayout = {};
 		vertexLayout.mAttribCount = 2;
 		vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-		vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32_SFLOAT;
+		vertexLayout.mAttribs[0].m_format = TinyImageFormat_R32G32_SFLOAT;
 		vertexLayout.mAttribs[0].mBinding = 0;
 		vertexLayout.mAttribs[0].mLocation = 0;
 		vertexLayout.mAttribs[0].mOffset = 0;
 
 		vertexLayout.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD0;
-		vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32_SFLOAT;
+		vertexLayout.mAttribs[1].m_format = TinyImageFormat_R32G32_SFLOAT;
 		vertexLayout.mAttribs[1].mBinding = 0;
 		vertexLayout.mAttribs[1].mLocation = 1;
-		vertexLayout.mAttribs[1].mOffset = TinyImageFormat_BitSizeOfBlock(vertexLayout.mAttribs[0].mFormat) / 8;
+		vertexLayout.mAttribs[1].mOffset = TinyImageFormat_BitSizeOfBlock(vertexLayout.mAttribs[0].m_format) / 8;
 
 		BlendStateDesc blendStateDesc = {};
 		blendStateDesc.mSrcFactors[0] = BC_SRC_ALPHA;
@@ -209,17 +209,17 @@ public:
 		pipelineDesc.mGraphicsDesc.mRenderTargetCount = 1;
 		pipelineDesc.mGraphicsDesc.mSampleCount = pRts[0]->mSampleCount;
 		pipelineDesc.mGraphicsDesc.mSampleQuality = pRts[0]->mSampleQuality;
-		pipelineDesc.mGraphicsDesc.pColorFormats = &pRts[0]->mFormat;
+		pipelineDesc.mGraphicsDesc.pColorFormats = &pRts[0]->m_format;
 		for ( uint32_t i = 0; i < min(count, 2U); ++i )
 		{
-			pipelineDesc.mGraphicsDesc.mDepthStencilFormat = (i > 0) ? pRts[1]->mFormat : TinyImageFormat_UNDEFINED;
+			pipelineDesc.mGraphicsDesc.mDepthStencilFormat = (i > 0) ? pRts[1]->m_format : TinyImageFormat_UNDEFINED;
 			pipelineDesc.mGraphicsDesc.pShaderProgram = pShaders[i];
 			pipelineDesc.mGraphicsDesc.pDepthState = &depthStateDesc[i];
 			pipelineDesc.mGraphicsDesc.pRasterizerState = &rasterizerStateDesc[i];
 			addPipeline(pRenderer, &pipelineDesc, &pPipelines[i]);
 		}
 
-		mScaleBias = { 2.0f / (float)pRts[0]->mWidth, -2.0f / (float)pRts[0]->mHeight };
+		mScaleBias = { 2.0f / (float)pRts[0]->m_width, -2.0f / (float)pRts[0]->m_height };
 
 		return true;
 	}
@@ -247,8 +247,8 @@ public:
 	Texture*       pCurrentTexture;
 	bool           mUpdateTexture;
 
-	uint32_t mWidth;
-	uint32_t mHeight;
+	uint32_t m_width;
+	uint32_t m_height;
 	float2   mScaleBias;
 
 	eastl::vector<void*>           mFontBuffers;
@@ -416,8 +416,8 @@ float Fontstash::measureText(
 int _Impl_FontStash::fonsImplementationGenerateTexture(void* userPtr, int width, int height)
 {
 	_Impl_FontStash* ctx = (_Impl_FontStash*)userPtr;
-	ctx->mWidth = width;
-	ctx->mHeight = height;
+	ctx->m_width = width;
+	ctx->m_height = height;
 
 	ctx->mUpdateTexture = true;
 
@@ -449,10 +449,10 @@ void _Impl_FontStash::fonsImplementationRenderText(
 
 		RawImageData rawData = {};
 		rawData.pRawData = (uint8_t*)ctx->pPixels;
-		rawData.mFormat = TinyImageFormat_R8_UNORM;
-		rawData.mWidth = ctx->mWidth;
-		rawData.mHeight = ctx->mHeight;
-		rawData.mDepth = 1;
+		rawData.m_format = TinyImageFormat_R8_UNORM;
+		rawData.m_width = ctx->m_width;
+		rawData.m_height = ctx->m_height;
+		rawData.m_depth = 1;
 		rawData.mArraySize = 1;
 		rawData.mMipLevels = 1;
 

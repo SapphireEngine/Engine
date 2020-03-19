@@ -1223,7 +1223,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 
 	DXGI_SWAP_CHAIN_DESC desc = {};
 	desc.BufferDesc.Width = pDesc->mWidth;
-	desc.BufferDesc.Height = pDesc->mHeight;
+	desc.BufferDesc.Height = pDesc->m_height;
 	desc.BufferDesc.Format = util_to_dx_swapchain_format(pDesc->mColorFormat);
 	desc.SampleDesc.Count = 1;    // If multisampling is needed, we'll resolve it later
 	desc.SampleDesc.Quality = 0;
@@ -1263,7 +1263,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 
 	RenderTargetDesc descColor = {};
 	descColor.mWidth = pDesc->mWidth;
-	descColor.mHeight = pDesc->mHeight;
+	descColor.m_height = pDesc->m_height;
 	descColor.mDepth = 1;
 	descColor.mArraySize = 1;
 	descColor.mFormat = pDesc->mColorFormat;
@@ -1429,7 +1429,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	textureDesc.mDepth = pDesc->mDepth;
 	textureDesc.mFlags = pDesc->mFlags;
 	textureDesc.mFormat = pDesc->mFormat;
-	textureDesc.mHeight = pDesc->mHeight;
+	textureDesc.m_height = pDesc->m_height;
 	textureDesc.mMipLevels = pDesc->mMipLevels;
 	textureDesc.mSampleCount = pDesc->mSampleCount;
 	textureDesc.mSampleQuality = pDesc->mSampleQuality;
@@ -1485,7 +1485,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	}
 
 	pRenderTarget->mWidth = pDesc->mWidth;
-	pRenderTarget->mHeight = pDesc->mHeight;
+	pRenderTarget->m_height = pDesc->m_height;
 	pRenderTarget->mArraySize = pDesc->mArraySize;
 	pRenderTarget->mDepth = pDesc->mDepth;
 	pRenderTarget->mMipLevels = pDesc->mMipLevels;
@@ -2023,7 +2023,7 @@ void unmapBuffer(Renderer* pRenderer, Buffer* pBuffer)
 void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTexture)
 {
 	SE_ASSERT(pRenderer);
-	SE_ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
+	SE_ASSERT(pDesc && pDesc->mWidth && pDesc->m_height && (pDesc->mDepth || pDesc->mArraySize));
 	SE_ASSERT(ppTexture);
 
 	if ( pDesc->mSampleCount > SAMPLE_COUNT_1 && pDesc->mMipLevels > 1 )
@@ -2071,7 +2071,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	{
 		if ( pDesc->mDepth > 1 )
 			res_dim = D3D11_RESOURCE_DIMENSION_TEXTURE3D;
-		else if ( pDesc->mHeight > 1 )
+		else if ( pDesc->m_height > 1 )
 			res_dim = D3D11_RESOURCE_DIMENSION_TEXTURE2D;
 		else
 			res_dim = D3D11_RESOURCE_DIMENSION_TEXTURE1D;
@@ -2107,7 +2107,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 				desc.BindFlags = util_determine_dx_bind_flags(pDesc->mDescriptors, pDesc->mStartState);
 				desc.CPUAccessFlags = 0;
 				desc.Format = (DXGI_FORMAT)TinyImageFormat_DXGI_FORMATToTypeless((TinyImageFormat_DXGI_FORMAT)dxFormat);
-				desc.Height = pDesc->mHeight;
+				desc.Height = pDesc->m_height;
 				desc.MipLevels = pDesc->mMipLevels;
 				desc.MiscFlags = util_determine_dx_resource_misc_flags(pDesc->mDescriptors, pDesc->mFormat);
 				desc.SampleDesc.Count = pDesc->mSampleCount;
@@ -2126,7 +2126,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 				desc.CPUAccessFlags = 0;
 				desc.Depth = pDesc->mDepth;
 				desc.Format = (DXGI_FORMAT)TinyImageFormat_DXGI_FORMATToTypeless((TinyImageFormat_DXGI_FORMAT)dxFormat);
-				desc.Height = pDesc->mHeight;
+				desc.Height = pDesc->m_height;
 				desc.MipLevels = pDesc->mMipLevels;
 				desc.MiscFlags = util_determine_dx_resource_misc_flags(pDesc->mDescriptors, pDesc->mFormat);
 				if ( pDesc->mFlags & TEXTURE_CREATION_FLAG_EXPORT_BIT )
@@ -2335,7 +2335,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	pTexture->mUav = pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_TEXTURE;
 	pTexture->mMipLevels = pDesc->mMipLevels;
 	pTexture->mWidth = pDesc->mWidth;
-	pTexture->mHeight = pDesc->mHeight;
+	pTexture->m_height = pDesc->m_height;
 	pTexture->mDepth = pDesc->mDepth;
 
 	// TODO: Handle host visible textures in a better way
@@ -3962,7 +3962,7 @@ void queueSubmit(
 										 pSubresource.mRegion.mYOffset,
 										 pSubresource.mRegion.mZOffset,
 										 pSubresource.mRegion.mXOffset + pSubresource.mRegion.mWidth,
-										 pSubresource.mRegion.mYOffset + pSubresource.mRegion.mHeight,
+										 pSubresource.mRegion.mYOffset + pSubresource.mRegion.m_height,
 										 pSubresource.mRegion.mZOffset + pSubresource.mRegion.mDepth };
 					pContext->Map(update.pSrcBuffer->pDxResource, 0, D3D11_MAP_READ, 0, &sub);
 					pContext->UpdateSubresource(

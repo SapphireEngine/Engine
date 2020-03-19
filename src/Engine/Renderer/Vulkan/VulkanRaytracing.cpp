@@ -560,7 +560,7 @@ void cmdDispatchRays(Cmd* pCmd, Raytracing* pRaytracing, const RaytracingDispatc
 		table->pBuffer->pVkBuffer, table->mMaxEntrySize, table->mMaxEntrySize,
 		table->pBuffer->pVkBuffer, table->mMaxEntrySize + table->mMissRecordSize, table->mMaxEntrySize,
 		VK_NULL_HANDLE, 0, 0,
-		pDesc->mWidth, pDesc->mHeight, 1
+		pDesc->mWidth, pDesc->m_height, 1
 	);
 }
 

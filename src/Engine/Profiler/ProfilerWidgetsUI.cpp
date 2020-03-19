@@ -1057,7 +1057,7 @@ void drawGpuProfileRecursive(Cmd* pCmd, const GpuProfiler* pGpuProfiler, const T
         return;
 
     const GpuProfileDrawDesc* pGpuDrawDesc = &gDefaultGpuProfileDrawDesc;
-    float2 pos(origin.x + pGpuDrawDesc->mChildIndent * pRoot->mDepth, origin.y);
+    float2 pos(origin.x + pGpuDrawDesc->mChildIndent * pRoot->m_depth, origin.y);
     uint32_t nAggregateFrames = S.nAggregateFrames ? S.nAggregateFrames : 1;
     float fsToMs = ProfileTickToMsMultiplier((uint64_t)pGpuProfiler->mGpuTimeStampFrequency);
     float fAverage = fsToMs * (S.Aggregate[nTimerIndex].nTicks / nAggregateFrames);

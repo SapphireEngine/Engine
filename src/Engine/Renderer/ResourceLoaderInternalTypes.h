@@ -13,7 +13,7 @@ extern "C" {
 
 	typedef struct MappedMemoryRange
 	{
-		uint8_t* pData;
+		uint8_t* p_data;
 		Buffer*  pBuffer;
 		uint64_t mOffset;
 		uint64_t mSize;
@@ -21,7 +21,7 @@ extern "C" {
 
 	typedef struct UMAAllocation
 	{
-		void* pData;
+		void* p_data;
 		void* pAllocationInfo;
 	} UMAAllocation;
 

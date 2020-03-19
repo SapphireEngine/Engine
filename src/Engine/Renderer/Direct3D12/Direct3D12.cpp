@@ -2211,8 +2211,8 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	SE_ASSERT(pSwapChain->ppRenderTargets);
 
 	DXGI_SWAP_CHAIN_DESC1 desc = {};
-	desc.Width = pDesc->mWidth;
-	desc.Height = pDesc->mHeight;
+	desc.Width = pDesc->m_width;
+	desc.Height = pDesc->m_height;
 	desc.Format = util_to_dx_swapchain_format(pDesc->mColorFormat);
 	desc.Stereo = false;
 	desc.SampleDesc.Count = 1;    // If multisampling is needed, we'll resolve it later
@@ -2298,11 +2298,11 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	}
 
 	RenderTargetDesc descColor = {};
-	descColor.mWidth = pDesc->mWidth;
-	descColor.mHeight = pDesc->mHeight;
-	descColor.mDepth = 1;
+	descColor.m_width = pDesc->m_width;
+	descColor.m_height = pDesc->m_height;
+	descColor.m_depth = 1;
 	descColor.mArraySize = 1;
-	descColor.mFormat = pDesc->mColorFormat;
+	descColor.m_format = pDesc->mColorFormat;
 	descColor.mClearValue = pDesc->mColorClearValue;
 	descColor.mSampleCount = SAMPLE_COUNT_1;
 	descColor.mSampleQuality = 0;
@@ -2486,10 +2486,10 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** ppBuffer)
 			srvDesc.Buffer.NumElements = (UINT)(pDesc->mElementCount);
 			srvDesc.Buffer.StructureByteStride = (UINT)(pDesc->mStructStride);
 			srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-			srvDesc.Format = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->mFormat);
+			srvDesc.Format = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->m_format);
 			if ( DESCRIPTOR_TYPE_BUFFER_RAW == (pDesc->mDescriptors & DESCRIPTOR_TYPE_BUFFER_RAW) )
 			{
-				if ( pDesc->mFormat != TinyImageFormat_UNDEFINED )
+				if ( pDesc->m_format != TinyImageFormat_UNDEFINED )
 					LOGF(LogLevel::eWARNING, "Raw buffers use R32 typeless format. Format will be ignored");
 				srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 				srvDesc.Buffer.Flags |= D3D12_BUFFER_SRV_FLAG_RAW;
@@ -2517,21 +2517,21 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** ppBuffer)
 			uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 			if ( DESCRIPTOR_TYPE_RW_BUFFER_RAW == (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_BUFFER_RAW) )
 			{
-				if ( pDesc->mFormat != TinyImageFormat_UNDEFINED )
+				if ( pDesc->m_format != TinyImageFormat_UNDEFINED )
 					LOGF(LogLevel::eWARNING, "Raw buffers use R32 typeless format. Format will be ignored");
 				uavDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 				uavDesc.Buffer.Flags |= D3D12_BUFFER_UAV_FLAG_RAW;
 			}
-			else if ( pDesc->mFormat != TinyImageFormat_UNDEFINED )
+			else if ( pDesc->m_format != TinyImageFormat_UNDEFINED )
 			{
-				uavDesc.Format = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->mFormat);
+				uavDesc.Format = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->m_format);
 				D3D12_FEATURE_DATA_FORMAT_SUPPORT FormatSupport = { uavDesc.Format, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE };
 				HRESULT hr = pRenderer->pDxDevice->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &FormatSupport, sizeof(FormatSupport));
 				if ( !SUCCEEDED(hr) || !(FormatSupport.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) ||
 					!(FormatSupport.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE) )
 				{
 					// Format does not support UAV Typed Load
-					LOGF(LogLevel::eWARNING, "Cannot use Typed UAV for buffer format %u", (uint32_t)pDesc->mFormat);
+					LOGF(LogLevel::eWARNING, "Cannot use Typed UAV for buffer format %u", (uint32_t)pDesc->m_format);
 					uavDesc.Format = DXGI_FORMAT_UNKNOWN;
 				}
 			}
@@ -2611,7 +2611,7 @@ void unmapBuffer(Renderer* pRenderer, Buffer* pBuffer)
 void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTexture)
 {
 	SE_ASSERT(pRenderer);
-	SE_ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
+	SE_ASSERT(pDesc && pDesc->m_width && pDesc->m_height && (pDesc->m_depth || pDesc->mArraySize));
 	if ( pDesc->mSampleCount > SAMPLE_COUNT_1 && pDesc->mMipLevels > 1 )
 	{
 		LOGF(LogLevel::eERROR, "Multi-Sampled textures cannot have mip maps");
@@ -2637,7 +2637,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	//add to gpu
 	D3D12_RESOURCE_DESC desc = {};
 
-	DXGI_FORMAT dxFormat = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->mFormat);
+	DXGI_FORMAT dxFormat = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->m_format);
 
 	DescriptorType      descriptors = pDesc->mDescriptors;
 
@@ -2648,7 +2648,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		D3D12_RESOURCE_DIMENSION res_dim = D3D12_RESOURCE_DIMENSION_UNKNOWN;
 		if ( pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_2D )
 		{
-			SE_ASSERT(pDesc->mDepth == 1);
+			SE_ASSERT(pDesc->m_depth == 1);
 			res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		}
 		else if ( pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_3D )
@@ -2657,9 +2657,9 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		}
 		else
 		{
-			if ( pDesc->mDepth > 1 )
+			if ( pDesc->m_depth > 1 )
 				res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
-			else if ( pDesc->mHeight > 1 )
+			else if ( pDesc->m_height > 1 )
 				res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 			else
 				res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
@@ -2669,9 +2669,9 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		//On PC, If Alignment is set to 0, the runtime will use 4MB for MSAA textures and 64KB for everything else.
 		//On XBox, We have to explicitlly assign D3D12_DEFAULT_MSAA_RESOURCE_PLACEMENT_ALIGNMENT if MSAA is used
 		desc.Alignment = (UINT)pDesc->mSampleCount > 1 ? D3D12_DEFAULT_MSAA_RESOURCE_PLACEMENT_ALIGNMENT : 0;
-		desc.Width = pDesc->mWidth;
-		desc.Height = pDesc->mHeight;
-		desc.DepthOrArraySize = (UINT16)(pDesc->mArraySize != 1 ? pDesc->mArraySize : pDesc->mDepth);
+		desc.Width = pDesc->m_width;
+		desc.Height = pDesc->m_height;
+		desc.DepthOrArraySize = (UINT16)(pDesc->mArraySize != 1 ? pDesc->mArraySize : pDesc->m_depth);
 		desc.MipLevels = (UINT16)pDesc->mMipLevels;
 		desc.Format = (DXGI_FORMAT)TinyImageFormat_DXGI_FORMATToTypeless((TinyImageFormat_DXGI_FORMAT)dxFormat);
 		desc.SampleDesc.Count = (UINT)pDesc->mSampleCount;
@@ -2945,9 +2945,9 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	pTexture->mStartState = pDesc->mStartState;
 	pTexture->mHandleCount = handleCount;
 	pTexture->mMipLevels = pDesc->mMipLevels;
-	pTexture->mWidth = pDesc->mWidth;
-	pTexture->mHeight = pDesc->mHeight;
-	pTexture->mDepth = pDesc->mDepth;
+	pTexture->m_width = pDesc->m_width;
+	pTexture->m_height = pDesc->m_height;
+	pTexture->m_depth = pDesc->m_depth;
 	pTexture->mUav = pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_TEXTURE;
 
 	// TODO: Handle host visible textures in a better way
@@ -2993,7 +2993,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	SE_ASSERT(pDesc);
 	SE_ASSERT(ppRenderTarget);
 
-	const bool isDepth = TinyImageFormat_HasDepth(pDesc->mFormat);
+	const bool isDepth = TinyImageFormat_HasDepth(pDesc->m_format);
 	SE_ASSERT(!((isDepth) && (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_TEXTURE)) && "Cannot use depth stencil as UAV");
 
 	((RenderTargetDesc*)pDesc)->mMipLevels = max(1U, pDesc->mMipLevels);
@@ -3002,16 +3002,16 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	SE_ASSERT(pRenderTarget);
 
 	//add to gpu
-	DXGI_FORMAT dxFormat = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->mFormat);
+	DXGI_FORMAT dxFormat = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->m_format);
 	SE_ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
 
 	TextureDesc textureDesc = {};
 	textureDesc.mArraySize = pDesc->mArraySize;
 	textureDesc.mClearValue = pDesc->mClearValue;
-	textureDesc.mDepth = pDesc->mDepth;
+	textureDesc.m_depth = pDesc->m_depth;
 	textureDesc.mFlags = pDesc->mFlags;
-	textureDesc.mFormat = pDesc->mFormat;
-	textureDesc.mHeight = pDesc->mHeight;
+	textureDesc.m_format = pDesc->m_format;
+	textureDesc.m_height = pDesc->m_height;
 	textureDesc.mMipLevels = pDesc->mMipLevels;
 	textureDesc.mSampleCount = pDesc->mSampleCount;
 	textureDesc.mSampleQuality = pDesc->mSampleQuality;
@@ -3022,7 +3022,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 		textureDesc.mStartState |= RESOURCE_STATE_DEPTH_WRITE;
 
 	// Set this by default to be able to sample the rendertarget in shader
-	textureDesc.mWidth = pDesc->mWidth;
+	textureDesc.m_width = pDesc->m_width;
 	textureDesc.pNativeHandle = pDesc->pNativeHandle;
 	textureDesc.pDebugName = pDesc->pDebugName;
 	textureDesc.mNodeIndex = pDesc->mNodeIndex;
@@ -3080,14 +3080,14 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 		}
 	}
 
-	pRenderTarget->mWidth = pDesc->mWidth;
-	pRenderTarget->mHeight = pDesc->mHeight;
+	pRenderTarget->m_width = pDesc->m_width;
+	pRenderTarget->m_height = pDesc->m_height;
 	pRenderTarget->mArraySize = pDesc->mArraySize;
-	pRenderTarget->mDepth = pDesc->mDepth;
+	pRenderTarget->m_depth = pDesc->m_depth;
 	pRenderTarget->mMipLevels = pDesc->mMipLevels;
 	pRenderTarget->mSampleCount = pDesc->mSampleCount;
 	pRenderTarget->mSampleQuality = pDesc->mSampleQuality;
-	pRenderTarget->mFormat = pDesc->mFormat;
+	pRenderTarget->m_format = pDesc->m_format;
 	pRenderTarget->mClearValue = pDesc->mClearValue;
 
 	*ppRenderTarget = pRenderTarget;
@@ -3095,11 +3095,11 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 
 void removeRenderTarget(Renderer* pRenderer, RenderTarget* pRenderTarget)
 {
-	bool const isDepth = TinyImageFormat_HasDepth(pRenderTarget->mFormat);
+	bool const isDepth = TinyImageFormat_HasDepth(pRenderTarget->m_format);
 
 	removeTexture(pRenderer, pRenderTarget->pTexture);
 
-	const uint32_t depthOrArraySize = (uint32_t)(pRenderTarget->mArraySize * pRenderTarget->mDepth);
+	const uint32_t depthOrArraySize = (uint32_t)(pRenderTarget->mArraySize * pRenderTarget->m_depth);
 	uint32_t handleCount = pRenderTarget->mMipLevels;
 	if ( (pRenderTarget->mDescriptors & DESCRIPTOR_TYPE_RENDER_TARGET_ARRAY_SLICES) ||
 		(pRenderTarget->mDescriptors & DESCRIPTOR_TYPE_RENDER_TARGET_DEPTH_SLICES) )
@@ -4674,7 +4674,7 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 			input_elements[input_elementCount].SemanticName = semantic_names[attrib_index];
 			input_elements[input_elementCount].SemanticIndex = semantic_index;
 
-			input_elements[input_elementCount].Format = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(attrib->mFormat);
+			input_elements[input_elementCount].Format = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(attrib->m_format);
 			input_elements[input_elementCount].InputSlot = attrib->mBinding;
 			input_elements[input_elementCount].AlignedByteOffset = attrib->mOffset;
 			if ( attrib->mRate == VERTEX_ATTRIB_RATE_INSTANCE )
@@ -5397,9 +5397,9 @@ void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, Subr
 	Src.pResource = pSrcBuffer->pDxResource;
 	Src.PlacedFootprint =
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT{ pSubresourceDesc->mBufferOffset,
-											{ Desc.Format, updateSubresourceDimension(Desc.Format, pSubresourceDesc->mRegion.mWidth),
-											  updateSubresourceDimension(Desc.Format, pSubresourceDesc->mRegion.mHeight),
-											  pSubresourceDesc->mRegion.mDepth, pSubresourceDesc->mRowPitch } };
+											{ Desc.Format, updateSubresourceDimension(Desc.Format, pSubresourceDesc->mRegion.m_width),
+											  updateSubresourceDimension(Desc.Format, pSubresourceDesc->mRegion.m_height),
+											  pSubresourceDesc->mRegion.m_depth, pSubresourceDesc->mRowPitch } };
 
 #ifdef _DURANGO
 	pCmd->mDma.pDxCmdList->CopyTextureRegion(
@@ -5487,7 +5487,7 @@ void queuePresent(Queue* pQueue, const QueuePresentDesc* pDesc)
 
 			presentRect.top = 0;
 			presentRect.left = 0;
-			presentRect.bottom = pSwapChain->ppRenderTargets[0]->mHeight;
+			presentRect.bottom = pSwapChain->ppRenderTargets[0]->m_height;
 			presentRect.right = pSwapChain->ppRenderTargets[0]->mWidth;
 
 			DXGIX_PRESENTARRAY_PARAMETERS presentParameterSets[1] = {};
@@ -6075,7 +6075,7 @@ void fillVirtualTexture(Cmd* pCmd, Texture* pTexture, Fence* pFence)
 
 		if ( allocateVirtualPage(pRenderer, pTexture, *pPage) )
 		{
-			void* pData = (void*)((unsigned char*)pTexture->pSvt->mVirtualImageData + (pageIndex * pPage->size));
+			void* p_data = (void*)((unsigned char*)pTexture->pSvt->mVirtualImageData + (pageIndex * pPage->size));
 
 			map = !pPage->pIntermediateBuffer->pCpuMappedAddress;
 			if ( map )
@@ -6083,7 +6083,7 @@ void fillVirtualTexture(Cmd* pCmd, Texture* pTexture, Fence* pFence)
 				mapBuffer(pRenderer, pPage->pIntermediateBuffer, NULL);
 			}
 
-			memcpy(pPage->pIntermediateBuffer->pCpuMappedAddress, pData, pPage->size);
+			memcpy(pPage->pIntermediateBuffer->pCpuMappedAddress, p_data, pPage->size);
 
 
 			D3D12_TILED_RESOURCE_COORDINATE startCoord;
@@ -6174,7 +6174,7 @@ void fillVirtualTextureLevel(Cmd* pCmd, Texture* pTexture, uint32_t mipLevel)
 		{
 			if ( allocateVirtualPage(renderer, pTexture, *pPage) )
 			{
-				void* pData = (void*)((unsigned char*)pTexture->pSvt->mVirtualImageData + (pageIndex * (uint32_t)pPage->size));
+				void* p_data = (void*)((unsigned char*)pTexture->pSvt->mVirtualImageData + (pageIndex * (uint32_t)pPage->size));
 
 				//CPU to GPU
 				bool map = !pPage->pIntermediateBuffer->pCpuMappedAddress;
@@ -6183,7 +6183,7 @@ void fillVirtualTextureLevel(Cmd* pCmd, Texture* pTexture, uint32_t mipLevel)
 					mapBuffer(renderer, pPage->pIntermediateBuffer, NULL);
 				}
 
-				memcpy(pPage->pIntermediateBuffer->pCpuMappedAddress, pData, pPage->size);
+				memcpy(pPage->pIntermediateBuffer->pCpuMappedAddress, p_data, pPage->size);
 
 				D3D12_TILED_RESOURCE_COORDINATE startCoord;
 				startCoord.X = pPage->offset.X / (uint32_t)pTexture->pSvt->mSparseVirtualTexturePageWidth;
@@ -6254,7 +6254,7 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture 
 	pTexture->pSvt = (VirtualTexture*)(pTexture + 1);
 
 	uint32_t imageSize = 0;
-	uint32_t mipSize = pDesc->mWidth * pDesc->mHeight * pDesc->mDepth;
+	uint32_t mipSize = pDesc->m_width * pDesc->m_height * pDesc->m_depth;
 
 	while ( mipSize > 0 )
 	{
@@ -6290,8 +6290,8 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture 
 
 	SE_ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
 
-	desc.Width = pDesc->mWidth;
-	desc.Height = pDesc->mHeight;
+	desc.Width = pDesc->m_width;
+	desc.Height = pDesc->m_height;
 	desc.MipLevels = pDesc->mMipLevels;
 	desc.Format = dxFormat;
 	desc.Flags = D3D12_RESOURCE_FLAG_NONE;
@@ -6342,9 +6342,9 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture 
 		for ( uint32_t mipLevel = 0; mipLevel < TiledMiplevel; mipLevel++ )
 		{
 			D3D12_TILED_RESOURCE_COORDINATE extent;
-			extent.X = max(pDesc->mWidth >> mipLevel, 1u);
-			extent.Y = max(pDesc->mHeight >> mipLevel, 1u);
-			extent.Z = max(pDesc->mDepth >> mipLevel, 1u);
+			extent.X = max(pDesc->m_width >> mipLevel, 1u);
+			extent.Y = max(pDesc->m_height >> mipLevel, 1u);
+			extent.Z = max(pDesc->m_depth >> mipLevel, 1u);
 
 			// Aligned sizes by image granularity
 			D3D12_TILED_RESOURCE_COORDINATE imageGranularity;
@@ -6401,7 +6401,7 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture 
 	hres = pRenderer->pDxDevice->CreateHeap(&desc_heap, __uuidof(pTexture->pSvt->pSparseImageMemory), (void**)&pTexture->pSvt->pSparseImageMemory);
 	SE_ASSERT(SUCCEEDED(hres));
 
-	LOGF(LogLevel::eINFO, "Virtual Texture info: Dim %d x %d Pages %d", pDesc->mWidth, pDesc->mHeight, (uint32_t)(((eastl::vector<VirtualTexturePage>*)pTexture->pSvt->pPages)->size()));
+	LOGF(LogLevel::eINFO, "Virtual Texture info: Dim %d x %d Pages %d", pDesc->m_width, pDesc->m_height, (uint32_t)(((eastl::vector<VirtualTexturePage>*)pTexture->pSvt->pPages)->size()));
 
 	fillVirtualTextureLevel(cmd, pTexture, TiledMiplevel - 1);
 
@@ -6422,9 +6422,9 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture 
 	pTexture->mNodeIndex = pDesc->mNodeIndex;
 	pTexture->mStartState = pDesc->mStartState;
 	pTexture->mMipLevels = pDesc->mMipLevels;
-	pTexture->mWidth = pDesc->mWidth;
-	pTexture->mHeight = pDesc->mHeight;
-	pTexture->mDepth = pDesc->mDepth;
+	pTexture->m_width = pDesc->m_width;
+	pTexture->m_height = pDesc->m_height;
+	pTexture->m_depth = pDesc->m_depth;
 
 	////save tetxure in given pointer
 	*ppTexture = pTexture;

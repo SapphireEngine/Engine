@@ -22,9 +22,9 @@ public:
 	struct Settings
 	{
 		/// Window width
-		int32_t  mWidth = -1;
+		int32_t  m_width = -1;
 		/// Window height
-		int32_t  mHeight = -1;
+		int32_t  m_height = -1;
 		/// Set to true if fullscreen mode has been requested
 		bool     mFullScreen = false;
 		/// Set to true if app wants to use an external window

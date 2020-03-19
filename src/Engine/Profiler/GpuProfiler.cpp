@@ -281,7 +281,7 @@ ProfileToken cmdBeginGpuTimestampQuery(Cmd* pCmd, struct GpuProfiler* pGpuProfil
     // Record gpu time
     node->mIndex = pGpuProfiler->mCurrentTimerCount;
     node->pParent = isRoot ? NULL : pGpuProfiler->pCurrentNode;
-    node->mDepth = isRoot ? 0 : node->pParent->mDepth + 1;
+    node->m_depth = isRoot ? 0 : node->pParent->m_depth + 1;
     node->mStarted = true;
     node->mDebugMarker = addMarker;
 

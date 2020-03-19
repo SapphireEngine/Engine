@@ -193,19 +193,14 @@ public:
 	CopyEngine pCopyEngines[MAX_GPUS];
 	size_t mActiveSetIndex;
 
-#if defined(NX64)
-	ThreadTypeNX mThreadType;
-	void* mThreadStackPtr;
-#endif
-
 	static void InitImageClass()
 	{
-		Image::Init();
+		Image::init();
 	}
 
 	static void ExitImageClass()
 	{
-		Image::Exit();
+		Image::exit();
 	}
 
 	static Image* AllocImage()
@@ -226,14 +221,14 @@ public:
 	static size_t GetImageSize(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, uint32_t rowAlignment, uint32_t subtextureAlignment)
 	{
 		Image image;
-		image.Create(fmt, w, h, d, mipMapCount, arraySize, NULL, rowAlignment, subtextureAlignment);
+		image.create(fmt, w, h, d, mipMapCount, arraySize, NULL, rowAlignment, subtextureAlignment);
 		return image.GetSizeInBytes();
 	}
 
 	static Image* CreateImage(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, const unsigned char* rawData, uint32_t rowAlignment, uint32_t subtextureAlignment)
 	{
 		Image* pImage = AllocImage();
-		pImage->Create(fmt, w, h, d, mipMapCount, arraySize, rawData, rowAlignment, subtextureAlignment);
+		pImage->create(fmt, w, h, d, mipMapCount, arraySize, rawData, rowAlignment, subtextureAlignment);
 		return pImage;
 	}
 
@@ -241,7 +236,7 @@ public:
 	{
 		Image* pImage = AllocImage();
 
-		ImageLoadingResult result = pImage->LoadFromFile(filePath, pAllocator, pUserData, rowAlignment, subtextureAlignment);
+		ImageLoadingResult result = pImage->loadFromFile(filePath, pAllocator, pUserData, rowAlignment, subtextureAlignment);
 
 		if ( result != IMAGE_LOADING_RESULT_SUCCESS )
 		{
@@ -265,7 +260,7 @@ public:
 		FileStream* stream = fsOpenReadOnlyMemory(mem, size);
 
 		Image* pImage = AllocImage();
-		ImageLoadingResult result = pImage->LoadFromStream(stream, extension, pAllocator, pUserData, rowAlignment, subtextureAlignment);
+		ImageLoadingResult result = pImage->loadFromStream(stream, extension, pAllocator, pUserData, rowAlignment, subtextureAlignment);
 
 		fsCloseStream(stream);
 
@@ -288,7 +283,7 @@ public:
 
 	static void DestroyImage(Image* pImage)
 	{
-		pImage->Destroy();
+		pImage->destroy();
 		conf_delete(pImage);
 	}
 };
@@ -332,8 +327,8 @@ static void setupCopyEngine(Renderer* pRenderer, CopyEngine* pCopyEngine, uint32
 	addCmdPool(pRenderer, &cmdPoolDesc, &pCopyEngine->pCmdPool);
 
 	const uint32_t maxBlockSize = 32;
-	uint64_t       minUploadSize = pCopyEngine->pQueue->mUploadGranularity.mWidth * pCopyEngine->pQueue->mUploadGranularity.mHeight *
-		pCopyEngine->pQueue->mUploadGranularity.mDepth * maxBlockSize;
+	uint64_t       minUploadSize = pCopyEngine->pQueue->mUploadGranularity.m_width * pCopyEngine->pQueue->mUploadGranularity.m_height *
+		pCopyEngine->pQueue->mUploadGranularity.m_depth * maxBlockSize;
 	size = ::max(size, minUploadSize);
 
 	pCopyEngine->resourceSets = (CopyResourceSet*)conf_malloc(sizeof(CopyResourceSet) * bufferCount);
@@ -552,11 +547,11 @@ static ResourceState util_determine_resource_start_state(const Buffer* pBuffer)
 void copyUploadRectZCurve(uint8_t* pDstData, uint8_t* pSrcData, Region3D uploadRegion, uint3 pitches)
 {
 	uint32_t offset = 0;
-	for ( uint32_t z = uploadRegion.mZOffset; z < uploadRegion.mZOffset + uploadRegion.mDepth; ++z )
+	for ( uint32_t z = uploadRegion.mZOffset; z < uploadRegion.mZOffset + uploadRegion.m_depth; ++z )
 	{
-		for ( uint32_t y = uploadRegion.mYOffset; y < uploadRegion.mYOffset + uploadRegion.mHeight; ++y )
+		for ( uint32_t y = uploadRegion.mYOffset; y < uploadRegion.mYOffset + uploadRegion.m_height; ++y )
 		{
-			for ( uint32_t x = uploadRegion.mXOffset; x < uploadRegion.mXOffset + uploadRegion.mWidth; ++x )
+			for ( uint32_t x = uploadRegion.mXOffset; x < uploadRegion.mXOffset + uploadRegion.m_width; ++x )
 			{
 				uint32_t blockOffset = EncodeMorton(y, x);
 				memcpy(pDstData + offset, pSrcData + blockOffset * pitches.x, pitches.x);
@@ -653,7 +648,7 @@ static void* allocateTextureStagingMemory(Image* pImage, uint64_t byteCount, uin
 	MappedMemoryRange mappedRange = allocateStagingMemory(byteCount, (uint32_t)alignment, /* waitForSpace = */ false);
 	*outRange = mappedRange;
 
-	return mappedRange.pData;
+	return mappedRange.p_data;
 #endif
 }
 
@@ -670,12 +665,12 @@ static UploadFunctionResult updateTexture(Renderer* pRenderer, CopyEngine* pCopy
 	Image* pImage = texUpdateDesc.pImage;
 	if ( !pImage )
 	{
-		pImage = ResourceLoader::CreateImage(texUpdateDesc.mRawImageData.mFormat, texUpdateDesc.mRawImageData.mWidth, texUpdateDesc.mRawImageData.mHeight,
-			texUpdateDesc.mRawImageData.mDepth, texUpdateDesc.mRawImageData.mMipLevels, texUpdateDesc.mRawImageData.mArraySize,
+		pImage = ResourceLoader::CreateImage(texUpdateDesc.mRawImageData.m_format, texUpdateDesc.mRawImageData.m_width, texUpdateDesc.mRawImageData.m_height,
+			texUpdateDesc.mRawImageData.m_depth, texUpdateDesc.mRawImageData.mMipLevels, texUpdateDesc.mRawImageData.mArraySize,
 			texUpdateDesc.mRawImageData.pRawData, textureRowAlignment, textureAlignment);
-		pImage->SetMipsAfterSlices(texUpdateDesc.mRawImageData.mMipsAfterSlices);
+		pImage->SetMipsAfterSlices(texUpdateDesc.mRawImageData.m_mipsAfterSlices);
 
-		if ( !texUpdateDesc.mStagingAllocation.pData )
+		if ( !texUpdateDesc.mStagingAllocation.p_data )
 		{
 			ResourceLoader::DestroyImage(pImage);
 			return UPLOAD_FUNCTION_RESULT_STAGING_BUFFER_FULL; // We weren't able to allocate enough space in the staging buffer.
@@ -719,8 +714,8 @@ static UploadFunctionResult updateTexture(Renderer* pRenderer, CopyEngine* pCopy
 	nSlices = pImage->IsCube() ? 6 : 1;
 	arrayCount = pImage->GetArrayCount() * nSlices;
 
-	const uint32 pxPerRow = ::max<uint32_t>(round_down(textureRowAlignment / blockSize, uploadGran.mWidth), uploadGran.mWidth);
-	const uint3 queueGranularity = { pxPerRow, uploadGran.mHeight, uploadGran.mDepth };
+	const uint32 pxPerRow = ::max<uint32_t>(round_down(textureRowAlignment / blockSize, uploadGran.m_width), uploadGran.m_width);
+	const uint3 queueGranularity = { pxPerRow, uploadGran.m_height, uploadGran.m_depth };
 	const uint3 fullSizeDim = { pImage->GetWidth(), pImage->GetHeight(), pImage->GetDepth() };
 
 	for ( ; i < pTexture->mMipLevels; ++i )
@@ -789,12 +784,12 @@ static UploadFunctionResult updateTexture(Renderer* pRenderer, CopyEngine* pCopy
 				MappedMemoryRange range =
 					allocateStagingMemory(uploadRectExtent.z * uploadPitches.z, textureAlignment, /* waitForSpace = */ false);
 
-				if ( !range.pData )
+				if ( !range.p_data )
 				{
 					if ( ownsImage ) ResourceLoader::DestroyImage(pImage);
 					return UPLOAD_FUNCTION_RESULT_STAGING_BUFFER_FULL;
 				}
-				copyUploadRectZCurve(range.pData, pSrcData, uploadRegion, pitches);
+				copyUploadRectZCurve(range.p_data, pSrcData, uploadRegion, pitches);
 				texData.mBufferOffset = range.mOffset;
 			}
 			else
@@ -881,11 +876,11 @@ static UploadFunctionResult loadTexture(Renderer* pRenderer, CopyEngine* pCopyEn
 				return UPLOAD_FUNCTION_RESULT_INVALID_REQUEST;
 
 			TextureDesc SVTDesc = {};
-			SVTDesc.mWidth = pImage->GetWidth();
-			SVTDesc.mHeight = pImage->GetHeight();
-			SVTDesc.mDepth = pImage->GetDepth();
+			SVTDesc.m_width = pImage->GetWidth();
+			SVTDesc.m_height = pImage->GetHeight();
+			SVTDesc.m_depth = pImage->GetDepth();
 			SVTDesc.mFlags = TEXTURE_CREATION_FLAG_NONE;
-			SVTDesc.mFormat = pImage->GetFormat();
+			SVTDesc.m_format = pImage->GetFormat();
 			SVTDesc.mHostVisible = false;
 			SVTDesc.mMipLevels = pImage->GetMipMapCount();
 			SVTDesc.mSampleCount = SAMPLE_COUNT_1;
@@ -993,7 +988,7 @@ static UploadFunctionResult loadTexture(Renderer* pRenderer, CopyEngine* pCopyEn
 
 		if ( !pImage )
 		{
-			return allocation.pData == NULL ? UPLOAD_FUNCTION_RESULT_STAGING_BUFFER_FULL : UPLOAD_FUNCTION_RESULT_INVALID_REQUEST;
+			return allocation.p_data == NULL ? UPLOAD_FUNCTION_RESULT_STAGING_BUFFER_FULL : UPLOAD_FUNCTION_RESULT_INVALID_REQUEST;
 		}
 	}
 	else if ( pTextureDesc->mBinaryImageData.pBinaryData )
@@ -1009,23 +1004,23 @@ static UploadFunctionResult loadTexture(Renderer* pRenderer, CopyEngine* pCopyEn
 
 	TextureDesc desc = {};
 	desc.mFlags = pTextureDesc->mCreationFlag;
-	desc.mWidth = pImage->GetWidth();
-	desc.mHeight = pImage->GetHeight();
-	desc.mDepth = ::max(1U, pImage->GetDepth());
+	desc.m_width = pImage->GetWidth();
+	desc.m_height = pImage->GetHeight();
+	desc.m_depth = ::max(1U, pImage->GetDepth());
 	desc.mArraySize = pImage->GetArrayCount();
 
 	desc.mMipLevels = pImage->GetMipMapCount();
 	desc.mSampleCount = SAMPLE_COUNT_1;
 	desc.mSampleQuality = 0;
-	desc.mFormat = pImage->GetFormat();
+	desc.m_format = pImage->GetFormat();
 
 	if ( pTextureDesc->mCreationFlag & TEXTURE_CREATION_FLAG_SRGB )
 	{
 		// Set the format to be an sRGB format.
-		uint64_t formatBits = desc.mFormat;
+		uint64_t formatBits = desc.m_format;
 		formatBits &= ~((uint64_t)(TinyImageFormat_PACK_TYPE_REQUIRED_BITS - 1) << TinyImageFormat_PACK_TYPE_SHIFT);
 		formatBits |= (uint64_t)TinyImageFormat_PACK_TYPE_SRGB << TinyImageFormat_PACK_TYPE_SHIFT;
-		desc.mFormat = (TinyImageFormat)formatBits;
+		desc.m_format = (TinyImageFormat)formatBits;
 	}
 
 	desc.mClearValue = ClearValue();
@@ -1422,7 +1417,7 @@ static UploadFunctionResult loadGeometry(Renderer* pRenderer, CopyEngine* pCopyE
 			const cgltf_attribute* cgltfAttr = vertexAttribs[attr->mSemantic];
 			SE_ASSERT(cgltfAttr);
 
-			const uint32_t dstFormatSize = TinyImageFormat_BitSizeOfBlock(attr->mFormat) >> 3;
+			const uint32_t dstFormatSize = TinyImageFormat_BitSizeOfBlock(attr->m_format) >> 3;
 			const uint32_t srcFormatSize = (uint32_t)cgltfAttr->data->stride;
 
 			vertexStrides[attr->mBinding] += dstFormatSize ? dstFormatSize : srcFormatSize;
@@ -1436,7 +1431,7 @@ static UploadFunctionResult loadGeometry(Renderer* pRenderer, CopyEngine* pCopyE
 			// Directions - Pack float3 to float2 to unorm2x16 (Normal, Tangent)
 			// Position - No packing yet
 			const TinyImageFormat srcFormat = cgltf_type_to_image_format(cgltfAttr->data->type, cgltfAttr->data->component_type);
-			const TinyImageFormat dstFormat = attr->mFormat == TinyImageFormat_UNDEFINED ? srcFormat : attr->mFormat;
+			const TinyImageFormat dstFormat = attr->m_format == TinyImageFormat_UNDEFINED ? srcFormat : attr->m_format;
 
 			if ( dstFormat != srcFormat )
 			{
@@ -1535,7 +1530,7 @@ static UploadFunctionResult loadGeometry(Renderer* pRenderer, CopyEngine* pCopyE
 #else
 		indexUpdateDesc.mInternalData.mMappedRange = allocateStagingMemory(indexUpdateDesc.mSize, RESOURCE_BUFFER_ALIGNMENT, false);
 #endif
-		indexUpdateDesc.pMappedData = indexUpdateDesc.mInternalData.mMappedRange.pData;
+		indexUpdateDesc.pMappedData = indexUpdateDesc.mInternalData.mMappedRange.p_data;
 
 		uint32_t bufferCounter = 0;
 		for ( uint32_t i = 0; i < MAX_VERTEX_BINDINGS; ++i )
@@ -1563,7 +1558,7 @@ static UploadFunctionResult loadGeometry(Renderer* pRenderer, CopyEngine* pCopyE
 #else
 			vertexUpdateDesc[i].mInternalData.mMappedRange = allocateStagingMemory(vertexUpdateDesc[i].mSize, RESOURCE_BUFFER_ALIGNMENT, false);
 #endif
-			vertexUpdateDesc[i].pMappedData = vertexUpdateDesc[i].mInternalData.mMappedRange.pData;
+			vertexUpdateDesc[i].pMappedData = vertexUpdateDesc[i].mInternalData.mMappedRange.p_data;
 			++bufferCounter;
 		}
 
@@ -2061,7 +2056,7 @@ static void queueResourceUpdate(ResourceLoader* pLoader, GeometryLoadDesc* pGeom
 
 static void queueResourceUpdate(ResourceLoader* pLoader, TextureUpdateDescInternal* pTextureUpdate, SyncToken* token, LoadPriority priority)
 {
-	SE_ASSERT(pTextureUpdate->mStagingAllocation.pData);
+	SE_ASSERT(pTextureUpdate->mStagingAllocation.p_data);
 
 	uint32_t nodeIndex = pTextureUpdate->pTexture->mNodeIndex;
 	pLoader->mQueueMutex.Acquire();
@@ -2169,7 +2164,7 @@ static void beginAddBuffer(BufferLoadDesc* pBufferDesc)
 		BufferUpdateDesc bufferUpdate = { *pBufferDesc->ppBuffer };
 		bufferUpdate.mSize = pBufferDesc->mDesc.mSize;
 		beginUpdateResource(&bufferUpdate);
-		memcpy(bufferUpdate.pMappedData, pBufferDesc->pData, bufferUpdate.mSize);
+		memcpy(bufferUpdate.pMappedData, pBufferDesc->p_data, bufferUpdate.mSize);
 		pBufferDesc->mInternalData = bufferUpdate.mInternalData;
 
 		if ( pBufferDesc->mForceReset )
@@ -2183,13 +2178,13 @@ static void endAddBuffer(BufferLoadDesc* pBufferDesc, SyncToken* token, LoadPrio
 {
 	SE_ASSERT(pBufferDesc->ppBuffer);
 
-	bool update = pBufferDesc->mInternalData.mMappedRange.pData;
+	bool update = pBufferDesc->mInternalData.mMappedRange.p_data;
 
 	if ( update )
 	{
 		BufferUpdateDesc bufferUpdate = { *pBufferDesc->ppBuffer };
 		bufferUpdate.mSize = pBufferDesc->mDesc.mSize;
-		bufferUpdate.pMappedData = pBufferDesc->mInternalData.mMappedRange.pData;
+		bufferUpdate.pMappedData = pBufferDesc->mInternalData.mMappedRange.p_data;
 		bufferUpdate.mInternalData = pBufferDesc->mInternalData;
 		endUpdateResource(&bufferUpdate, token);
 
@@ -2219,10 +2214,10 @@ static void beginAddTexture(TextureLoadDesc* pTextureDesc)
 		}
 		else
 		{
-			textureDesc.mFormat = pTextureDesc->pRawImageData->mFormat;
-			textureDesc.mWidth = pTextureDesc->pRawImageData->mWidth;
-			textureDesc.mHeight = pTextureDesc->pRawImageData->mHeight;
-			textureDesc.mDepth = pTextureDesc->pRawImageData->mDepth;
+			textureDesc.m_format = pTextureDesc->pRawImageData->m_format;
+			textureDesc.m_width = pTextureDesc->pRawImageData->m_width;
+			textureDesc.m_height = pTextureDesc->pRawImageData->m_height;
+			textureDesc.m_depth = pTextureDesc->pRawImageData->m_depth;
 			textureDesc.mMipLevels = pTextureDesc->pRawImageData->mMipLevels;
 			textureDesc.mArraySize = pTextureDesc->pRawImageData->mArraySize;
 			textureDesc.mFlags = pTextureDesc->mCreationFlag;
@@ -2264,7 +2259,7 @@ static void endAddTexture(TextureLoadDesc* pTextureDesc, SyncToken* token, LoadP
 		TextureUpdateDesc updateDesc = {};
 		updateDesc.pTexture = *pTextureDesc->ppTexture;
 		updateDesc.pRawImageData = pTextureDesc->pRawImageData;
-		updateDesc.pMappedData = pTextureDesc->mInternalData.mMappedRange.pData;
+		updateDesc.pMappedData = pTextureDesc->mInternalData.mMappedRange.p_data;
 		updateDesc.mInternalData.mMappedRange = pTextureDesc->mInternalData.mMappedRange;
 		endUpdateResource(&updateDesc, token);
 
@@ -2288,12 +2283,12 @@ void addResource(BufferLoadDesc* pBufferDesc, SyncToken* token, LoadPriority pri
 	uint64_t stagingBufferSize = getMaximumStagingAllocationSize();
 	SE_ASSERT(stagingBufferSize > 0);
 
-	if ( pBufferDesc->pData && pBufferDesc->mDesc.mSize > stagingBufferSize && pBufferDesc->mDesc.mMemoryUsage != RESOURCE_MEMORY_USAGE_CPU_ONLY )
+	if ( pBufferDesc->p_data && pBufferDesc->mDesc.mSize > stagingBufferSize && pBufferDesc->mDesc.mMemoryUsage != RESOURCE_MEMORY_USAGE_CPU_ONLY )
 	{
 		// The data is too large for a single staging buffer copy, so perform it in stages.
 
 		// Save the data parameter so we can restore it later.
-		const void* data = pBufferDesc->pData;
+		const void* data = pBufferDesc->p_data;
 
 		pBufferDesc->mSkipUpload = true;
 
@@ -2314,7 +2309,7 @@ void addResource(BufferLoadDesc* pBufferDesc, SyncToken* token, LoadPriority pri
 	}
 	else
 	{
-		pBufferDesc->mSkipUpload = pBufferDesc->pData == NULL && !pBufferDesc->mForceReset;
+		pBufferDesc->mSkipUpload = pBufferDesc->p_data == NULL && !pBufferDesc->mForceReset;
 
 		beginAddBuffer(pBufferDesc);
 		endAddBuffer(pBufferDesc, token, priority);
@@ -2378,7 +2373,7 @@ void beginUpdateResource(BufferUpdateDesc* pBufferUpdate)
 		}
 
 		pBufferUpdate->mInternalData.mMappedRange = { (uint8_t*)pBuffer->pCpuMappedAddress + pBufferUpdate->mDstOffset, pBuffer };
-		pBufferUpdate->pMappedData = pBufferUpdate->mInternalData.mMappedRange.pData;
+		pBufferUpdate->pMappedData = pBufferUpdate->mInternalData.mMappedRange.p_data;
 		pBufferUpdate->mInternalData.mBufferNeedsUnmap = map;
 	}
 	else
@@ -2386,7 +2381,7 @@ void beginUpdateResource(BufferUpdateDesc* pBufferUpdate)
 		// We need to use a staging buffer.
 		pResourceLoader->mStagingBufferMutex.Acquire();
 		MappedMemoryRange range = allocateStagingMemory(size, RESOURCE_BUFFER_ALIGNMENT, /* waitForSpace = */ true);
-		pBufferUpdate->pMappedData = range.pData;
+		pBufferUpdate->pMappedData = range.p_data;
 
 		pBufferUpdate->mInternalData.mMappedRange = range;
 		pBufferUpdate->mInternalData.mBufferNeedsUnmap = false;
@@ -2405,18 +2400,18 @@ void beginUpdateResource(TextureUpdateDesc* pTextureUpdate)
 
 	uint32_t textureAlignment = ResourceLoader::GetSubtextureAlignment(pResourceLoader->pRenderer);
 	uint32_t textureRowAlignment = ResourceLoader::GetTextureRowAlignment(pResourceLoader->pRenderer);
-	size_t requiredSize = ResourceLoader::GetImageSize(rawData.mFormat, rawData.mWidth, rawData.mHeight, rawData.mDepth, rawData.mMipLevels, rawData.mArraySize, textureRowAlignment, textureAlignment);
+	size_t requiredSize = ResourceLoader::GetImageSize(rawData.m_format, rawData.m_width, rawData.m_height, rawData.m_depth, rawData.mMipLevels, rawData.mArraySize, textureRowAlignment, textureAlignment);
 
 	pResourceLoader->mStagingBufferMutex.Acquire();
 	MappedMemoryRange range = allocateStagingMemory(requiredSize, textureAlignment, /* waitForSpace = */ true);
-	pTextureUpdate->pMappedData = range.pData;
+	pTextureUpdate->pMappedData = range.p_data;
 	pTextureUpdate->mInternalData.mMappedRange = range;
 
 	uint32_t sourceRowStride = rawData.mRowStride;
 	if ( sourceRowStride == 0 )
 	{
-		uint32_t bytesPerBlock = TinyImageFormat_BitSizeOfBlock(rawData.mFormat) / 8;
-		uint32_t blocksPerRow = (rawData.mWidth + TinyImageFormat_WidthOfBlock(rawData.mFormat) - 1) / TinyImageFormat_WidthOfBlock(rawData.mFormat);
+		uint32_t bytesPerBlock = TinyImageFormat_BitSizeOfBlock(rawData.m_format) / 8;
+		uint32_t blocksPerRow = (rawData.m_width + TinyImageFormat_WidthOfBlock(rawData.m_format) - 1) / TinyImageFormat_WidthOfBlock(rawData.m_format);
 		sourceRowStride = blocksPerRow * bytesPerBlock;
 	}
 
@@ -2430,7 +2425,7 @@ void beginUpdateResource(TextureUpdateDesc* pTextureUpdate)
 		}
 		else
 		{
-			size_t rowCount = (rawData.mHeight + TinyImageFormat_HeightOfBlock(rawData.mFormat) - 1) / TinyImageFormat_HeightOfBlock(rawData.mFormat);
+			size_t rowCount = (rawData.m_height + TinyImageFormat_HeightOfBlock(rawData.m_format) - 1) / TinyImageFormat_HeightOfBlock(rawData.m_format);
 			for ( size_t row = 0; row < rowCount; row += 1 )
 			{
 				const uint8_t* src = sourceData + row * sourceRowStride;

@@ -1908,9 +1908,9 @@ void ProfilePrintUIntComma(ProfileWriteCallback CB, void* Handle, uint64_t nData
 	CB(Handle, sizeof(Buffer) - nOffset, &Buffer[nOffset]);
 }
 
-void ProfilePrintString(ProfileWriteCallback CB, void* Handle, const char* pData)
+void ProfilePrintString(ProfileWriteCallback CB, void* Handle, const char* p_data)
 {
-	CB(Handle, strlen(pData), pData);
+	CB(Handle, strlen(p_data), p_data);
 }
 
 void ProfileDumpCsv(ProfileWriteCallback CB, void* Handle, int nMaxFrames)
@@ -2564,9 +2564,9 @@ void ProfileDumpHtml(ProfileWriteCallback CB, void* Handle, int nMaxFrames, cons
 }
 #endif
 
-void ProfileWriteFile(void* Handle, size_t nSize, const char* pData)
+void ProfileWriteFile(void* Handle, size_t nSize, const char* p_data)
 {
-	fsWriteToStream((FileStream*)Handle, pData, nSize);
+	fsWriteToStream((FileStream*)Handle, p_data, nSize);
 }
 
 void ProfileDumpToFile()

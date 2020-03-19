@@ -72,8 +72,8 @@ typedef struct WindowsDesc
 
 typedef struct Resolution
 {
-	uint32_t mWidth;
-	uint32_t mHeight;
+	uint32_t m_width;
+	uint32_t m_height;
 } Resolution;
 
 // Monitor data

@@ -163,7 +163,7 @@ AccelerationStructureBottom* createBottomAS(Raytracing* pRaytracing, const Accel
 				ibDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
 				ibDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
 				ibDesc.mDesc.mSize = (pGeom->indexType == INDEX_TYPE_UINT32 ? sizeof(uint32_t) : sizeof(uint16_t)) * pGeom->indicesCount;
-				ibDesc.pData = pGeom->indexType == INDEX_TYPE_UINT32 ? (void*)pGeom->pIndices32 : (void*)pGeom->pIndices16;
+				ibDesc.p_data = pGeom->indexType == INDEX_TYPE_UINT32 ? (void*)pGeom->pIndices32 : (void*)pGeom->pIndices16;
 				ibDesc.ppBuffer = &pResult[i].pIndexBuffer;
 				addResource(&ibDesc, NULL, LOAD_PRIORITY_NORMAL);
 
@@ -180,7 +180,7 @@ AccelerationStructureBottom* createBottomAS(Raytracing* pRaytracing, const Accel
 			vbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
 			vbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
 			vbDesc.mDesc.mSize = sizeof(float3) * pGeom->vertexCount;
-			vbDesc.pData = pGeom->pVertexArray;
+			vbDesc.p_data = pGeom->pVertexArray;
 			vbDesc.ppBuffer = &pResult[i].pVertexBuffer;
 			addResource(&vbDesc, NULL, LOAD_PRIORITY_NORMAL);
 
@@ -646,8 +646,8 @@ void cmdDispatchRays(Cmd* pCmd, Raytracing* pRaytracing, const RaytracingDispatc
 	/************************************************************************/
 	/************************************************************************/
 	D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
-	dispatchDesc.Height = pDesc->mHeight;
-	dispatchDesc.Width = pDesc->mWidth;
+	dispatchDesc.Height = pDesc->m_height;
+	dispatchDesc.Width = pDesc->m_width;
 	dispatchDesc.Depth = 1;
 	dispatchDesc.RayGenerationShaderRecord = rayGenShaderRecord;
 	dispatchDesc.MissShaderTable = missShaderTable;

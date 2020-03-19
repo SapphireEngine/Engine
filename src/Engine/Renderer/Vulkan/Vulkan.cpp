@@ -630,7 +630,7 @@ typedef struct FrameBuffer
 {
 	VkFramebuffer pFramebuffer;
 	uint32_t      mWidth;
-	uint32_t      mHeight;
+	uint32_t      m_height;
 	uint32_t      mArraySize;
 } FrameBuffer;
 
@@ -763,7 +763,7 @@ static void add_framebuffer(Renderer* pRenderer, const FrameBufferDesc* pDesc, F
 	if ( colorAttachmentCount )
 	{
 		pFrameBuffer->mWidth = pDesc->ppRenderTargets[0]->mWidth;
-		pFrameBuffer->mHeight = pDesc->ppRenderTargets[0]->mHeight;
+		pFrameBuffer->m_height = pDesc->ppRenderTargets[0]->m_height;
 		if ( pDesc->pColorArraySlices )
 			pFrameBuffer->mArraySize = 1;
 		else
@@ -772,7 +772,7 @@ static void add_framebuffer(Renderer* pRenderer, const FrameBufferDesc* pDesc, F
 	else
 	{
 		pFrameBuffer->mWidth = pDesc->pDepthStencil->mWidth;
-		pFrameBuffer->mHeight = pDesc->pDepthStencil->mHeight;
+		pFrameBuffer->m_height = pDesc->pDepthStencil->m_height;
 		if ( pDesc->mDepthArraySlice != -1 )
 			pFrameBuffer->mArraySize = 1;
 		else
@@ -850,7 +850,7 @@ static void add_framebuffer(Renderer* pRenderer, const FrameBufferDesc* pDesc, F
 	add_info.attachmentCount = attachment_count;
 	add_info.pAttachments = pImageViews;
 	add_info.width = pFrameBuffer->mWidth;
-	add_info.height = pFrameBuffer->mHeight;
+	add_info.height = pFrameBuffer->m_height;
 	add_info.layers = pFrameBuffer->mArraySize;
 	VkResult vk_res = vkCreateFramebuffer(pRenderer->pVkDevice, &add_info, NULL, &(pFrameBuffer->pFramebuffer));
 	SE_ASSERT(VK_SUCCESS == vk_res);
@@ -1150,7 +1150,7 @@ static void add_default_resources(Renderer* pRenderer)
 		textureDesc.mArraySize = 1;
 		textureDesc.mDepth = 1;
 		textureDesc.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
-		textureDesc.mHeight = 1;
+		textureDesc.m_height = 1;
 		textureDesc.mMipLevels = 1;
 		textureDesc.mSampleCount = SAMPLE_COUNT_1;
 		textureDesc.mStartState = RESOURCE_STATE_COMMON;
@@ -1169,7 +1169,7 @@ static void add_default_resources(Renderer* pRenderer)
 
 		// 2D texture
 		textureDesc.mWidth = 2;
-		textureDesc.mHeight = 2;
+		textureDesc.m_height = 2;
 		textureDesc.mArraySize = 1;
 		textureDesc.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 		addTexture(pRenderer, &textureDesc, &pRenderer->pNullDescriptors->pDefaultTextureSRV[i][TEXTURE_DIM_2D]);
@@ -1205,7 +1205,7 @@ static void add_default_resources(Renderer* pRenderer)
 
 		// Cube texture
 		textureDesc.mWidth = 2;
-		textureDesc.mHeight = 2;
+		textureDesc.m_height = 2;
 		textureDesc.mDepth = 1;
 		textureDesc.mArraySize = 6;
 		textureDesc.mDescriptors = DESCRIPTOR_TYPE_TEXTURE_CUBE;
@@ -3192,7 +3192,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	// Swapchain
 	VkExtent2D extent = { 0 };
 	extent.width = pDesc->mWidth;
-	extent.height = pDesc->mHeight;
+	extent.height = pDesc->m_height;
 
 	VkSharingMode sharing_mode = VK_SHARING_MODE_EXCLUSIVE;
 	uint32_t      queue_family_index_count = 0;
@@ -3311,7 +3311,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 
 	RenderTargetDesc descColor = {};
 	descColor.mWidth = pDesc->mWidth;
-	descColor.mHeight = pDesc->mHeight;
+	descColor.m_height = pDesc->m_height;
 	descColor.mDepth = 1;
 	descColor.mArraySize = 1;
 	descColor.mFormat = pDesc->mColorFormat;
@@ -3523,7 +3523,7 @@ void removeBuffer(Renderer* pRenderer, Buffer* pBuffer)
 void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTexture)
 {
 	SE_ASSERT(pRenderer);
-	SE_ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
+	SE_ASSERT(pDesc && pDesc->mWidth && pDesc->m_height && (pDesc->mDepth || pDesc->mArraySize));
 	if ( pDesc->mSampleCount > SAMPLE_COUNT_1 && pDesc->mMipLevels > 1 )
 	{
 		LOGF(LogLevel::eERROR, "Multi-Sampled textures cannot have mip maps");
@@ -3569,7 +3569,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	{
 		if ( pDesc->mDepth > 1 )
 			image_type = VK_IMAGE_TYPE_3D;
-		else if ( pDesc->mHeight > 1 )
+		else if ( pDesc->m_height > 1 )
 			image_type = VK_IMAGE_TYPE_2D;
 		else
 			image_type = VK_IMAGE_TYPE_1D;
@@ -3588,7 +3588,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		add_info.imageType = image_type;
 		add_info.format = (VkFormat)TinyImageFormat_ToVkFormat(pDesc->mFormat);
 		add_info.extent.width = pDesc->mWidth;
-		add_info.extent.height = pDesc->mHeight;
+		add_info.extent.height = pDesc->m_height;
 		add_info.extent.depth = pDesc->mDepth;
 		add_info.mipLevels = pDesc->mMipLevels;
 		add_info.arrayLayers = pDesc->mArraySize;
@@ -3794,7 +3794,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	pTexture->mNodeIndex = pDesc->mNodeIndex;
 	pTexture->mStartState = pDesc->mStartState;
 	pTexture->mWidth = pDesc->mWidth;
-	pTexture->mHeight = pDesc->mHeight;
+	pTexture->m_height = pDesc->m_height;
 	pTexture->mDepth = pDesc->mDepth;
 	pTexture->mMipLevels = pDesc->mMipLevels;
 	pTexture->mUav = pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_TEXTURE;
@@ -3875,7 +3875,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	textureDesc.mDepth = pDesc->mDepth;
 	textureDesc.mFlags = pDesc->mFlags;
 	textureDesc.mFormat = pDesc->mFormat;
-	textureDesc.mHeight = pDesc->mHeight;
+	textureDesc.m_height = pDesc->m_height;
 	textureDesc.mHostVisible = false;
 	textureDesc.mMipLevels = pDesc->mMipLevels;
 	textureDesc.mSampleCount = pDesc->mSampleCount;
@@ -3920,7 +3920,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
 	if ( pDesc->mDepth > 1 )
 		viewType = VK_IMAGE_VIEW_TYPE_3D;
-	else if ( pDesc->mHeight > 1 )
+	else if ( pDesc->m_height > 1 )
 		viewType = pDesc->mArraySize > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
 	else
 		viewType = pDesc->mArraySize > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
@@ -3968,7 +3968,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	}
 
 	pRenderTarget->mWidth = pDesc->mWidth;
-	pRenderTarget->mHeight = pDesc->mHeight;
+	pRenderTarget->m_height = pDesc->m_height;
 	pRenderTarget->mArraySize = pDesc->mArraySize;
 	pRenderTarget->mDepth = pDesc->mDepth;
 	pRenderTarget->mMipLevels = pDesc->mMipLevels;
@@ -5690,7 +5690,7 @@ void cmdBindRenderTargets(
 	render_area.offset.x = 0;
 	render_area.offset.y = 0;
 	render_area.extent.width = pFrameBuffer->mWidth;
-	render_area.extent.height = pFrameBuffer->mHeight;
+	render_area.extent.height = pFrameBuffer->m_height;
 
 	uint32_t     clearValueCount = renderTargetCount;
 	VkClearValue clearValues[MAX_RENDER_TARGET_ATTACHMENTS + 1] = {};
@@ -6055,7 +6055,7 @@ void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, Subr
 	pCopy.imageOffset.y = pSubresourceDesc->mRegion.mYOffset;
 	pCopy.imageOffset.z = pSubresourceDesc->mRegion.mZOffset;
 	pCopy.imageExtent.width = pSubresourceDesc->mRegion.mWidth;
-	pCopy.imageExtent.height = pSubresourceDesc->mRegion.mHeight;
+	pCopy.imageExtent.height = pSubresourceDesc->mRegion.m_height;
 	pCopy.imageExtent.depth = pSubresourceDesc->mRegion.mDepth;
 
 	vkCmdCopyBufferToImage(pCmd->pVkCmdBuf, pSrcBuffer->pVkBuffer, pTexture->pVkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &pCopy);
@@ -7004,7 +7004,7 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture*
 	pTexture->pSvt = (VirtualTexture*)(pTexture + 1);
 
 	uint32_t imageSize = 0;
-	uint32_t mipSize = pDesc->mWidth * pDesc->mHeight * pDesc->mDepth;
+	uint32_t mipSize = pDesc->mWidth * pDesc->m_height * pDesc->mDepth;
 	while ( mipSize > 0 )
 	{
 		imageSize += mipSize;
@@ -7042,7 +7042,7 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture*
 	add_info.imageType = VK_IMAGE_TYPE_2D;
 	add_info.format = format;
 	add_info.extent.width = pDesc->mWidth;
-	add_info.extent.height = pDesc->mHeight;
+	add_info.extent.height = pDesc->m_height;
 	add_info.extent.depth = pDesc->mDepth;
 	add_info.mipLevels = pDesc->mMipLevels;
 	add_info.arrayLayers = 1;
@@ -7223,7 +7223,7 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture*
 		}
 	} // end layers and mips
 
-	LOGF(LogLevel::eINFO, "Virtual Texture info: Dim %d x %d Pages %d", pDesc->mWidth, pDesc->mHeight, (uint32_t)(((eastl::vector<VirtualTexturePage>*)pTexture->pSvt->pPages)->size()));
+	LOGF(LogLevel::eINFO, "Virtual Texture info: Dim %d x %d Pages %d", pDesc->mWidth, pDesc->m_height, (uint32_t)(((eastl::vector<VirtualTexturePage>*)pTexture->pSvt->pPages)->size()));
 
 	// Check if format has one mip tail for all layers
 	if ( (sparseMemoryReq.formatProperties.flags & VK_SPARSE_IMAGE_FORMAT_SINGLE_MIPTAIL_BIT) && (sparseMemoryReq.imageMipTailFirstLod < pDesc->mMipLevels) )
@@ -7296,7 +7296,7 @@ void addVirtualTexture(Renderer * pRenderer, const TextureDesc * pDesc, Texture*
 	pTexture->mStartState = pDesc->mStartState;
 	pTexture->mMipLevels = pDesc->mMipLevels;
 	pTexture->mWidth = pDesc->mWidth;
-	pTexture->mHeight = pDesc->mHeight;
+	pTexture->m_height = pDesc->m_height;
 	pTexture->mDepth = pDesc->mDepth;
 	pTexture->mCurrentState = RESOURCE_STATE_UNDEFINED;
 

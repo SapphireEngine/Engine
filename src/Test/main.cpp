@@ -227,7 +227,7 @@ public:
 		sphereVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
 		sphereVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
 		sphereVbDesc.mDesc.mSize = sphereDataSize;
-		sphereVbDesc.pData = pSpherePoints;
+		sphereVbDesc.p_data = pSpherePoints;
 		sphereVbDesc.ppBuffer = &pSphereVertexBuffer;
 		addResource(&sphereVbDesc, NULL, LOAD_PRIORITY_NORMAL);
 
@@ -263,7 +263,7 @@ public:
 		skyboxVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
 		skyboxVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
 		skyboxVbDesc.mDesc.mSize = skyBoxDataSize;
-		skyboxVbDesc.pData = skyBoxPoints;
+		skyboxVbDesc.p_data = skyBoxPoints;
 		skyboxVbDesc.ppBuffer = &pSkyBoxVertexBuffer;
 		addResource(&skyboxVbDesc, NULL, LOAD_PRIORITY_NORMAL);
 
@@ -272,7 +272,7 @@ public:
 		ubDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
 		ubDesc.mDesc.mSize = sizeof(UniformBlock);
 		ubDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
-		ubDesc.pData = NULL;
+		ubDesc.p_data = NULL;
 		for ( uint32_t i = 0; i < gImageCount; ++i )
 		{
 			ubDesc.ppBuffer = &pProjViewUniformBuffer[i];
@@ -538,18 +538,18 @@ public:
 		if ( !gVirtualJoystick.Load(pSwapChain->ppRenderTargets[0]) )
 			return false;
 
-		loadProfilerUI(&gAppUI, mSettings.mWidth, mSettings.mHeight);
+		loadProfilerUI(&gAppUI, mSettings.m_width, mSettings.m_height);
 
 		//layout and pipeline for sphere draw
 		VertexLayout vertexLayout = {};
 		vertexLayout.mAttribCount = 2;
 		vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-		vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
+		vertexLayout.mAttribs[0].m_format = TinyImageFormat_R32G32B32_SFLOAT;
 		vertexLayout.mAttribs[0].mBinding = 0;
 		vertexLayout.mAttribs[0].mLocation = 0;
 		vertexLayout.mAttribs[0].mOffset = 0;
 		vertexLayout.mAttribs[1].mSemantic = SEMANTIC_NORMAL;
-		vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
+		vertexLayout.mAttribs[1].m_format = TinyImageFormat_R32G32B32_SFLOAT;
 		vertexLayout.mAttribs[1].mBinding = 0;
 		vertexLayout.mAttribs[1].mLocation = 1;
 		vertexLayout.mAttribs[1].mOffset = 3 * sizeof(float);
@@ -571,10 +571,10 @@ public:
 		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
 		pipelineSettings.mRenderTargetCount = 1;
 		pipelineSettings.pDepthState = &depthStateDesc;
-		pipelineSettings.pColorFormats = &pSwapChain->ppRenderTargets[0]->mFormat;
+		pipelineSettings.pColorFormats = &pSwapChain->ppRenderTargets[0]->m_format;
 		pipelineSettings.mSampleCount = pSwapChain->ppRenderTargets[0]->mSampleCount;
 		pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mSampleQuality;
-		pipelineSettings.mDepthStencilFormat = pDepthBuffer->mFormat;
+		pipelineSettings.mDepthStencilFormat = pDepthBuffer->m_format;
 		pipelineSettings.pRootSignature = pRootSignature;
 		pipelineSettings.pShaderProgram = pSphereShader;
 		pipelineSettings.pVertexLayout = &vertexLayout;
@@ -585,7 +585,7 @@ public:
 		vertexLayout = {};
 		vertexLayout.mAttribCount = 1;
 		vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-		vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
+		vertexLayout.mAttribs[0].m_format = TinyImageFormat_R32G32B32A32_SFLOAT;
 		vertexLayout.mAttribs[0].mBinding = 0;
 		vertexLayout.mAttribs[0].mLocation = 0;
 		vertexLayout.mAttribs[0].mOffset = 0;
@@ -616,7 +616,7 @@ public:
 
 	void Update(float deltaTime)
 	{
-		updateInputSystem(mSettings.mWidth, mSettings.mHeight);
+		updateInputSystem(mSettings.m_width, mSettings.m_height);
 
 		pCameraController->update(deltaTime);
 		/************************************************************************/
@@ -628,7 +628,7 @@ public:
 		// update camera with time
 		mat4 viewMat = pCameraController->getViewMatrix();
 
-		const float aspectInverse = (float)mSettings.mHeight / (float)mSettings.mWidth;
+		const float aspectInverse = (float)mSettings.m_height / (float)mSettings.m_width;
 		const float horizontal_fov = PI / 2.0f;
 		mat4        projMat = mat4::perspective(horizontal_fov, aspectInverse, 1000.0f, 0.1f);
 		gUniformData.mProjectView = projMat * viewMat;
@@ -716,8 +716,8 @@ public:
 		loadActions.mClearDepth.depth = 0.0f;
 		loadActions.mClearDepth.stencil = 0;
 		cmdBindRenderTargets(cmd, 1, &pRenderTarget, pDepthBuffer, &loadActions, NULL, NULL, -1, -1);
-		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
-		cmdSetScissor(cmd, 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
+		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->m_width, (float)pRenderTarget->m_height, 0.0f, 1.0f);
+		cmdSetScissor(cmd, 0, 0, pRenderTarget->m_width, pRenderTarget->m_height);
 
 		const uint32_t sphereVbStride = sizeof(float) * 6;
 		const uint32_t skyboxVbStride = sizeof(float) * 4;
@@ -794,8 +794,8 @@ public:
 		swapChainDesc.mWindowHandle = pWindow->handle;
 		swapChainDesc.mPresentQueueCount = 1;
 		swapChainDesc.ppPresentQueues = &pGraphicsQueue;
-		swapChainDesc.mWidth = mSettings.mWidth;
-		swapChainDesc.mHeight = mSettings.mHeight;
+		swapChainDesc.m_width = mSettings.m_width;
+		swapChainDesc.m_height = mSettings.m_height;
 		swapChainDesc.mImageCount = gImageCount;
 		swapChainDesc.mColorFormat = getRecommendedSwapchainFormat(true);
 		swapChainDesc.mEnableVsync = false;
@@ -811,12 +811,12 @@ public:
 		depthRT.mArraySize = 1;
 		depthRT.mClearValue.depth = 0.0f;
 		depthRT.mClearValue.stencil = 0;
-		depthRT.mDepth = 1;
-		depthRT.mFormat = TinyImageFormat_D32_SFLOAT;
-		depthRT.mHeight = mSettings.mHeight;
+		depthRT.m_depth = 1;
+		depthRT.m_format = TinyImageFormat_D32_SFLOAT;
+		depthRT.m_height = mSettings.m_height;
 		depthRT.mSampleCount = SAMPLE_COUNT_1;
 		depthRT.mSampleQuality = 0;
-		depthRT.mWidth = mSettings.mWidth;
+		depthRT.m_width = mSettings.m_width;
 		depthRT.mFlags = TEXTURE_CREATION_FLAG_ON_TILE;
 		addRenderTarget(pRenderer, &depthRT, &pDepthBuffer);
 

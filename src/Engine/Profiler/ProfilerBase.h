@@ -390,7 +390,7 @@ PROFILE_API const char* ProfileGetProcessName(ProfileProcessIdType nId, char* Bu
 
 PROFILE_API void ProfileDumpFile(const Path* pPath, ProfileDumpType eType, uint32_t nFrames);
 
-typedef void ProfileWriteCallback(void* Handle, size_t size, const char* pData);
+typedef void ProfileWriteCallback(void* Handle, size_t size, const char* p_data);
 PROFILE_API void ProfileDumpHtml(ProfileWriteCallback CB, void* Handle, int nMaxFrames, const char* pHost);
 
 PROFILE_API int ProfileFormatCounter(int eFormat, int64_t nCounter, char* pOut, uint32_t nBufferSize);
